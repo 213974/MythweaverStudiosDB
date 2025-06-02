@@ -1,0 +1,14 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\commands",
+    "\\commands\\moderation",
+    "\\commands\\utility",
+    "\\events",
+    "\\handlers",
+    "\\src",
+    "\\utils"
+  ],
+  "SelectedNode": "\\utils\\logger.js",
+  "PreviewInSolutionExplorer": false
+}
