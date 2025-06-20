@@ -21,6 +21,8 @@
   },
   "homepage": "https://github.com/213974/ProjectPMU-Discordbot#readme",
   "dependencies": {
+    "chrono-node": "^2.8.3",
+    "date-fns-tz": "^3.2.0",
     "discord-api-types": "^0.38.11",
     "discord.js": "^14.19.3",
     "dotenv": "^16.5.0"
