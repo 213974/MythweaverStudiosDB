@@ -103,5 +103,3 @@ This project is licensed under a proprietary license. Please see the [LICENSE](L
 ## Contributing
 
 As this is a proprietary project, contributions are not being accepted at this time.
-
-# Last updated: June 2025
