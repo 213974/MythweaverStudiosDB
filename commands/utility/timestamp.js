@@ -41,7 +41,7 @@ module.exports = {
             if (parsedResult.length === 0) {
                 return interaction.reply({
                     content: "I couldn't understand that date and time. Please try a clearer format (e.g., `March 20 5pm`, `tomorrow 17:00`).\nIf providing a timezone, make sure it's at the end.",
-                    ephemeral: true
+                    flags: 64
                 });
             }
 
@@ -80,7 +80,7 @@ module.exports = {
 
         } catch (error) {
             console.error('[TimestampCommand] Error generating timestamp:', error);
-            await interaction.reply({ content: 'An error occurred while parsing the date. Please check your input.', ephemeral: true });
+            await interaction.reply({ content: 'An error occurred while parsing the date. Please check your input.', flags: 64 });
         }
     },
 };

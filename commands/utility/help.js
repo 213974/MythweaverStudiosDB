@@ -35,6 +35,6 @@ module.exports = {
             .setTimestamp();
 
         // Ephemeral makes the reply only visible to the user who executed the command
-        await interaction.reply({ embeds: [helpEmbed], ephemeral: true });
+        await interaction.reply({ embeds: [helpEmbed], flags: 64 });
     },
 };
