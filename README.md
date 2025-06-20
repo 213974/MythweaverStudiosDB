@@ -27,8 +27,8 @@ This bot provides a full suite of commands for administrators to create and mana
 
 1.  **Clone the Repository:**
     ```bash
-    git clone https://github.com/213974/ProjectPMU-Discordbot.git
-    cd ProjectPMU-Discordbot
+    git clone https://github.com/213974/MythweaverStudiosDB.git
+    cd MythweaverStudiosDB
     ```
 
 2.  **Install Dependencies:**
