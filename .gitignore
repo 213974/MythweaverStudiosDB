@@ -4,12 +4,19 @@ node_modules/
 # Environment variables
 .env
 
+# Data files
+data/
+
 # Log files
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+
+# Editor-specific configuration
+.vscode/
+.idea/
 
 # OS generated files
 .DS_Store
@@ -19,3 +26,4 @@ lerna-debug.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+*.vsidx

@@ -2,13 +2,15 @@
   "ExpandedNodes": [
     "",
     "\\commands",
+    "\\commands\\clan",
     "\\commands\\moderation",
     "\\commands\\utility",
+    "\\data",
     "\\events",
     "\\handlers",
     "\\src",
     "\\utils"
   ],
-  "SelectedNode": "\\utils\\logger.js",
+  "SelectedNode": "\\commands\\admin\\addClan.js",
   "PreviewInSolutionExplorer": false
 }

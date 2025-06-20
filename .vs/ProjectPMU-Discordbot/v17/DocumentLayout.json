@@ -3,32 +3,36 @@
   "WorkspaceRootPath": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\utils\\logger.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:utils\\logger.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\README.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:README.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\src\\index.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\index.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\src\\config.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\config.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\LICENSE||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:LICENSE||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\handlers\\eventHandler.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:handlers\\eventHandler.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\commands\\clan\\clan.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\clan\\clan.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\events\\ready.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:events\\ready.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\commands\\admin\\addClan.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\admin\\addClan.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\events\\messageCreate.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:events\\messageCreate.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\commands\\admin\\changeClanOwner.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\admin\\changeClanOwner.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\events\\interactionCreate.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:events\\interactionCreate.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\utils\\clanManager.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:utils\\clanManager.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\commands\\admin\\removeClan.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\admin\\removeClan.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,24 +42,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "logger.js",
-              "DocumentMoniker": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\utils\\logger.js",
-              "RelativeDocumentMoniker": "utils\\logger.js",
-              "ToolTip": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\utils\\logger.js",
-              "RelativeToolTip": "utils\\logger.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-02T18:31:26.56Z",
-              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -65,74 +56,100 @@
               "RelativeDocumentMoniker": "src\\index.js",
               "ToolTip": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\src\\index.js",
               "RelativeToolTip": "src\\index.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAABSAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-02T18:31:26.051Z",
+              "WhenOpened": "2025-06-20T18:07:18.794Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "config.js",
-              "DocumentMoniker": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\src\\config.js",
-              "RelativeDocumentMoniker": "src\\config.js",
-              "ToolTip": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\src\\config.js",
-              "RelativeToolTip": "src\\config.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-02T18:31:25.415Z",
+              "Title": "LICENSE",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\LICENSE",
+              "RelativeDocumentMoniker": "LICENSE",
+              "ToolTip": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\LICENSE",
+              "RelativeToolTip": "LICENSE",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-06-20T18:02:47.183Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "eventHandler.js",
-              "DocumentMoniker": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\handlers\\eventHandler.js",
-              "RelativeDocumentMoniker": "handlers\\eventHandler.js",
-              "ToolTip": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\handlers\\eventHandler.js",
-              "RelativeToolTip": "handlers\\eventHandler.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-02T18:31:24.598Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "ready.js",
-              "DocumentMoniker": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\events\\ready.js",
-              "RelativeDocumentMoniker": "events\\ready.js",
-              "ToolTip": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\events\\ready.js",
-              "RelativeToolTip": "events\\ready.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-02T18:31:23.777Z",
+              "DocumentIndex": 0,
+              "Title": "README.md",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\README.md",
+              "RelativeDocumentMoniker": "README.md",
+              "ToolTip": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\README.md",
+              "RelativeToolTip": "README.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAABsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-06-20T17:56:28.479Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 5,
-              "Title": "messageCreate.js",
-              "DocumentMoniker": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\events\\messageCreate.js",
-              "RelativeDocumentMoniker": "events\\messageCreate.js",
-              "ToolTip": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\events\\messageCreate.js",
-              "RelativeToolTip": "events\\messageCreate.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Title": "changeClanOwner.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\commands\\admin\\changeClanOwner.js",
+              "RelativeDocumentMoniker": "commands\\admin\\changeClanOwner.js",
+              "ToolTip": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\commands\\admin\\changeClanOwner.js",
+              "RelativeToolTip": "commands\\admin\\changeClanOwner.js",
+              "ViewState": "AgIAACAAAAAAAAAAAAAYwDAAAABmAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-02T18:31:23.082Z",
+              "WhenOpened": "2025-06-20T17:35:24.614Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 6,
-              "Title": "interactionCreate.js",
-              "DocumentMoniker": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\events\\interactionCreate.js",
-              "RelativeDocumentMoniker": "events\\interactionCreate.js",
-              "ToolTip": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\events\\interactionCreate.js",
-              "RelativeToolTip": "events\\interactionCreate.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Title": "clanManager.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\utils\\clanManager.js",
+              "RelativeDocumentMoniker": "utils\\clanManager.js",
+              "ToolTip": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\utils\\clanManager.js",
+              "RelativeToolTip": "utils\\clanManager.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAA8AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-02T18:31:21.459Z",
+              "WhenOpened": "2025-06-20T17:11:54.417Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "clan.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\commands\\clan\\clan.js",
+              "RelativeDocumentMoniker": "commands\\clan\\clan.js",
+              "ToolTip": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\commands\\clan\\clan.js",
+              "RelativeToolTip": "commands\\clan\\clan.js",
+              "ViewState": "AgIAAEABAAAAAAAAAAAYwFIBAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-20T17:11:45.547Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "removeClan.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\commands\\admin\\removeClan.js",
+              "RelativeDocumentMoniker": "commands\\admin\\removeClan.js",
+              "ToolTip": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\commands\\admin\\removeClan.js",
+              "RelativeToolTip": "commands\\admin\\removeClan.js",
+              "ViewState": "AgIAACUAAAAAAAAAAAAuwE4AAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-20T17:10:53.825Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "addClan.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\commands\\admin\\addClan.js",
+              "RelativeDocumentMoniker": "commands\\admin\\addClan.js",
+              "ToolTip": "C:\\Users\\LilGavin\\ProjectPMU-Discordbot\\commands\\admin\\addClan.js",
+              "RelativeToolTip": "commands\\admin\\addClan.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAABBAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-05T17:47:13.55Z",
               "EditorCaption": ""
             }
           ]
