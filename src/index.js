@@ -13,7 +13,7 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.DirectMessages,
-        GatewayIntentBits.GuildMembers, // Needed to fetch members for role assignment
+        GatewayIntentBits.GuildMembers,
     ],
     partials: [Partials.Channel, Partials.Message],
 });

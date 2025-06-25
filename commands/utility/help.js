@@ -46,7 +46,7 @@ module.exports = {
             await interaction.reply({ embeds: [helpEmbed] });
         } else {
             // For all other users, send it as an ephemeral message.
-            await interaction.reply({ embeds: [helpEmbed], ephemeral: true });
+            await interaction.reply({ embeds: [helpEmbed], flags: 64 });
         }
     },
 };

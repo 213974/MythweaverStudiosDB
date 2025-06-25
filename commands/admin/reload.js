@@ -1,5 +1,5 @@
 // commands/admin/reload.js
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const config = require('../../src/config');
 // We need access to the registerCommands function from ready.js
 // This is a bit tricky as ready.js executes. We might need to expose it differently or re-implement.
@@ -8,9 +8,10 @@ const config = require('../../src/config');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('reload')
-        .setDescription('Reloads all slash commands for the bot.')
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Or specific owner check
+        .setDescription('Reloads all slash commands for the bot.'),
+    // .setDefaultMemberPermissions() has been removed to make this a true "owner only" command.
     async execute(interaction) {
+        // This check is now the ONLY permission gate for this command.
         if (interaction.user.id !== config.ownerID) {
             return interaction.reply({ content: 'You do not have permission to use this command.', flags: 64 });
         }

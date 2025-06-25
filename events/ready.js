@@ -3,7 +3,8 @@ const { Events, ActivityType } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord-api-types/v9'); // Or v10 for d.js v14
+const { Routes } = require('discord-api-types/v9');
+const { sendOrUpdateDashboard } = require('../utils/dashboardManager');
 
 async function registerCommands(client, appConfig) {
     const commands = [];
@@ -19,7 +20,6 @@ async function registerCommands(client, appConfig) {
             if (command.data && command.execute) {
                 client.commands.set(command.data.name, command);
                 commands.push(command.data.toJSON());
-                // console.log(`[COMMAND LOADER in READY] Loaded command: /${command.data.name}`); // Less verbose
             } else {
                 console.log(`[WARNING in READY] The command at ${filePath} is missing "data" or "execute".`);
             }
@@ -48,20 +48,19 @@ async function registerCommands(client, appConfig) {
 module.exports = {
     name: Events.ClientReady,
     once: true,
-    async execute(eventClient, handlerClient, appConfig) { // eventClient is client, handlerClient is also client
-        const client = eventClient; // Use a consistent name
-        console.log('[ready.js] Received config:', JSON.stringify(appConfig));
+    async execute(client, handlerClient, appConfig) {
         console.log(`Ready! Logged in as ${client.user.tag}`);
         console.log(`Bot is in ${client.guilds.cache.size} servers.`);
 
-        // Initialize client.commands if not already (should be done in index.js though)
         if (!client.commands) {
             const { Collection } = require('discord.js');
             client.commands = new Collection();
         }
 
-        // Register/Reload slash commands
-        await registerCommands(client, appConfig); // Pass client and appConfig
+        await registerCommands(client, appConfig);
+
+        // Initialize the Clan Dashboard
+        await sendOrUpdateDashboard(client);
 
         if (appConfig && appConfig.ownerID) {
             try {
@@ -69,14 +68,10 @@ module.exports = {
                 if (owner) {
                     await owner.send('Hello! I am online and ready to go! Commands have been refreshed.');
                     console.log(`Successfully DMed owner (${owner.tag}) that the bot is online.`);
-                } else {
-                    console.error(`Could not find user with ID: ${appConfig.ownerID}`);
                 }
             } catch (error) {
                 console.error(`Failed to DM owner (${appConfig.ownerID}):`, error);
             }
-        } else {
-            console.error('[ready.js] Error: appConfig.ownerID is undefined. Cannot DM owner.');
         }
 
         client.user.setPresence({
@@ -88,5 +83,5 @@ module.exports = {
             status: 'online',
         });
     },
-    registerCommands, // Export for /reload command
+    registerCommands,
 };
