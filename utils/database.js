@@ -2,7 +2,7 @@
 const path = require('node:path');
 const Database = require('better-sqlite3');
 
-const dbPath = path.join(__dirname, '..', 'data', 'database.db');
+const dbPath = path.join(__dirname, '..', 'data', 'Mythweaver.db');
 const db = new Database(dbPath);
 
 // Define the database schema
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS wallets (
     currency TEXT NOT NULL,
     balance INTEGER DEFAULT 0,
     bank INTEGER DEFAULT 0,
-    bank_capacity INTEGER DEFAULT 1000,
+    bank_capacity INTEGER DEFAULT 100000,
     PRIMARY KEY (user_id, currency),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
@@ -63,41 +63,25 @@ CREATE TABLE IF NOT EXISTS claims (
 
 db.exec(schema);
 
-// --- Migration Logic for existing databases ---
-// This is complex, so we'll handle it carefully.
-// This assumes you previously had a `balance` and `last_daily_claim` column on the `users` table.
+// --- Migration/Alteration Logic ---
 try {
-    const transaction = db.transaction(() => {
-        // Check if the old balance column exists
-        const oldColumns = db.pragma('table_info(users)').map(col => col.name);
-        if (oldColumns.includes('balance')) {
-            console.log('[Database Migration] Old `balance` column found. Migrating data to `wallets` table...');
-            const usersWithBalance = db.prepare('SELECT user_id, balance FROM users WHERE balance > 0').all();
-
-            const insertWallet = db.prepare('INSERT OR IGNORE INTO wallets (user_id, currency, balance) VALUES (?, ?, ?)');
-            for (const user of usersWithBalance) {
-                insertWallet.run(user.user_id, 'Gold', user.balance);
-            }
-            console.log(`[Database Migration] Migrated ${usersWithBalance.length} user balances.`);
-
-            // Now, we'll create a new users table and copy data, effectively dropping the old columns
-            db.exec(`
-                CREATE TABLE IF NOT EXISTS users_new (
-                    user_id TEXT PRIMARY KEY,
-                    username TEXT NOT NULL
-                );
-                INSERT INTO users_new (user_id, username) SELECT user_id, username FROM users;
-                DROP TABLE users;
-                ALTER TABLE users_new RENAME TO users;
-            `);
-            console.log('[Database Migration] Restructured `users` table successfully.');
-        }
-    });
-    transaction();
+    db.prepare("SELECT last_daily_claim FROM users LIMIT 1").get();
 } catch (error) {
-    if (!error.message.includes("no such column: balance")) {
-        console.error('[Database Migration] Failed to migrate old columns:', error);
+    if (error.message.includes("no such column: last_daily_claim")) {
+        console.log("[Database] 'last_daily_claim' column not found. Adding it to 'users' table.");
+        db.prepare("ALTER TABLE users ADD COLUMN last_daily_claim TEXT").run();
     }
+}
+
+// Update old bank capacities to the new default
+try {
+    const updateStmt = db.prepare('UPDATE wallets SET bank_capacity = 100000 WHERE bank_capacity < 100000');
+    const result = updateStmt.run();
+    if (result.changes > 0) {
+        console.log(`[Database] Updated ${result.changes} wallets to the new bank capacity of 100,000.`);
+    }
+} catch (e) {
+    console.error("[Database] Failed to run bank capacity migration:", e);
 }
 
 

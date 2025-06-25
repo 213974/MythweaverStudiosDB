@@ -5,7 +5,7 @@ const economyManager = require('../../utils/economyManager');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('balance')
-        .setDescription('Check a user\'s currency balance.')
+        .setDescription("Check a user's on-hand Gold balance.")
         .addUserOption(option =>
             option.setName('user')
                 .setDescription('The user whose balance you want to check. Defaults to yourself.')
@@ -22,7 +22,7 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setColor('#FFD700')
             .setAuthor({ name: `${targetUser.username}'s Wallet`, iconURL: targetUser.displayAvatarURL() })
-            .setDescription(`**Balance:** ${wallet.balance.toLocaleString()} 🪙`);
+            .addFields({ name: 'On-Hand Balance', value: `${wallet.balance.toLocaleString()} 🪙` })
 
         await interaction.reply({ embeds: [embed], ephemeral: !isPublic });
     },

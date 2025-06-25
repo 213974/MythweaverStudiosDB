@@ -1,7 +1,7 @@
 ﻿// handlers/buttonHandler.js
-const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
-const economyManager = require('../utils/economyManager');
+const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
 const { sendOrUpdateDashboard } = require('../utils/dashboardManager');
+const economyManager = require('../utils/economyManager');
 
 async function handleSetDashboardChannel(interaction) {
     const modal = new ModalBuilder()
@@ -21,32 +21,55 @@ async function handleSetDashboardChannel(interaction) {
 }
 
 async function handleRefreshDashboard(interaction) {
-    await interaction.deferReply({ flags: 64 });
+    await interaction.deferReply({ ephemeral: true });
     await sendOrUpdateDashboard(interaction.client);
     await interaction.editReply({ content: 'Dashboard refresh initiated successfully.' });
 }
 
-async function handleDailyClaim(interaction) {
-    const result = economyManager.claimDaily(interaction.user.id);
-    if (result.success) {
-        await interaction.update({ content: `You have successfully claimed your daily reward of **${result.reward}** 🪙!`, components: [] });
-    } else {
-        await interaction.update({ content: `Claim failed: ${result.message}`, components: [] });
-    }
+async function handleViewBank(interaction) {
+    const user = interaction.user;
+    const wallet = economyManager.getWallet(user.id, 'Gold');
+    const embed = new EmbedBuilder()
+        .setColor('#3498DB')
+        .setAuthor({ name: `${user.username}'s Bank Account`, iconURL: user.displayAvatarURL() })
+        .addFields(
+            { name: 'Bank Balance', value: `> ${wallet.bank.toLocaleString()} 🪙`, inline: true },
+            { name: 'Bank Capacity', value: `> ${wallet.bank_capacity.toLocaleString()} 🪙`, inline: true },
+            { name: 'On-Hand Balance', value: `> ${wallet.balance.toLocaleString()} 🪙`, inline: false }
+        )
+        .setFooter({ text: 'Gold in your bank is safe. Use /bank deposit or /bank withdraw to manage it.' });
+
+    // Reply to the button interaction with a new ephemeral message
+    await interaction.reply({ embeds: [embed], ephemeral: true });
 }
 
-async function handleWeeklyClaim(interaction) {
-    const result = economyManager.claimWeekly(interaction.user.id);
-    if (result.success) {
-        await interaction.update({ content: `You have successfully claimed your weekly reward of **${result.reward}** 💎!`, components: [] });
+async function handleViewShop(interaction) {
+    const items = economyManager.getShopItems();
+    const embed = new EmbedBuilder()
+        .setColor('#3498DB')
+        .setTitle('Role Shop')
+        .setDescription('Here are the roles available for purchase with Gold. Use `/buy <role>` to purchase an item.');
+
+    if (items.length === 0) {
+        embed.addFields({ name: 'No items available', value: 'The shop is currently empty. Check back later!' });
     } else {
-        await interaction.update({ content: `Claim failed: ${result.message}`, components: [] });
+        items.forEach(item => {
+            embed.addFields({
+                name: `${item.name} - ${item.price.toLocaleString()} 🪙`,
+                value: `<@&${item.role_id}>\n*${item.description || 'No description provided.'}*`,
+                inline: false,
+            });
+        });
     }
+
+    // Reply to the button interaction with a new ephemeral message
+    await interaction.reply({ embeds: [embed], ephemeral: true });
 }
+
 
 module.exports = {
     handleSetDashboardChannel,
     handleRefreshDashboard,
-    handleDailyClaim,
-    handleWeeklyClaim,
+    handleViewBank,
+    handleViewShop,
 };

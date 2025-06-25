@@ -33,18 +33,21 @@ module.exports = {
 
         const row = new ActionRowBuilder().addComponents(claimButton);
 
-        const reply = await interaction.reply({ embeds: [embed], components: [row], flags: 64, fetchReply: true });
+        const reply = await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
 
         const collector = reply.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60000 });
 
         collector.on('collect', async i => {
+            if (i.user.id !== interaction.user.id) {
+                return i.reply({ content: 'This is not for you!', ephemeral: true });
+            }
             if (i.customId === 'claim_daily_reward') {
                 const result = economyManager.claimDaily(i.user.id);
 
                 const newEmbed = new EmbedBuilder();
                 const newButtons = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder().setCustomId('view_bank').setLabel('View Bank').setStyle(ButtonStyle.Primary).setEmoji('🏦'),
-                    new ButtonBuilder().setCustomId('view_shop').setLabel('View Shop').setStyle(ButtonStyle.Secondary).setEmoji('🛍️')
+                    new ButtonBuilder().setCustomId('view_bank_after_claim').setLabel('View Bank').setStyle(ButtonStyle.Primary).setEmoji('🏦'),
+                    new ButtonBuilder().setCustomId('view_shop_after_claim').setLabel('View Shop').setStyle(ButtonStyle.Secondary).setEmoji('🛍️')
                 );
 
                 if (result.success) {
@@ -63,11 +66,10 @@ module.exports = {
             }
         });
 
-        collector.on('end', collected => {
-            if (collected.size === 0) {
-                // If no button was clicked, edit the message to show the buttons are expired
-                const expiredRow = new ActionRowBuilder().addComponents(claimButton.setDisabled(true));
-                interaction.editReply({ components: [expiredRow] }).catch(() => { }); // Ignore errors if message was already handled
+        collector.on('end', (collected, reason) => {
+            if (reason === 'time' && collected.size === 0) {
+                const expiredRow = new ActionRowBuilder().addComponents(claimButton.setDisabled(true).setLabel('Expired'));
+                interaction.editReply({ components: [expiredRow] }).catch(() => { });
             }
         });
     },

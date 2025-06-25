@@ -5,6 +5,7 @@ const { differenceInHours, differenceInCalendarDays, startOfWeek, getDay, parseI
 const DAILY_REWARD = 25;
 const WEEKLY_REWARD = 175;
 const DEFAULT_CURRENCY = 'Gold';
+const DEFAULT_BANK_CAPACITY = 100000;
 
 // --- Helper Functions ---
 function ensureUser(userId, username = 'Unknown') {
@@ -13,7 +14,7 @@ function ensureUser(userId, username = 'Unknown') {
 
 function ensureWallet(userId, currency) {
     ensureUser(userId);
-    db.prepare('INSERT OR IGNORE INTO wallets (user_id, currency) VALUES (?, ?)').run(userId, currency);
+    db.prepare('INSERT OR IGNORE INTO wallets (user_id, currency, bank_capacity) VALUES (?, ?, ?)').run(userId, currency, DEFAULT_BANK_CAPACITY);
 }
 
 // --- Main Exported Module ---
@@ -111,14 +112,15 @@ module.exports = {
     },
 
     claimDaily: (userId) => {
-        const { canClaim, weekly_claim_state } = module.exports.getDailyStatus(userId);
+        const { canClaim } = module.exports.getDailyStatus(userId);
         if (!canClaim) return { success: false, message: 'You have already claimed your daily reward today.' };
 
         const wallet = module.exports.getWallet(userId, 'Gold');
         if (wallet.bank + DAILY_REWARD > wallet.bank_capacity) {
             return { success: false, message: 'You do not have enough space in your bank to claim this reward.' };
         }
-
+        
+        const { weekly_claim_state } = module.exports.getDailyStatus(userId);
         const todayDayIndex = getDay(new Date());
         weekly_claim_state[todayDayIndex] = true;
         const newState = JSON.stringify(weekly_claim_state);

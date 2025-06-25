@@ -1,9 +1,9 @@
 ﻿// events/interactionCreate.js
-const { Events, EmbedBuilder, ActionRowBuilder } = require('discord.js');
+const { Events } = require('discord.js');
 const buttonHandler = require('../handlers/buttonHandler');
 const selectMenuHandler = require('../handlers/selectMenuHandler');
 const modalSubmitHandler = require('../handlers/modalSubmitHandler');
-const clanManager = require('../utils/clanManager'); // Add clanManager
+const clanManager = require('../utils/clanManager');
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -13,7 +13,7 @@ module.exports = {
                 const command = client.commands.get(interaction.commandName);
                 if (!command) {
                     console.error(`No command matching ${interaction.commandName} was found.`);
-                    return interaction.reply({ content: 'Error: Command not found.', flags: 64 });
+                    return interaction.reply({ content: 'Error: Command not found.', ephemeral: true });
                 }
                 await command.execute(interaction);
             }
@@ -24,16 +24,19 @@ module.exports = {
                 // Admin dashboard buttons
                 if (customId === 'admin_dashboard_set_channel') await buttonHandler.handleSetDashboardChannel(interaction);
                 else if (customId === 'admin_dashboard_refresh') await buttonHandler.handleRefreshDashboard(interaction);
-                // Economy buttons
-                else if (customId === 'claim_daily_reward') await buttonHandler.handleDailyClaim(interaction);
-                else if (customId === 'claim_weekly_reward') await buttonHandler.handleWeeklyClaim(interaction);
+
+                // After-claim buttons
+                else if (customId === 'view_bank_after_claim') await buttonHandler.handleViewBank(interaction);
+                else if (customId === 'view_shop_after_claim') await buttonHandler.handleViewShop(interaction);
+
                 // Clan Invite Buttons
                 else if (parts[0] === 'clan' && (parts[1] === 'accept' || parts[1] === 'deny')) {
+                    // This logic remains to handle clan invites, which don't use a collector.
                     const originalMessage = interaction.message;
                     const originalEmbed = originalMessage.embeds[0];
                     if (!originalEmbed) return;
 
-                    const disabledRow = ActionRowBuilder.from(originalMessage.components[0]);
+                    const disabledRow = new ActionRowBuilder.from(originalMessage.components[0]);
                     disabledRow.components.forEach(component => component.setDisabled(true));
                     await interaction.update({ components: [disabledRow] });
 
@@ -42,11 +45,11 @@ module.exports = {
                     const invitedUserId = parts[3];
 
                     if (interaction.user.id !== invitedUserId) {
-                        return interaction.followUp({ content: "This invitation is not for you.", flags: 64 });
+                        return interaction.followUp({ content: "This invitation is not for you.", ephemeral: true });
                     }
 
                     const clanDiscordRole = await interaction.guild.roles.fetch(clanRoleId).catch(() => null);
-                    const updatedEmbed = EmbedBuilder.from(originalEmbed);
+                    const updatedEmbed = new EmbedBuilder.from(originalEmbed);
 
                     if (action === 'accept') {
                         const authorityToAssign = parts[4].replace(/-/g, ' ');
@@ -77,7 +80,7 @@ module.exports = {
             }
         } catch (error) {
             console.error(`Error during interaction execution:`, error);
-            const replyOptions = { content: 'An error occurred while processing your request.', flags: 64 };
+            const replyOptions = { content: 'An error occurred while processing your request.', ephemeral: true };
             if (interaction.replied || interaction.deferred) {
                 await interaction.followUp(replyOptions).catch(console.error);
             } else {

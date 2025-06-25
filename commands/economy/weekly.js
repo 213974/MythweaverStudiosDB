@@ -28,25 +28,28 @@ module.exports = {
         }
 
         const row = new ActionRowBuilder().addComponents(claimButton);
-        const reply = await interaction.reply({ embeds: [embed], components: [row], flags: 64, fetchReply: true });
+        const reply = await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
 
         const collector = reply.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60000 });
 
         collector.on('collect', async i => {
+            if (i.user.id !== interaction.user.id) {
+                return i.reply({ content: 'This is not for you!', ephemeral: true });
+            }
             if (i.customId === 'claim_weekly_reward') {
                 const result = economyManager.claimWeekly(i.user.id);
 
                 const newEmbed = new EmbedBuilder();
                 const newButtons = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder().setCustomId('view_bank').setLabel('View Bank').setStyle(ButtonStyle.Primary).setEmoji('🏦'),
-                    new ButtonBuilder().setCustomId('view_shop').setLabel('View Shop').setStyle(ButtonStyle.Secondary).setEmoji('🛍️')
+                    new ButtonBuilder().setCustomId('view_bank_after_claim').setLabel('View Bank').setStyle(ButtonStyle.Primary).setEmoji('🏦'),
+                    new ButtonBuilder().setCustomId('view_shop_after_claim').setLabel('View Shop').setStyle(ButtonStyle.Secondary).setEmoji('🛍️')
                 );
 
                 if (result.success) {
                     newEmbed.setColor('#00FF00')
                         .setTitle('Weekly Reward Claimed!')
                         .setDescription(`**${result.reward}** 💎 has been deposited directly into your bank.`)
-                        .setFooter({ text: 'The Gold is safe in your bank. Use `/bank withdraw` to move it to your pockets to buy things.' });
+                        .setFooter({ text: 'This Gold is safe in your bank. Use /bank withdraw to move it to your balance.' });
                 } else {
                     newEmbed.setColor('#FF0000')
                         .setTitle('Claim Failed')
@@ -58,9 +61,9 @@ module.exports = {
             }
         });
 
-        collector.on('end', collected => {
-            if (collected.size === 0) {
-                const expiredRow = new ActionRowBuilder().addComponents(claimButton.setDisabled(true));
+        collector.on('end', (collected, reason) => {
+            if (reason === 'time' && collected.size === 0) {
+                const expiredRow = new ActionRowBuilder().addComponents(claimButton.setDisabled(true).setLabel('Expired'));
                 interaction.editReply({ components: [expiredRow] }).catch(() => { });
             }
         });

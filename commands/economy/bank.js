@@ -5,7 +5,7 @@ const economyManager = require('../../utils/economyManager');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('bank')
-        .setDescription('Interact with your bank account.')
+        .setDescription('Interact with your secure bank account.')
         .addSubcommand(subcommand =>
             subcommand.setName('view')
                 .setDescription('View your bank balance and capacity.')
@@ -31,53 +31,49 @@ module.exports = {
             const wallet = economyManager.getWallet(user.id, 'Gold');
             const embed = new EmbedBuilder()
                 .setColor('#3498DB')
-                .setTitle(`${user.username}'s Bank Account`)
+                .setAuthor({ name: `${user.username}'s Bank Account`, iconURL: user.displayAvatarURL() })
                 .addFields(
-                    { name: 'Bank Balance', value: `${wallet.bank.toLocaleString()} 🪙`, inline: true },
-                    { name: 'Bank Capacity', value: `${wallet.bank_capacity.toLocaleString()} 🪙`, inline: true },
-                    { name: 'Current Balance (On-hand)', value: `${wallet.balance.toLocaleString()} 🪙`, inline: true }
+                    { name: 'Bank Balance', value: `> ${wallet.bank.toLocaleString()} 🪙`, inline: true },
+                    { name: 'Bank Capacity', value: `> ${wallet.bank_capacity.toLocaleString()} 🪙`, inline: true },
+                    { name: 'On-Hand Balance', value: `> ${wallet.balance.toLocaleString()} 🪙`, inline: false }
                 )
-                .setFooter({ text: 'Use /bank deposit or /bank withdraw to manage your funds.' });
+                .setFooter({ text: 'Gold in your bank is safe. Use /bank deposit or /bank withdraw to manage it.' });
 
             await interaction.reply({ embeds: [embed], ephemeral: !isPublic });
         }
         else if (subcommand === 'deposit') {
             const amount = interaction.options.getInteger('amount');
             const result = economyManager.depositToBank(user.id, amount, 'Gold');
-            const wallet = economyManager.getWallet(user.id, 'Gold');
 
-            const embed = new EmbedBuilder()
-                .setTitle('Bank Deposit')
-                .setFooter({ text: `New Bank Balance: ${wallet.bank.toLocaleString()} 🪙 | New On-Hand Balance: ${wallet.balance.toLocaleString()} 🪙` });
+            const wallet = economyManager.getWallet(user.id, 'Gold');
+            const embed = new EmbedBuilder().setTitle('Bank Deposit');
 
             if (result.success) {
                 embed.setColor('#2ECC71')
-                    .setDescription(`You have successfully deposited **${amount.toLocaleString()}** 🪙 into your bank.`);
-                await interaction.reply({ embeds: [embed] });
+                    .setDescription(`You successfully deposited **${amount.toLocaleString()}** 🪙 into your bank.`);
             } else {
                 embed.setColor('#E74C3C')
                     .setDescription(`Deposit failed: ${result.message}`);
-                await interaction.reply({ embeds: [embed], flags: 64 });
             }
+            embed.setFooter({ text: `New Bank Balance: ${wallet.bank.toLocaleString()} 🪙 | New On-Hand Balance: ${wallet.balance.toLocaleString()} 🪙` });
+            await interaction.reply({ embeds: [embed], ephemeral: true });
         }
         else if (subcommand === 'withdraw') {
             const amount = interaction.options.getInteger('amount');
             const result = economyManager.withdrawFromBank(user.id, amount, 'Gold');
-            const wallet = economyManager.getWallet(user.id, 'Gold');
 
-            const embed = new EmbedBuilder()
-                .setTitle('Bank Withdrawal')
-                .setFooter({ text: `New Bank Balance: ${wallet.bank.toLocaleString()} 🪙 | New On-Hand Balance: ${wallet.balance.toLocaleString()} 🪙` });
+            const wallet = economyManager.getWallet(user.id, 'Gold');
+            const embed = new EmbedBuilder().setTitle('Bank Withdrawal');
 
             if (result.success) {
                 embed.setColor('#2ECC71')
-                    .setDescription(`You have successfully withdrawn **${amount.toLocaleString()}** 🪙 from your bank.`);
-                await interaction.reply({ embeds: [embed] });
+                    .setDescription(`You successfully withdrew **${amount.toLocaleString()}** 🪙 from your bank.`);
             } else {
                 embed.setColor('#E74C3C')
                     .setDescription(`Withdrawal failed: ${result.message}`);
-                await interaction.reply({ embeds: [embed], flags: 64 });
             }
+            embed.setFooter({ text: `New Bank Balance: ${wallet.bank.toLocaleString()} 🪙 | New On-Hand Balance: ${wallet.balance.toLocaleString()} 🪙` });
+            await interaction.reply({ embeds: [embed], ephemeral: true });
         }
     },
 };
