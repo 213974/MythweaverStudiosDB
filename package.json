@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/213974/ProjectPMU-Discordbot#readme",
   "dependencies": {
+    "better-sqlite3": "^12.1.1",
     "chrono-node": "^2.8.3",
     "date-fns-tz": "^3.2.0",
     "discord-api-types": "^0.38.11",
@@ -28,6 +29,7 @@
     "dotenv": "^16.5.0"
   },
   "devDependencies": {
+    "eslint": "^9.29.0",
     "nodemon": "^3.1.10"
   }
 }

@@ -1,73 +1,46 @@
 // utils/clanManager.js
-const fs = require('node:fs');
-const path = require('node:path');
-const clansFilePath = path.join(__dirname, '..', 'data', 'clans.json');
-const config = require('../src/config');
+const db = require('./database');
 
 const MAX_MEMBERS = 100;
 const MAX_OFFICERS = 8;
 const MAX_VICE_GUILD_MASTERS = 4;
 
-function readClans() {
-    try {
-        if (!fs.existsSync(clansFilePath)) {
-            fs.writeFileSync(clansFilePath, JSON.stringify({}), 'utf8');
-            return {};
-        }
-        const data = fs.readFileSync(clansFilePath, 'utf8');
-        if (data.trim() === '') {
-            fs.writeFileSync(clansFilePath, JSON.stringify({}), 'utf8');
-            return {};
-        }
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('[ClanManager] Error reading or parsing clans.json:', error);
-        try {
-            fs.writeFileSync(clansFilePath, JSON.stringify({}), 'utf8');
-            console.log('[ClanManager] clans.json was corrupted or unreadable, reset to {}.');
-        } catch (resetError) {
-            console.error('[ClanManager] CRITICAL: Failed to reset corrupted clans.json:', resetError);
-        }
-        return {};
-    }
-}
+// Prepare statements for reuse (performance and security)
+const queries = {
+    findClanContainingUser: db.prepare('SELECT clan_id, authority FROM clan_members WHERE user_id = ?'),
+    getClanMembersByAuth: db.prepare('SELECT user_id FROM clan_members WHERE clan_id = ? AND authority = ?'),
+    getClanById: db.prepare('SELECT * FROM clans WHERE clan_id = ?'),
+    getMemberCount: db.prepare('SELECT COUNT(*) as count FROM clan_members WHERE clan_id = ? AND authority = ?'),
+    createClan: db.prepare('INSERT INTO clans (clan_id, owner_id) VALUES (?, ?)'),
+    addClanMember: db.prepare('INSERT INTO clan_members (user_id, clan_id, authority) VALUES (?, ?, ?)'),
+    addUser: db.prepare('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)'),
+    deleteClan: db.prepare('DELETE FROM clans WHERE clan_id = ?'),
+    removeUserFromClan: db.prepare('DELETE FROM clan_members WHERE user_id = ? AND clan_id = ?'),
+    setClanOwner: db.prepare('UPDATE clans SET owner_id = ? WHERE clan_id = ?'),
+    updateMemberAuth: db.prepare('UPDATE clan_members SET authority = ? WHERE user_id = ? AND clan_id = ?'),
+    setMotto: db.prepare('UPDATE clans SET motto = ? WHERE clan_id = ?'),
+};
 
-function saveClans(clans) {
-    try {
-        fs.writeFileSync(clansFilePath, JSON.stringify(clans, null, 4), 'utf8');
-    } catch (error) {
-        console.error('[ClanManager] Error writing to clans.json:', error);
-    }
-}
+function findClanContainingUser(userId) {
+    const row = queries.findClanContainingUser.get(userId);
+    if (!row) return null;
 
-async function getGuild(client, interactionOrGuildIdOrGuildObject) {
-    // If it's already a guild object
-    if (interactionOrGuildIdOrGuildObject && interactionOrGuildIdOrGuildObject.roles && interactionOrGuildIdOrGuildObject.id) {
-        return interactionOrGuildIdOrGuildObject;
-    }
+    const clan = queries.getClanById.get(row.clan_id);
+    if (!clan) return null;
 
-    // If it's an interaction object with a guild property
-    if (interactionOrGuildIdOrGuildObject && interactionOrGuildIdOrGuildObject.guild) {
-        return interactionOrGuildIdOrGuildObject.guild;
-    }
+    // To match the old structure, we fetch all members
+    const members = queries.getClanMembersByAuth.all(clan.clan_id, 'Member').map(r => r.user_id);
+    const officers = queries.getClanMembersByAuth.all(clan.clan_id, 'Officer').map(r => r.user_id);
+    const viceGuildMasters = queries.getClanMembersByAuth.all(clan.clan_id, 'Vice Guild Master').map(r => r.user_id);
 
-    // If it's a guild ID string, or if we need to use the default from config
-    const guildIdToFetch = (typeof interactionOrGuildIdOrGuildObject === 'string')
-        ? interactionOrGuildIdOrGuildObject
-        : config.guildID;
-
-    if (!client || !guildIdToFetch) {
-        console.error("[ClanManager] getGuild: Client or Guild ID is missing for fetching.");
-        return null;
-    }
-
-    try {
-        const guild = await client.guilds.fetch(guildIdToFetch);
-        return guild;
-    } catch (error) {
-        console.error(`[ClanManager] getGuild: Failed to fetch guild with ID ${guildIdToFetch}:`, error);
-        return null;
-    }
+    return {
+        clanRoleId: clan.clan_id,
+        clanOwnerUserID: clan.owner_id,
+        motto: clan.motto,
+        members,
+        officers,
+        viceGuildMasters,
+    };
 }
 
 module.exports = {
@@ -76,288 +49,129 @@ module.exports = {
     MAX_VICE_GUILD_MASTERS,
 
     getClanData: (clanRoleId) => {
-        const clans = readClans();
-        return clans[clanRoleId] || null;
-    },
+        const clan = queries.getClanById.get(clanRoleId);
+        if (!clan) return null;
 
-    getAllClans: () => {
-        return readClans();
-    },
+        const members = queries.getClanMembersByAuth.all(clan.clan_id, 'Member').map(r => r.user_id);
+        const officers = queries.getClanMembersByAuth.all(clan.clan_id, 'Officer').map(r => r.user_id);
+        const viceGuildMasters = queries.getClanMembersByAuth.all(clan.clan_id, 'Vice Guild Master').map(r => r.user_id);
 
-    saveClans: saveClans,
-
-    deleteClan: async (clanRoleId) => {
-        const clans = readClans();
-        if (!clans[clanRoleId]) {
-            return { success: false, message: 'Clan not found in records.' };
-        }
-
-        const clanData = clans[clanRoleId];
-        const ownerId = clanData.clanOwnerUserID;
-
-        delete clans[clanRoleId];
-        saveClans(clans);
-
-        return { success: true, ownerId: ownerId, message: 'Clan successfully removed from records.' };
+        return {
+            clanOwnerUserID: clan.owner_id,
+            motto: clan.motto,
+            members,
+            officers,
+            viceGuildMasters
+        };
     },
 
     findClanByOwner: (ownerId) => {
-        const clans = readClans();
-        for (const roleId in clans) {
-            if (clans[roleId].clanOwnerUserID === ownerId) {
-                return { clanRoleId: roleId, ...clans[roleId] };
-            }
-        }
-        return null;
+        const row = db.prepare('SELECT * FROM clans WHERE owner_id = ?').get(ownerId);
+        if (!row) return null;
+        return findClanContainingUser(ownerId);
     },
 
-    findClanContainingUser: (userId) => {
-        const clans = readClans();
-        for (const clanRoleId in clans) {
-            const clan = clans[clanRoleId];
-            if (!clan) continue;
-            if (clan.clanOwnerUserID === userId ||
-                (clan.members && clan.members.includes(userId)) ||
-                (clan.officers && clan.officers.includes(userId)) ||
-                (clan.viceGuildMasters && clan.viceGuildMasters.includes(userId))) {
-                return { clanRoleId, ...clan };
+    createClan: (clanRoleId, ownerId) => {
+        try {
+            queries.addUser.run(ownerId, 'Unknown');
+            queries.createClan.run(clanRoleId, ownerId);
+            queries.addClanMember.run(ownerId, clanRoleId, 'Owner');
+            return { success: true };
+        } catch (error) {
+            if (error.code === 'SQLITE_CONSTRAINT_PRIMARYKEY') {
+                return { success: false, message: 'This role is already registered as a clan.' };
             }
+            console.error('[ClanManager] Error in createClan:', error);
+            return { success: false, message: 'A database error occurred.' };
         }
-        return null;
     },
 
-    createClan: async (client, guildContext, clanRoleId, ownerId) => {
-        const guild = await getGuild(client, guildContext); // Use the refined getGuild
-        if (!guild) return { success: false, message: "Internal error: Could not establish guild context for creating clan." };
+    deleteClan: (clanRoleId) => {
+        queries.deleteClan.run(clanRoleId); // ON DELETE CASCADE will handle clan_members
+        return { success: true };
+    },
 
-        const clans = readClans();
-        if (clans[clanRoleId]) {
-            return { success: false, message: 'This role is already registered as a clan.' };
-        }
+    addUserToClan: (clanRoleId, targetUserId, authority) => {
+        try {
+            // Check limits before adding
+            const limit = authority === 'Member' ? MAX_MEMBERS : authority === 'Officer' ? MAX_OFFICERS : MAX_VICE_GUILD_MASTERS;
+            const { count } = queries.getMemberCount.get(clanRoleId, authority);
+            if (count >= limit) return { success: false, message: `This clan has reached the maximum number of ${authority}s.` };
 
-        clans[clanRoleId] = {
-            clanOwnerUserID: ownerId,
-            members: [],
-            officers: [],
-            viceGuildMasters: [],
-            // motto is intentionally omitted by default
-        };
-        let autoEnrolledCount = 0;
-        // Guild is already fetched and validated by getGuild above
-        const clanRole = await guild.roles.fetch(clanRoleId).catch(() => null);
-        if (clanRole) {
-            await guild.members.fetch(); // Ensure member cache for the specific guild
-            for (const member of guild.members.cache.values()) {
-                if (member.id === ownerId) continue;
-                if (member.roles.cache.has(clanRoleId)) {
-                    const existingAffiliation = module.exports.findClanContainingUser(member.id);
-                    if (!existingAffiliation) {
-                        if (clans[clanRoleId].members.length < MAX_MEMBERS) {
-                            clans[clanRoleId].members.push(member.id);
-                            autoEnrolledCount++;
-                        }
-                    }
-                }
-            }
+            queries.addUser.run(targetUserId, 'Unknown');
+            queries.addClanMember.run(targetUserId, clanRoleId, authority);
+            return { success: true };
+        } catch (error) {
+            console.error('[ClanManager] Error in addUserToClan:', error);
+            return { success: false, message: 'A database error occurred.' };
         }
-        saveClans(clans);
-        return { success: true, message: 'Clan created successfully.', autoEnrolledCount };
+    },
+
+    removeUserFromClan: (clanRoleId, targetUserId) => {
+        const result = queries.removeUserFromClan.run(targetUserId, clanRoleId);
+        return { success: result.changes > 0, message: result.changes > 0 ? 'User removed.' : 'User not found in clan.' };
+    },
+
+    setClanOwner: (clanRoleId, newOwnerId) => {
+        try {
+            const oldOwner = queries.getClanById.get(clanRoleId).owner_id;
+            // Transaction to ensure both steps succeed or fail together
+            db.transaction(() => {
+                queries.setClanOwner.run(newOwnerId, clanRoleId);
+                // Remove new owner from any other authority in this clan
+                queries.removeUserFromClan.run(newOwnerId, clanRoleId);
+                queries.addClanMember.run(newOwnerId, clanRoleId, 'Owner');
+                // Demote old owner to a regular member
+                queries.updateMemberAuth.run('Member', oldOwner, clanRoleId);
+            })();
+            return { success: true };
+        } catch (error) {
+            console.error('[ClanManager] Error in setClanOwner:', error);
+            return { success: false, message: 'A database error occurred during ownership transfer.' };
+        }
+    },
+
+    manageClanMemberRole: (clanRoleId, targetUserId, newAuthority) => {
+        try {
+            // Check limits before promoting
+            const limit = newAuthority === 'Member' ? MAX_MEMBERS : newAuthority === 'Officer' ? MAX_OFFICERS : MAX_VICE_GUILD_MASTERS;
+            const { count } = queries.getMemberCount.get(clanRoleId, newAuthority);
+            if (count >= limit) return { success: false, message: `This clan has reached the maximum number of ${newAuthority}s.` };
+
+            queries.updateMemberAuth.run(newAuthority, targetUserId, clanRoleId);
+            return { success: true };
+        } catch (error) {
+            console.error('[ClanManager] Error in manageClanMemberRole:', error);
+            return { success: false, message: 'A database error occurred.' };
+        }
     },
 
     setClanMotto: (clanRoleId, motto) => {
-        const clans = readClans();
-        const clan = clans[clanRoleId];
-        if (!clan) {
-            return { success: false, message: 'Clan not found.' };
-        }
-
-        // If motto is a non-empty string, set it.
-        if (motto && motto.trim().length > 0) {
-            clan.motto = motto;
-        } else {
-            // Otherwise, delete the key entirely for a clean object.
-            delete clan.motto;
-        }
-
-        saveClans(clans);
-        return { success: true, message: 'Clan motto updated successfully.' };
-    },
-
-    setClanOwner: async (client, guildContext, clanRoleId, newOwnerId) => {
-        const guild = await getGuild(client, guildContext);
-        if (!guild) return { success: false, message: "Internal error: Could not establish guild context for setting owner." };
-
-        const clans = readClans();
-        const clan = clans[clanRoleId];
-        if (!clan) return { success: false, message: 'Clan not found for this role.' };
-
-        const ownerExistingClan = module.exports.findClanContainingUser(newOwnerId);
-        if (ownerExistingClan && ownerExistingClan.clanRoleId !== clanRoleId) {
-            const otherClanRole = await guild.roles.fetch(ownerExistingClan.clanRoleId).catch(() => null);
-            return { success: false, message: `Proposed new owner is already in ${otherClanRole?.name || 'another clan'}.` };
-        }
-
-        clan.clanOwnerUserID = newOwnerId;
-        clan.members = (clan.members || []).filter(id => id !== newOwnerId);
-        clan.officers = (clan.officers || []).filter(id => id !== newOwnerId);
-        clan.viceGuildMasters = (clan.viceGuildMasters || []).filter(id => id !== newOwnerId);
-        saveClans(clans);
-        return { success: true, message: 'Clan owner updated.' };
-    },
-
-    addUserToClan: async (client, guildContext, clanRoleId, targetUserId, authority, discordRole) => {
-        const guild = await getGuild(client, guildContext);
-        if (!guild) {
-            console.error("[ClanManager] addUserToClan: Failed to get guild.");
-            return { success: false, message: 'Internal error: Could not determine guild.' };
-        }
-
-        const clans = readClans();
-        const clan = clans[clanRoleId];
-        if (!clan) return { success: false, message: 'Clan data not found.' };
-
-        const existingClanAffiliation = module.exports.findClanContainingUser(targetUserId);
-        if (existingClanAffiliation) {
-            const otherClanRole = await guild.roles.fetch(existingClanAffiliation.clanRoleId).catch(() => null);
-            return { success: false, message: `User is already a member of ${existingClanAffiliation.clanRoleId === clanRoleId ? 'this clan' : (otherClanRole?.name || 'another clan')}.` };
-        }
-
-        clan.members = clan.members || [];
-        clan.officers = clan.officers || [];
-        clan.viceGuildMasters = clan.viceGuildMasters || [];
-
-        switch (authority.toLowerCase()) {
-            case 'member':
-                if (clan.members.length >= MAX_MEMBERS) return { success: false, message: 'Clan has reached the maximum number of Members.' };
-                clan.members.push(targetUserId);
-                break;
-            case 'officer':
-                if (clan.officers.length >= MAX_OFFICERS) return { success: false, message: 'Clan has reached the maximum number of Officers.' };
-                clan.officers.push(targetUserId);
-                break;
-            case 'vice guild master':
-                if (clan.viceGuildMasters.length >= MAX_VICE_GUILD_MASTERS) return { success: false, message: 'Clan has reached the maximum number of Vice Guild Masters.' };
-                clan.viceGuildMasters.push(targetUserId);
-                break;
-            default:
-                return { success: false, message: 'Invalid authority level specified for a new member.' };
-        }
-        saveClans(clans);
-
         try {
-            const member = await guild.members.fetch(targetUserId).catch(() => null);
-            if (member && discordRole && !member.roles.cache.has(discordRole.id)) {
-                await member.roles.add(discordRole);
-            }
+            queries.setMotto.run(motto, clanRoleId);
+            return { success: true };
         } catch (error) {
-            console.error(`[ClanManager] Failed to add Discord role ${discordRole?.id} to user ${targetUserId}:`, error);
+            console.error('[ClanManager] Error in setClanMotto:', error);
+            return { success: false, message: 'A database error occurred.' };
         }
-        return { success: true, message: `User successfully invited and added as ${authority}.` };
     },
 
-    manageClanMemberRole: async (client, guildContext, clanRoleId, targetUserId, newAuthority, actingUserId) => {
-        const guild = await getGuild(client, guildContext);
-        if (!guild) {
-            console.error("[ClanManager] manageClanMemberRole: Failed to get guild.");
-            return { success: false, message: 'Internal error: Could not determine guild.' };
-        }
-        const clans = readClans();
-        const clan = clans[clanRoleId];
-        if (!clan) return { success: false, message: 'Clan data not found.' };
-
-        const targetIsOwner = clan.clanOwnerUserID === targetUserId;
-        if (targetIsOwner) return { success: false, message: "The Clan Owner's role cannot be managed this way." };
-
-        const actorIsOwner = clan.clanOwnerUserID === actingUserId;
-        const actorIsVice = (clan.viceGuildMasters || []).includes(actingUserId);
-
-        if (newAuthority.toLowerCase() === 'vice guild master') {
-            if (!actorIsOwner) return { success: false, message: 'Only the Clan Owner can promote to Vice Guild Master.' };
-        } else if (newAuthority.toLowerCase() === 'officer') {
-            if (!actorIsOwner && !actorIsVice) return { success: false, message: 'Only Clan Owners or Vice Guild Masters can manage Officer roles.' };
-        } else if (newAuthority.toLowerCase() === 'member') { // Demoting to member
-            if (!actorIsOwner && !actorIsVice) return { success: false, message: 'Only Clan Owners or Vice Guild Masters can manage Member roles.' };
-        } else {
-            return { success: false, message: 'Invalid new authority level.' };
+    // We now need to pass the user's username to the add user function
+    // This is a simple wrapper around the main addUserToClan function
+    addUserToClanAndEnsureRole: async (client, guild, clanRoleId, targetUserId, authority, discordRole) => {
+        const guildMember = await guild.members.fetch(targetUserId).catch(() => null);
+        if (guildMember) {
+            db.prepare('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)').run(targetUserId, guildMember.user.username);
         }
 
-        clan.members = (clan.members || []).filter(id => id !== targetUserId);
-        clan.officers = (clan.officers || []).filter(id => id !== targetUserId);
-        clan.viceGuildMasters = (clan.viceGuildMasters || []).filter(id => id !== targetUserId);
-
-        clan.members = clan.members || []; // Ensure arrays exist
-        clan.officers = clan.officers || [];
-        clan.viceGuildMasters = clan.viceGuildMasters || [];
-
-        switch (newAuthority.toLowerCase()) {
-            case 'member':
-                if (clan.members.length >= MAX_MEMBERS) return { success: false, message: 'Clan has reached the maximum number of Members.' };
-                clan.members.push(targetUserId);
-                break;
-            case 'officer':
-                if (clan.officers.length >= MAX_OFFICERS) return { success: false, message: 'Clan has reached the maximum number of Officers.' };
-                clan.officers.push(targetUserId);
-                break;
-            case 'vice guild master':
-                if (clan.viceGuildMasters.length >= MAX_VICE_GUILD_MASTERS) return { success: false, message: 'Clan has reached the maximum number of Vice Guild Masters.' };
-                clan.viceGuildMasters.push(targetUserId);
-                break;
-        }
-        saveClans(clans);
-
-        try {
-            const member = await guild.members.fetch(targetUserId).catch(() => null);
-            const discordRole = await guild.roles.fetch(clanRoleId).catch(() => null);
-            if (member && discordRole && !member.roles.cache.has(discordRole.id)) {
-                await member.roles.add(discordRole);
+        const result = module.exports.addUserToClan(clanRoleId, targetUserId, authority);
+        if (result.success && guildMember && discordRole) {
+            if (!guildMember.roles.cache.has(discordRole.id)) {
+                await guildMember.roles.add(discordRole).catch(e => console.error(e));
             }
-        } catch (error) {
-            console.error(`[ClanManager] Error ensuring role for ${targetUserId} during promotion:`, error);
         }
-        return { success: true, message: `User's authority successfully changed to ${newAuthority}.` };
+        return result;
     },
 
-    removeUserFromClan: async (client, guildContext, clanRoleId, targetUserId, discordRoleToManage) => {
-        const guild = await getGuild(client, guildContext);
-        if (!guild) {
-            console.error("[ClanManager] removeUserFromClan: Failed to get guild.");
-            return { success: false, message: 'Internal error: Could not determine guild.' };
-        }
-        const clans = readClans();
-        const clan = clans[clanRoleId];
-        if (!clan) return { success: false, message: 'Clan not found.' };
-
-        if (clan.clanOwnerUserID === targetUserId) {
-            return { success: false, message: "The Clan Owner cannot be removed this way." };
-        }
-
-        let removedFromJson = false;
-        const initialMemberCount = clan.members ? clan.members.length : 0;
-        const initialOfficerCount = clan.officers ? clan.officers.length : 0;
-        const initialViceCount = clan.viceGuildMasters ? clan.viceGuildMasters.length : 0;
-
-        clan.members = (clan.members || []).filter(id => id !== targetUserId);
-        clan.officers = (clan.officers || []).filter(id => id !== targetUserId);
-        clan.viceGuildMasters = (clan.viceGuildMasters || []).filter(id => id !== targetUserId);
-
-        if ((clan.members && clan.members.length !== initialMemberCount) ||
-            (clan.officers && clan.officers.length !== initialOfficerCount) ||
-            (clan.viceGuildMasters && clan.viceGuildMasters.length !== initialViceCount)) {
-            removedFromJson = true;
-        }
-
-        if (removedFromJson) {
-            saveClans(clans);
-            try {
-                const member = await guild.members.fetch(targetUserId).catch(() => null);
-                if (member && discordRoleToManage && member.roles.cache.has(discordRoleToManage.id)) {
-                    await member.roles.remove(discordRoleToManage);
-                }
-            } catch (error) {
-                console.error(`[ClanManager] Failed to remove Discord role ${discordRoleToManage?.id} from user ${targetUserId}:`, error);
-            }
-            return { success: true, message: 'User removed from clan and their clan role has been removed.' };
-        }
-        return { success: false, message: 'User not found in this clan with a removable role.' };
-    },
+    findClanContainingUser,
 };

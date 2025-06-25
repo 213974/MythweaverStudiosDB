@@ -57,7 +57,8 @@ module.exports = {
 
                 if (action === 'accept') {
                     const authorityToAssign = parts[4].replace(/-/g, ' ');
-                    const result = await clanManager.addUserToClan(client, guildForButton, clanRoleId, invitedUserId, authorityToAssign, clanDiscordRole);
+                    // Use the new manager function that also handles role assignment
+                    const result = await clanManager.addUserToClanAndEnsureRole(client, guildForButton, clanRoleId, invitedUserId, authorityToAssign, clanDiscordRole);
 
                     if (result.success) {
                         updatedEmbed.setColor('#00FF00')
@@ -77,42 +78,6 @@ module.exports = {
                 // Edit the original message with the updated embed
                 await originalMessage.edit({ embeds: [updatedEmbed] }).catch(err => console.error("[Button Handler] Failed to edit original invite message:", err));
 
-            }
-            // --- CLAN DISBAND HANDLER ---
-            else if (handlerType === 'disband' && (parts[1] === 'confirm' || parts[1] === 'cancel')) {
-                const action = parts[1];
-                const clanRoleId = parts[2];
-                const ownerId = parts[3];
-
-                if (interaction.user.id !== ownerId) {
-                    return interaction.reply({ content: 'Only the user who initiated the disband can confirm or cancel.', ephemeral: true });
-                }
-
-                // Disable buttons and update the message immediately
-                await interaction.update({ components: [] });
-
-                if (action === 'confirm') {
-                    const clanRole = await interaction.guild.roles.fetch(clanRoleId).catch(() => null);
-                    if (!clanRole) {
-                        return interaction.followUp({ content: 'Error: Could not find the clan role to disband.', ephemeral: true });
-                    }
-
-                    // Delete from JSON
-                    await clanManager.deleteClan(clanRoleId);
-
-                    // Delete Discord Role
-                    try {
-                        await clanRole.delete(`Disbanded by owner ${interaction.user.tag}`);
-                    } catch (e) {
-                        console.error(`Failed to delete role ${clanRole.id} during disband:`, e);
-                        return interaction.followUp({ content: `Clan data removed, but failed to delete the Discord role <@&${clanRole.id}>. Please delete it manually.`, ephemeral: true });
-                    }
-
-                    await interaction.followUp({ content: `The clan **${clanRole.name}** has been successfully disbanded.`, ephemeral: true });
-
-                } else if (action === 'cancel') {
-                    await interaction.followUp({ content: 'Clan disband operation has been cancelled.', ephemeral: true });
-                }
             }
         }
     },

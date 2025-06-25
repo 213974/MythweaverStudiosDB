@@ -4,8 +4,10 @@ node_modules/
 # Environment variables
 .env
 
-# Data files
+# Data files and database
 data/
+*.db
+*.db-journal
 
 # Log files
 *.log
@@ -13,6 +15,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+
+# PM2 logs
+logs/
+*.log
+~/.pm2/logs/
 
 # Editor-specific configuration
 .vscode/

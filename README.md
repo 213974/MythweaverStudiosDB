@@ -11,17 +11,18 @@ This bot provides a full suite of commands for administrators to create and mana
 *   **Advanced Clan System:**
     *   Admins can create clans, assign owners, and manage clan existence.
     *   Clan owners can set a clan motto and change their role color.
-    *   Clan leadership (Owners/Vices) can invite, kick, and manage member authority.
+    *   Clan leadership can invite, kick, and manage member authority.
     *   Members can view detailed clan profiles and leave their clan.
+*   **Robust Database:** Uses a SQLite database for fast, reliable, and scalable data storage, managed by `better-sqlite3`.
+*   **Production Ready:** Includes configuration for PM2, a professional process manager to ensure the bot stays online 24/7.
 *   **Structured and Extendable:** Built with a clean handler structure for adding new commands and events easily.
-*   **Interactive Presence:** Responds with a custom emoji when mentioned and DMs the bot owner on startup.
-*   **Data Persistence:** Clan data is stored locally in `data/clans.json`, ensuring persistence between bot restarts. Temporary.
 
 ## Prerequisites
 
 *   [Node.js](https://nodejs.org/) (v16.9.0 or higher)
 *   [npm](https://www.npmjs.com/) (included with Node.js)
 *   [Git](https://git-scm.com/) (for cloning)
+*   [PM2](https://pm2.keymetrics.io/) (for production hosting)
 
 ## Setup Instructions
 
@@ -32,14 +33,21 @@ This bot provides a full suite of commands for administrators to create and mana
     ```
 
 2.  **Install Dependencies:**
+    This will install `discord.js`, `better-sqlite3`, and other necessary packages.
     ```bash
     npm install
     ```
 
-3.  **Configuration:**
-    *   Create a `.env` file in the root directory and add your bot token:
+3.  **Install PM2 Globally:**
+    PM2 is used to keep the bot running continuously in a production environment.
+    ```bash
+    npm install pm2 -g
+    ```
+
+4.  **Configuration:**
+    *   Create a `.env` file in the root directory and add your Discord bot token:
         ```env
-        TOKEN=YOUR_DISCORD_BOT_TOKEN_HERE
+        DISCORD_TOKEN=YOUR_BOT_TOKEN_HERE
         ```
     *   Edit `src/config.js` to set your server and user IDs:
         ```javascript
@@ -51,25 +59,59 @@ This bot provides a full suite of commands for administrators to create and mana
         };
         ```
 
-4.  **Enable Discord Intents:**
+5.  **Enable Discord Intents:**
     In your [Discord Developer Portal](https://discord.com/developers/applications), navigate to your bot's application page. Under the "Bot" tab, enable the following **Privileged Gateway Intents**:
     *   `SERVER MEMBERS INTENT`
     *   `MESSAGE CONTENT INTENT`
 
+6.  **Database Migration (First-Time Setup Only):**
+    If you have existing clan data in `data/clans.json`, this one-time script will migrate it to the new SQLite database. If you are starting fresh, this step will simply create the empty database file.
+    ```bash
+    node utils/migrate.js
+    ```
+
 ## Running the Bot
 
-*   **For development (recommended):**
-    This command uses `nodemon` to automatically restart the bot on file changes.
-    ```bash
-    npm run dev
-    ```
+You have two primary ways to run the bot, depending on your needs.
 
-*   **For production:**
-    ```bash
-    node src/index.js
-    ```
+### Development Mode
+Use this mode when you are actively writing code. It runs the bot in your current terminal and uses `nodemon` to automatically restart when you save a file.
 
-To stop the bot, press `CTRL+C` in the terminal.
+```bash
+npm run dev
+```
+To stop the bot, press `CTRL+C`.
+
+### Production Mode with PM2
+Use this mode to run the bot 24/7 on a server. It runs as a background process and will automatically restart if it crashes.
+
+*   **Start the bot:**
+    ```bash
+    pm2 start ecosystem.config.js
+    ```
+*   **View live console logs:**
+    ```bash
+    pm2 logs MythweaverBot
+    ```
+*   **Monitor CPU and Memory usage:**
+    ```bash
+    pm2 monit
+    ```
+*   **Restart the bot (to apply major code changes):**
+    ```bash
+    pm2 restart MythweaverBot
+    ```
+*   **Stop the bot:**
+    ```bash
+    pm2 stop MythweaverBot
+    ```
+*   **Enable on Server Boot (Highly Recommended):**
+    This ensures PM2 starts automatically if your server reboots.
+    ```bash
+    pm2 startup
+    # PM2 will give you a command to run. Copy and paste it.
+    pm2 save
+    ```
 
 ## Command List
 
@@ -79,22 +121,22 @@ To stop the bot, press `CTRL+C` in the terminal.
 *   `/admin-add-clan <clanrole> <clanowner>`: Establishes a role as a new clan and sets its owner.
 *   `/admin-clan-remove <clanrole> [reason]`: Deletes a clan from the system and DMs the owner. The role itself is not deleted.
 *   `/admin-change-clan-owner <clanrole> <newowner>`: Transfers ownership of a clan to a new user.
-*   `/reload`: Hot-reloads all slash commands and events without a full bot restart.
+*   `/reload`: Hot-reloads all slash commands for minor updates without a full restart.
 
 ### Clan Commands
 
-#### Clan Management (Owner/Vice Only)
-*   `/clan invite <user> <authority>`: Sends a public invitation in the channel for a user to join the clan as a `Member` or `Officer`.
-*   `/clan authority <user> <authority>`: Promotes or demotes an existing member within the clan. Owners can manage Vices; Vices can manage Officers/Members.
-*   `/clan kick <user> [reason]`: Kicks a member from the clan and DMs them the reason.
+#### Clan Management (Leadership Roles)
+*   `/clan invite <user> <authority>`: Sends a public invitation for a user to join the clan. (Owner/Vice Only)
+*   `/clan authority <user> <authority>`: Promotes or demotes an existing clan member. (Owner/Vice Only)
+*   `/clan kick <user> [reason]`: Kicks a member from the clan. (Owner/Vice/Officer)
 
 #### Customization (Owner Only)
-*   `/clan motto [motto]`: Sets or removes the clan's motto, which is displayed in `/clan view`.
+*   `/clan motto [motto]`: Sets or removes the clan's motto.
 *   `/clan color <hexcolor>`: Changes the clan's role color (e.g., `#A737FF`).
 
 #### General Clan Actions
-*   `/clan leave`: Allows a member to leave their current clan. Owners cannot leave.
-*   `/clan view [clanrole]`: Displays a detailed public profile of a clan, including its motto, owner, leadership, and members. If no role is specified, it shows the user's own clan.
+*   `/clan leave`: Allows a member to leave their current clan. Owners cannot use this.
+*   `/clan view [clanrole]`: Displays a detailed profile of a clan. Shows your own clan if no role is specified.
 
 ## License
 
