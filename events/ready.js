@@ -81,7 +81,7 @@ module.exports = {
 
         client.user.setPresence({
             activities: [{
-                name: "Project PMU's Promise c:",
+                name: "Mythweaver Studios's Promise c:",
                 type: ActivityType.Streaming,
                 url: "https://youtu.be/qhvdg2D9d_o?si=olOBCuhgJ5CuGz-b"
             }],

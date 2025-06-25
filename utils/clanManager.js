@@ -140,6 +140,7 @@ module.exports = {
             members: [],
             officers: [],
             viceGuildMasters: [],
+            // motto is intentionally omitted by default
         };
         let autoEnrolledCount = 0;
         // Guild is already fetched and validated by getGuild above
@@ -161,6 +162,25 @@ module.exports = {
         }
         saveClans(clans);
         return { success: true, message: 'Clan created successfully.', autoEnrolledCount };
+    },
+
+    setClanMotto: (clanRoleId, motto) => {
+        const clans = readClans();
+        const clan = clans[clanRoleId];
+        if (!clan) {
+            return { success: false, message: 'Clan not found.' };
+        }
+
+        // If motto is a non-empty string, set it.
+        if (motto && motto.trim().length > 0) {
+            clan.motto = motto;
+        } else {
+            // Otherwise, delete the key entirely for a clean object.
+            delete clan.motto;
+        }
+
+        saveClans(clans);
+        return { success: true, message: 'Clan motto updated successfully.' };
     },
 
     setClanOwner: async (client, guildContext, clanRoleId, newOwnerId) => {
@@ -204,7 +224,7 @@ module.exports = {
 
         clan.members = clan.members || [];
         clan.officers = clan.officers || [];
-        // viceGuildMasters is handled by manageClanMemberRole for additions
+        clan.viceGuildMasters = clan.viceGuildMasters || [];
 
         switch (authority.toLowerCase()) {
             case 'member':
@@ -215,8 +235,10 @@ module.exports = {
                 if (clan.officers.length >= MAX_OFFICERS) return { success: false, message: 'Clan has reached the maximum number of Officers.' };
                 clan.officers.push(targetUserId);
                 break;
-            case 'vice guild master': // Should not be directly added via invite accept, only promoted by owner
-                return { success: false, message: 'Vice Guild Master role must be assigned via promotion by the Clan Owner.' };
+            case 'vice guild master':
+                if (clan.viceGuildMasters.length >= MAX_VICE_GUILD_MASTERS) return { success: false, message: 'Clan has reached the maximum number of Vice Guild Masters.' };
+                clan.viceGuildMasters.push(targetUserId);
+                break;
             default:
                 return { success: false, message: 'Invalid authority level specified for a new member.' };
         }

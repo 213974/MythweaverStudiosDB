@@ -1,5 +1,6 @@
 ﻿// commands/utility/help.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const config = require('../../src/config');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -15,26 +16,37 @@ module.exports = {
                 {
                     name: '────────── General Clan Commands ──────────',
                     value: '`/clan view [clanrole]` - View the details of a clan. Shows your own if no role is specified.\n' +
-                        '`/clan leave` - Leave the clan you are currently in. Cannot be used by Clan Owners.',
+                        '`/clan leave` - Leave the clan you are currently in. Cannot be used by Clan Owners.\n' +
+                        '`/clan disband` - Permanently disbands your clan (Owner only).',
                 },
                 // Clan Management Commands
                 {
-                    name: '────────── Clan Management (Owner/Vice Only) ──────────',
-                    value: '`/clan invite <user> <authority>` - Invite a user to your clan as a Member or Officer.\n' +
-                        '`/clan authority <user> <authority>` - Promote or demote an existing clan member.\n' +
-                        '`/clan kick <user> [reason]` - Remove a member from your clan.',
+                    name: '────────── Clan Management (Leadership) ──────────',
+                    value: '`/clan invite <user> <authority>` - Invite a user to your clan (Owner/Vice only).\n' +
+                        '`/clan authority <user> <authority>` - Promote or demote an existing clan member (Owner/Vice only).\n' +
+                        '`/clan kick <user> [reason]` - Remove a member from your clan (Owner/Vice/Officer). Officers can only kick Members.',
                 },
                 // Clan Customization Commands
                 {
                     name: '────────── Clan Customization (Owner Only) ──────────',
                     value: '`/clan motto [motto]` - Set or remove your clan\'s motto.\n' +
                         '`/clan color <hexcolor>` - Change the color of your clan\'s Discord role.',
+                },
+                // Utility Commands
+                {
+                    name: '────────── Utility Commands ──────────',
+                    value: '`/timestamp <datetime> [timezone]` - Generates a dynamic timestamp for everyone to see in their own time.'
                 }
             )
             .setFooter({ text: 'Commands with [ ] are optional. Commands with < > are required.' })
             .setTimestamp();
 
-        // Ephemeral makes the reply only visible to the user who executed the command
-        await interaction.reply({ embeds: [helpEmbed], flags: 64 });
+        if (interaction.user.id === config.ownerID) {
+            // If the user is the bot owner, send the help message publicly.
+            await interaction.reply({ embeds: [helpEmbed] });
+        } else {
+            // For all other users, send it as an ephemeral message.
+            await interaction.reply({ embeds: [helpEmbed], ephemeral: true });
+        }
     },
 };

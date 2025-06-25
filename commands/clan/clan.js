@@ -27,7 +27,8 @@ module.exports = {
                         .setRequired(true)
                         .addChoices(
                             { name: 'Member', value: 'Member' },
-                            { name: 'Officer', value: 'Officer' }
+                            { name: 'Officer', value: 'Officer' },
+                            { name: 'Vice Guild Master', value: 'Vice Guild Master' }
                         ))
         )
         .addSubcommand(subcommand =>
@@ -48,7 +49,7 @@ module.exports = {
                             { name: 'Vice Guild Master', value: 'Vice Guild Master' }
                         ))
         )
-         .addSubcommand(subcommand =>
+        .addSubcommand(subcommand =>
             subcommand
                 .setName('kick')
                 .setDescription('Kicks a member from your clan.')
@@ -69,6 +70,11 @@ module.exports = {
                     option.setName('motto')
                         .setDescription('The motto for your clan. Leave blank to remove.')
                         .setRequired(false))
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('disband')
+                .setDescription('Disbands your clan. This action is irreversible.')
         )
         .addSubcommand(subcommand =>
             subcommand
@@ -127,15 +133,15 @@ module.exports = {
                     return interaction.reply({ content: "Could not find your clan's Discord role. Contact an admin.", flags: 64 });
                 }
             }
-            
+
             await interaction.deferReply();
 
             const { clanOwnerUserID, motto, viceGuildMasters = [], officers = [], members = [] } = clanToViewData;
-            
+
             const ownerMention = `<@${clanOwnerUserID}>`;
             const viceGMMentions = viceGuildMasters.length > 0 ? viceGuildMasters.map(id => `<@${id}>`).join(', ') : 'None';
             const officerMentions = officers.length > 0 ? officers.map(id => `<@${id}>`).join(', ') : 'None';
-            
+
             let memberMentions = 'None';
             if (members.length > 0) {
                 const displayLimit = 40;
@@ -144,7 +150,7 @@ module.exports = {
                     memberMentions += `... and ${members.length - displayLimit} more.`;
                 }
             }
-    
+
             const embed = new EmbedBuilder()
                 .setColor(clanToViewRole.color || '#FFFFFF')
                 .setTitle(`${clanToViewRole.name}`)
@@ -156,11 +162,11 @@ module.exports = {
                 )
                 .setTimestamp()
                 .setFooter({ text: `Clan Role ID: ${clanToViewRole.id}` });
-            
+
             if (motto) {
                 embed.setDescription(`*“${motto}”*`);
             }
-        
+
             return interaction.editReply({ embeds: [embed] });
         }
 
@@ -192,6 +198,7 @@ module.exports = {
         let actingUserClan = clanManager.findClanByOwner(actingUser.id);
         let actorIsOwner = !!actingUserClan;
         let actorIsVice = false;
+        let actorIsOfficer = false;
 
         if (!actorIsOwner) {
             const clanAffiliation = clanManager.findClanContainingUser(actingUser.id);
@@ -199,6 +206,9 @@ module.exports = {
                 actingUserClan = clanAffiliation;
                 if (clanAffiliation.viceGuildMasters && clanAffiliation.viceGuildMasters.includes(actingUser.id)) {
                     actorIsVice = true;
+                }
+                if (clanAffiliation.officers && clanAffiliation.officers.includes(actingUser.id)) {
+                    actorIsOfficer = true;
                 }
             }
         }
@@ -223,6 +233,8 @@ module.exports = {
             if (targetUser.bot) return interaction.reply({ content: "Bots cannot be invited to clans.", flags: 64 });
             if (targetUser.id === actingUser.id) return interaction.reply({ content: "You cannot invite yourself.", flags: 64 });
 
+            if (newAuthority.toLowerCase() === 'vice guild master' && !actorIsOwner) return interaction.reply({ content: 'Only Owners can invite directly as Vice GM.', flags: 64 });
+
             const targetUserAnyClan = clanManager.findClanContainingUser(targetUser.id);
             if (targetUserAnyClan) {
                 const otherClanRole = await guild.roles.fetch(targetUserAnyClan.clanRoleId).catch(() => null);
@@ -233,8 +245,9 @@ module.exports = {
             if (!currentClanData) return interaction.reply({ content: 'Error fetching clan data.', flags: 64 });
             if (newAuthority.toLowerCase() === 'member' && (currentClanData.members?.length || 0) >= clanManager.MAX_MEMBERS) return interaction.reply({ content: `Member limit (${clanManager.MAX_MEMBERS}) reached.`, flags: 64 });
             if (newAuthority.toLowerCase() === 'officer' && (currentClanData.officers?.length || 0) >= clanManager.MAX_OFFICERS) return interaction.reply({ content: `Officer limit (${clanManager.MAX_OFFICERS}) reached.`, flags: 64 });
+            if (newAuthority.toLowerCase() === 'vice guild master' && (currentClanData.viceGuildMasters?.length || 0) >= clanManager.MAX_VICE_GUILD_MASTERS) return interaction.reply({ content: `Vice GM limit (${clanManager.MAX_VICE_GUILD_MASTERS}) reached.`, flags: 64 });
 
-            const inviteTimestamp = Math.floor(Date.now() / 1000) + 3600; // 1 hour expiry
+            const inviteTimestamp = Math.floor(Date.now() / 1000) + 300; // 5 minute expiry
             const inviteEmbed = new EmbedBuilder().setColor(clanDiscordRole.color || '#0099ff').setTitle(`⚔️ Clan Invitation: ${clanDiscordRole.name} ⚔️`)
                 .setDescription(`<@${actingUser.id}> has invited you to join **${clanDiscordRole.name}** as **${newAuthority}**.`)
                 .addFields({ name: 'Expires', value: formatTimestamp(inviteTimestamp, 'R') })
@@ -273,7 +286,7 @@ module.exports = {
             if (targetUserAffiliationInThisClan.toLowerCase() === newAuthority.toLowerCase()) return interaction.reply({ content: `${targetUser.username} already has the **${newAuthority}** authority level.`, flags: 64 });
             if (newAuthority.toLowerCase() === 'vice guild master' && !actorIsOwner) return interaction.reply({ content: 'Only the Clan Owner can promote members to Vice Guild Master.', flags: 64 });
             if ((targetUserAffiliationInThisClan === 'Officer' || targetUserAffiliationInThisClan === 'Vice Guild Master') && !actorIsOwner) {
-                 return interaction.reply({ content: 'Only the Clan Owner can demote Officers or Vice Guild Masters.', flags: 64 });
+                return interaction.reply({ content: 'Only the Clan Owner can demote Officers or Vice Guild Masters.', flags: 64 });
             }
 
             const manageResult = await clanManager.manageClanMemberRole(client, guild, actingUserClan.clanRoleId, targetUser.id, newAuthority, actingUser.id);
@@ -287,8 +300,8 @@ module.exports = {
         }
         // --- KICK SUBCOMMAND ---
         else if (subcommand === 'kick') {
-            if (!actorIsOwner && !actorIsVice) {
-                return interaction.reply({ content: 'Only Clan Owners or Vice Guild Masters can kick members.', flags: 64 });
+            if (!actorIsOwner && !actorIsVice && !actorIsOfficer) {
+                return interaction.reply({ content: 'Only Clan Owners, Vice Guild Masters, or Officers can kick members.', flags: 64 });
             }
             const targetUserToKick = interaction.options.getUser('user');
             const reason = interaction.options.getString('reason') || 'No reason provided.';
@@ -302,6 +315,7 @@ module.exports = {
 
             if (!targetUserAffiliation) return interaction.reply({ content: `${targetUserToKick.username} is not in your clan.`, flags: 64 });
             if (targetUserAffiliation === 'Vice Guild Master' && !actorIsOwner) return interaction.reply({ content: 'Only the Owner can kick a Vice GM.', flags: 64 });
+            if (targetUserAffiliation === 'Officer' && !actorIsOwner && !actorIsVice) return interaction.reply({ content: 'Only the Owner or a Vice GM can kick an Officer.', flags: 64 });
 
             const removeResult = await clanManager.removeUserFromClan(client, guild, actingUserClan.clanRoleId, targetUserToKick.id, clanDiscordRole);
             if (removeResult.success) {
@@ -328,7 +342,7 @@ module.exports = {
             const motto = interaction.options.getString('motto') || '';
             const result = clanManager.setClanMotto(actingUserClan.clanRoleId, motto);
             if (result.success) {
-                if(motto){
+                if (motto) {
                     await interaction.reply({ content: `Your clan motto has been updated to: *“${motto}”*`, flags: 64 });
                 } else {
                     await interaction.reply({ content: `Your clan motto has been removed.`, flags: 64 });
@@ -336,6 +350,23 @@ module.exports = {
             } else {
                 await interaction.reply({ content: `Failed to set motto: ${result.message}`, flags: 64 });
             }
+        }
+        // --- DISBAND SUBCOMMAND ---
+        else if (subcommand === 'disband') {
+            if (!actorIsOwner) {
+                return interaction.reply({ content: 'Only the Clan Owner can disband the clan.', flags: 64 });
+            }
+            const confirmEmbed = new EmbedBuilder()
+                .setColor('#FF0000')
+                .setTitle('‼️ Confirm Clan Disband ‼️')
+                .setDescription(`Are you sure you want to permanently disband the clan **${clanDiscordRole.name}**?\n\nThis will remove the clan from the bot's records and delete the associated Discord role. **This action cannot be undone.**`);
+
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId(`disband_confirm_${clanDiscordRole.id}_${actingUser.id}`).setLabel('Confirm Disband').setStyle(ButtonStyle.Danger),
+                new ButtonBuilder().setCustomId(`disband_cancel_${actingUser.id}`).setLabel('Cancel').setStyle(ButtonStyle.Secondary)
+            );
+
+            await interaction.reply({ embeds: [confirmEmbed], components: [row], flags: 64 });
         }
         // --- COLOR SUBCOMMAND ---
         else if (subcommand === 'color') {
