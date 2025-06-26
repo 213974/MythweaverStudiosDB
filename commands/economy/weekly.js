@@ -9,11 +9,13 @@ module.exports = {
         .setDescription('Claim your weekly Gold reward.'),
     async execute(interaction) {
         const { canClaim, nextClaim } = economyManager.canClaimWeekly(interaction.user.id);
+        const user = interaction.user;
 
-        const embed = new EmbedBuilder().setTitle('Weekly Reward');
+        const embed = new EmbedBuilder()
+            .setAuthor({ name: `${user.displayName}'s Weekly Claim`, iconURL: user.displayAvatarURL() });
 
         const claimButton = new ButtonBuilder()
-            .setCustomId('claim_weekly_reward')
+            .setCustomId(`claim_weekly_${user.id}`) // User-specific ID
             .setLabel('Claim Weekly Reward')
             .setStyle(ButtonStyle.Success)
             .setEmoji('💎')
@@ -28,9 +30,10 @@ module.exports = {
         }
 
         const row = new ActionRowBuilder().addComponents(claimButton);
+        // Reply is now ephemeral as requested
         const reply = await interaction.reply({ embeds: [embed], components: canClaim ? [row] : [], flags: 64 });
 
-        if (!canClaim) return; // No need to create a collector if they can't claim.
+        if (!canClaim) return;
 
         const collector = reply.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60000 });
 
@@ -38,34 +41,32 @@ module.exports = {
             if (i.user.id !== interaction.user.id) {
                 return i.reply({ content: 'This is not for you!', flags: 64 });
             }
-            if (i.customId === 'claim_weekly_reward') {
-                const result = economyManager.claimWeekly(i.user.id);
 
-                const newEmbed = new EmbedBuilder();
-                const newButtons = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder().setCustomId('view_bank_after_claim').setLabel('View Bank').setStyle(ButtonStyle.Primary).setEmoji('🏦'),
-                    new ButtonBuilder().setCustomId('view_shop_after_claim').setLabel('View Shop').setStyle(ButtonStyle.Secondary).setEmoji('🛍️')
-                );
+            const result = economyManager.claimWeekly(i.user.id);
+            const newEmbed = new EmbedBuilder();
+            const newButtons = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('view_bank_after_claim').setLabel('View Bank').setStyle(ButtonStyle.Primary).setEmoji('🏦'),
+                new ButtonBuilder().setCustomId('view_shop_after_claim').setLabel('View Shop').setStyle(ButtonStyle.Secondary).setEmoji('🛍️')
+            );
 
-                if (result.success) {
-                    newEmbed.setColor('#00FF00')
-                        .setTitle('Weekly Reward Claimed!')
-                        .setDescription(`**${result.reward}** 💎 has been deposited directly into your bank.`)
-                        .setFooter({ text: 'This Gold is safe in your bank. Use `/bank withdraw` to move it to your pockets(balance).' });
-                } else {
-                    newEmbed.setColor('#FF0000')
-                        .setTitle('Claim Failed')
-                        .setDescription(result.message);
-                }
-
-                await i.update({ embeds: [newEmbed], components: [newButtons] });
-                collector.stop();
+            if (result.success) {
+                newEmbed.setColor('#00FF00')
+                    .setTitle('Weekly Reward Claimed!')
+                    .setDescription(`**${result.reward}** 💎 has been deposited directly into your bank.`)
+                    .setFooter({ text: 'This Gold is safe in your bank. Use /bank withdraw to move it to your pockets(balance).' });
+            } else {
+                newEmbed.setColor('#FF0000')
+                    .setTitle('Claim Failed')
+                    .setDescription(result.message);
             }
+
+            // Update the original ephemeral message
+            await i.update({ embeds: [newEmbed], components: [newButtons] });
+            collector.stop();
         });
 
         collector.on('end', (collected, reason) => {
             if (reason === 'time' && collected.size === 0) {
-                // If timer runs out, just remove the button from the message
                 interaction.editReply({ components: [] }).catch(() => { });
             }
         });

@@ -5,7 +5,7 @@ const selectMenuHandler = require('../handlers/selectMenuHandler');
 const modalSubmitHandler = require('../handlers/modalSubmitHandler');
 const clanManager = require('../utils/clanManager');
 
-const COOLDOWN_SECONDS = 2.5;
+const COMMAND_COOLDOWN_SECONDS = 2.5;
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -17,31 +17,50 @@ module.exports = {
                     console.error(`No command matching ${interaction.commandName} was found.`);
                     return interaction.reply({ content: 'Error: Command not found.', flags: 64 });
                 }
+
+                // --- User Cooldown Check for Slash Commands ---
+                const cooldowns = client.cooldowns.get('commands') || new Collection();
+                const now = Date.now();
+                const userTimestamp = cooldowns.get(interaction.user.id);
+
+                if (userTimestamp) {
+                    const expirationTime = userTimestamp + COMMAND_COOLDOWN_SECONDS * 1000;
+                    if (now < expirationTime) {
+                        const timeLeft = (expirationTime - now) / 1000;
+                        return interaction.reply({ content: `Please wait ${timeLeft.toFixed(1)} more second(s) before using a command again.`, flags: 64 });
+                    }
+                }
+
+                cooldowns.set(interaction.user.id, now);
+                client.cooldowns.set('commands', cooldowns);
+                setTimeout(() => cooldowns.delete(interaction.user.id), COMMAND_COOLDOWN_SECONDS * 1000);
+
+
                 await command.execute(interaction);
             }
             else if (interaction.isButton()) {
-                // --- User Cooldown Check for Buttons ---
-                const now = Date.now();
-                const timestamps = client.cooldowns.get('buttons') || new Collection();
-                const userTimestamp = timestamps.get(interaction.user.id);
+                const customId = interaction.customId;
+                const parts = customId.split('_');
 
-                if (userTimestamp) {
-                    const expirationTime = userTimestamp + COOLDOWN_SECONDS * 1000;
+                // --- Button Cooldown Check ---
+                // We check this here because button collectors handle their own logic. This is for general buttons.
+                const buttonCooldowns = client.cooldowns.get('buttons') || new Collection();
+                const now = Date.now();
+                const userButtonTimestamp = buttonCooldowns.get(interaction.user.id);
+
+                if (userButtonTimestamp) {
+                    const expirationTime = userButtonTimestamp + COMMAND_COOLDOWN_SECONDS * 1000;
                     if (now < expirationTime) {
                         const timeLeft = (expirationTime - now) / 1000;
                         return interaction.reply({ content: `Please wait ${timeLeft.toFixed(1)} more second(s) before using a button again.`, flags: 64 });
                     }
                 }
+                buttonCooldowns.set(interaction.user.id, now);
+                client.cooldowns.set('buttons', buttonCooldowns);
+                setTimeout(() => buttonCooldowns.delete(interaction.user.id), COMMAND_COOLDOWN_SECONDS * 1000);
 
-                // Set the cooldown for the user
-                timestamps.set(interaction.user.id, now);
-                client.cooldowns.set('buttons', timestamps);
-                setTimeout(() => timestamps.delete(interaction.user.id), COOLDOWN_SECONDS * 1000);
 
                 // --- Button Routing ---
-                const customId = interaction.customId;
-                const parts = customId.split('_');
-
                 // Admin dashboard buttons
                 if (customId === 'admin_dashboard_set_channel') await buttonHandler.handleSetDashboardChannel(interaction);
                 else if (customId === 'admin_dashboard_refresh') await buttonHandler.handleRefreshDashboard(interaction);
