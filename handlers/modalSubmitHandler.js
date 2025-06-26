@@ -17,7 +17,7 @@ async function parseUser(guild, userInput) {
 
 // --- Dashboard Channel ---
 async function handleDashboardChannelModal(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
     const channelId = interaction.fields.getTextInputValue('channel_id_input');
     const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
     if (!channel || channel.type !== ChannelType.GuildText) {
@@ -31,7 +31,7 @@ async function handleDashboardChannelModal(interaction) {
 
 // --- Invite Modal ---
 async function handleInviteModal(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
 
     const userInput = interaction.fields.getTextInputValue('user_input');
     const authorityInput = interaction.fields.getTextInputValue('authority_input').trim();
@@ -90,7 +90,7 @@ async function handleInviteModal(interaction) {
 
 // --- Kick Modal ---
 async function handleKickModal(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({  flags: 64 });
     const userInput = interaction.fields.getTextInputValue('user_input');
     const reason = interaction.fields.getTextInputValue('reason_input') || 'No reason provided.';
     const targetMember = await parseUser(interaction.guild, userInput);
@@ -130,7 +130,7 @@ async function handleKickModal(interaction) {
 
 // --- Motto Modal ---
 async function handleMottoModal(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
     const motto = interaction.fields.getTextInputValue('motto_input');
     const actingUserClan = clanManager.findClanContainingUser(interaction.user.id);
     clanManager.setClanMotto(actingUserClan.clanRoleId, motto || null);
@@ -139,7 +139,7 @@ async function handleMottoModal(interaction) {
 
 // --- Authority Modal ---
 async function handleAuthorityModal(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
     const userInput = interaction.fields.getTextInputValue('user_input');
     const authorityInput = interaction.fields.getTextInputValue('authority_input').trim();
     const targetMember = await parseUser(interaction.guild, userInput);
@@ -163,7 +163,7 @@ async function handleAuthorityModal(interaction) {
 
 // --- Economy Navigation Modals ---
 async function handleNavDepositModal(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
     const amountInput = interaction.fields.getTextInputValue('amount_input');
     const amount = parseInt(amountInput, 10);
 
@@ -180,7 +180,7 @@ async function handleNavDepositModal(interaction) {
 }
 
 async function handleNavWithdrawModal(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
     const amountInput = interaction.fields.getTextInputValue('amount_input');
     const amount = parseInt(amountInput, 10);
 

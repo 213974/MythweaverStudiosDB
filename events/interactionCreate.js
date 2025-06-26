@@ -1,9 +1,11 @@
 ﻿// events/interactionCreate.js
-const { Events, EmbedBuilder, ActionRowBuilder } = require('discord.js');
+const { Events, EmbedBuilder, ActionRowBuilder, Collection } = require('discord.js');
 const buttonHandler = require('../handlers/buttonHandler');
 const selectMenuHandler = require('../handlers/selectMenuHandler');
 const modalSubmitHandler = require('../handlers/modalSubmitHandler');
 const clanManager = require('../utils/clanManager');
+
+const COOLDOWN_SECONDS = 2.5;
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -18,24 +20,40 @@ module.exports = {
                 await command.execute(interaction);
             }
             else if (interaction.isButton()) {
+                // --- User Cooldown Check for Buttons ---
+                const now = Date.now();
+                const timestamps = client.cooldowns.get('buttons') || new Collection();
+                const userTimestamp = timestamps.get(interaction.user.id);
+
+                if (userTimestamp) {
+                    const expirationTime = userTimestamp + COOLDOWN_SECONDS * 1000;
+                    if (now < expirationTime) {
+                        const timeLeft = (expirationTime - now) / 1000;
+                        return interaction.reply({ content: `Please wait ${timeLeft.toFixed(1)} more second(s) before using a button again.`, flags: 64 });
+                    }
+                }
+
+                // Set the cooldown for the user
+                timestamps.set(interaction.user.id, now);
+                client.cooldowns.set('buttons', timestamps);
+                setTimeout(() => timestamps.delete(interaction.user.id), COOLDOWN_SECONDS * 1000);
+
+                // --- Button Routing ---
                 const customId = interaction.customId;
                 const parts = customId.split('_');
 
-                // --- Admin dashboard buttons ---
+                // Admin dashboard buttons
                 if (customId === 'admin_dashboard_set_channel') await buttonHandler.handleSetDashboardChannel(interaction);
                 else if (customId === 'admin_dashboard_refresh') await buttonHandler.handleRefreshDashboard(interaction);
-
-                // --- Economy Navigation Buttons ---
+                // Economy Navigation Buttons
                 else if (customId === 'nav_view_bank') await buttonHandler.handleViewBank(interaction);
                 else if (customId === 'nav_view_balance') await buttonHandler.handleViewBalance(interaction);
                 else if (customId === 'nav_deposit') await buttonHandler.handleNavDeposit(interaction);
                 else if (customId === 'nav_withdraw') await buttonHandler.handleNavWithdraw(interaction);
-
-                // --- After-claim buttons ---
+                // After-claim buttons
                 else if (customId === 'view_bank_after_claim') await buttonHandler.handleViewBank(interaction);
                 else if (customId === 'view_shop_after_claim') await buttonHandler.handleViewShop(interaction);
-
-                // --- Clan Invite Buttons ---
+                // Clan Invite Buttons
                 else if (parts[0] === 'clan' && (parts[1] === 'accept' || parts[1] === 'deny')) {
                     const originalMessage = interaction.message;
                     const originalEmbed = originalMessage.embeds[0];
@@ -82,7 +100,7 @@ module.exports = {
                 else if (customId === 'dashboard_kick_modal') await modalSubmitHandler.handleKickModal(interaction);
                 else if (customId === 'dashboard_motto_modal') await modalSubmitHandler.handleMottoModal(interaction);
                 else if (customId === 'dashboard_authority_modal') await modalSubmitHandler.handleAuthorityModal(interaction);
-                // --- Economy Navigation Modals ---
+                // Economy Navigation Modals
                 else if (customId === 'nav_deposit_modal') await modalSubmitHandler.handleNavDepositModal(interaction);
                 else if (customId === 'nav_withdraw_modal') await modalSubmitHandler.handleNavWithdrawModal(interaction);
             }

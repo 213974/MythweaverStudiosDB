@@ -99,4 +99,8 @@ async function sendOrUpdateDashboard(client) {
     }
 }
 
-module.exports = { sendOrUpdateDashboard };
+module.exports = {
+    sendOrUpdateDashboard,
+    createDashboardEmbed,
+    createDashboardComponents
+};

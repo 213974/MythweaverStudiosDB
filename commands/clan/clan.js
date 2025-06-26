@@ -1,6 +1,7 @@
 ﻿// commands/clan/clan.js
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const clanManager = require('../../utils/clanManager');
+const dashboardManager = require('../../utils/dashboardManager'); // Import dashboard manager
 const { formatTimestamp } = require('../../utils/timestampFormatter');
 
 // Helper function to validate hex color
@@ -13,6 +14,11 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('clan')
         .setDescription('Manages clan functionalities.')
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('dashboard')
+                .setDescription('Displays the interactive clan receptionist dashboard.')
+        )
         .addSubcommand(subcommand =>
             subcommand
                 .setName('invite')
@@ -105,6 +111,14 @@ module.exports = {
         const client = interaction.client;
         const actingUser = interaction.user;
 
+        // --- DASHBOARD SUBCOMMAND ---
+        if (subcommand === 'dashboard') {
+            const embed = dashboardManager.createDashboardEmbed();
+            const components = dashboardManager.createDashboardComponents();
+            return interaction.reply({ embeds: [embed], components: [components], flags: 64 });
+        }
+
+
         // --- VIEW SUBCOMMAND (Can be used by anyone) ---
         if (subcommand === 'view') {
             const specifiedRole = interaction.options.getRole('clanrole');
@@ -129,7 +143,7 @@ module.exports = {
                 }
             }
 
-            await interaction.deferReply();
+            await interaction.deferReply({ flags: 64 });
 
             const { clanOwnerUserID, motto, viceGuildMasters = [], officers = [], members = [] } = clanToViewData;
 

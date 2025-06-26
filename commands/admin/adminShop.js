@@ -1,4 +1,4 @@
-﻿// commands/admin/admin-shop.js
+﻿// commands/admin/adminShop.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const economyManager = require('../../utils/economyManager');
 const config = require('../../src/config');

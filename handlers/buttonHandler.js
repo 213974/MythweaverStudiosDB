@@ -21,7 +21,7 @@ async function handleSetDashboardChannel(interaction) {
 }
 
 async function handleRefreshDashboard(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
     await sendOrUpdateDashboard(interaction.client);
     await interaction.editReply({ content: 'Dashboard refresh initiated successfully.' });
 }

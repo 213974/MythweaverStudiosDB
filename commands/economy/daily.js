@@ -14,9 +14,10 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setColor(canClaim ? '#2ECC71' : '#E74C3C')
             .setTitle('Daily Reward')
-            .setDescription(`Claim your daily reward of **${economyManager.DAILY_REWARD}** 🪙 once per day.\nYour weekly progress is shown below.`);
+            .setDescription(`Claim your daily reward of **${economyManager.DAILY_REWARD}** 🪙 once per calendar day.\nYour weekly progress is shown below.`);
 
         if (!canClaim) {
+            // nextClaim is the start of the next day, so the timestamp will show when the cooldown ends.
             embed.description += `\n\nYou can claim again ${formatTimestamp(Math.floor(nextClaim.getTime() / 1000), 'R')}.`;
         }
 
@@ -37,7 +38,9 @@ module.exports = {
 
         const row = new ActionRowBuilder().addComponents(claimButton);
 
-        const reply = await interaction.reply({ embeds: [embed], components: [row], flags: 64 });
+        const reply = await interaction.reply({ embeds: [embed], components: canClaim ? [row] : [], flags: 64 });
+
+        if (!canClaim) return; // No need to create a collector if they can't claim.
 
         const collector = reply.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60000 });
 
@@ -58,7 +61,7 @@ module.exports = {
                     newEmbed.setColor('#00FF00')
                         .setTitle('Daily Reward Claimed!')
                         .setDescription(`**${result.reward}** 🪙 has been deposited directly into your bank.`)
-                        .setFooter({ text: 'This Gold is safe in your bank. Use `/bank withdraw` to move it to your pockets(balance).' });
+                        .setFooter({ text: 'This Gold is safe in your bank. Use /bank withdraw to move it to your pockets(balance).' });
                 } else {
                     newEmbed.setColor('#FF0000')
                         .setTitle('Claim Failed')
@@ -72,8 +75,8 @@ module.exports = {
 
         collector.on('end', (collected, reason) => {
             if (reason === 'time' && collected.size === 0) {
-                const expiredRow = new ActionRowBuilder().addComponents(claimButton.setDisabled(true).setLabel('Expired'));
-                interaction.editReply({ components: [expiredRow] }).catch(() => { });
+                // If timer runs out, just remove the button from the message
+                interaction.editReply({ components: [] }).catch(() => { });
             }
         });
     },
