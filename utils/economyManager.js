@@ -95,7 +95,7 @@ module.exports = {
 
         const today = new Date();
         const lastClaimDate = parseISO(daily.last_claimed_at);
-        const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 }); // Monday as start of week
+        const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 });
         const startOfLastClaimWeek = startOfWeek(lastClaimDate, { weekStartsOn: 1 });
 
         let weeklyState = {};
@@ -108,7 +108,13 @@ module.exports = {
         const todayDayIndex = getDay(today);
         const canClaimToday = !weeklyState[todayDayIndex];
 
-        return { canClaim: canClaimToday, weekly_claim_state: weeklyState };
+        if (canClaimToday) {
+            return { canClaim: true, weekly_claim_state: weeklyState };
+        } else {
+            const midnight = new Date();
+            midnight.setHours(24, 0, 0, 0); // Set to midnight of the next day
+            return { canClaim: false, weekly_claim_state: weeklyState, nextClaim: midnight };
+        }
     },
 
     claimDaily: (userId) => {
@@ -119,7 +125,7 @@ module.exports = {
         if (wallet.bank + DAILY_REWARD > wallet.bank_capacity) {
             return { success: false, message: 'You do not have enough space in your bank to claim this reward.' };
         }
-        
+
         const { weekly_claim_state } = module.exports.getDailyStatus(userId);
         const todayDayIndex = getDay(new Date());
         weekly_claim_state[todayDayIndex] = true;

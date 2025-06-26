@@ -28,13 +28,13 @@ module.exports = {
         }
 
         const row = new ActionRowBuilder().addComponents(claimButton);
-        const reply = await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+        const reply = await interaction.reply({ embeds: [embed], components: [row], flags: 64 });
 
         const collector = reply.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60000 });
 
         collector.on('collect', async i => {
             if (i.user.id !== interaction.user.id) {
-                return i.reply({ content: 'This is not for you!', ephemeral: true });
+                return i.reply({ content: 'This is not for you!', flags: 64 });
             }
             if (i.customId === 'claim_weekly_reward') {
                 const result = economyManager.claimWeekly(i.user.id);
@@ -49,7 +49,7 @@ module.exports = {
                     newEmbed.setColor('#00FF00')
                         .setTitle('Weekly Reward Claimed!')
                         .setDescription(`**${result.reward}** 💎 has been deposited directly into your bank.`)
-                        .setFooter({ text: 'This Gold is safe in your bank. Use /bank withdraw to move it to your balance.' });
+                        .setFooter({ text: 'This Gold is safe in your bank. Use `/bank withdraw` to move it to your pockets(balance).' });
                 } else {
                     newEmbed.setColor('#FF0000')
                         .setTitle('Claim Failed')

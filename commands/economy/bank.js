@@ -1,5 +1,5 @@
 ﻿// commands/economy/bank.js
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const economyManager = require('../../utils/economyManager');
 
 module.exports = {
@@ -39,7 +39,17 @@ module.exports = {
                 )
                 .setFooter({ text: 'Gold in your bank is safe. Use /bank deposit or /bank withdraw to manage it.' });
 
-            await interaction.reply({ embeds: [embed], ephemeral: !isPublic });
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('nav_deposit').setLabel('Deposit').setStyle(ButtonStyle.Success).setEmoji('📥'),
+                new ButtonBuilder().setCustomId('nav_withdraw').setLabel('Withdraw').setStyle(ButtonStyle.Primary).setEmoji('📤'),
+                new ButtonBuilder().setCustomId('nav_view_balance').setLabel('View Balance').setStyle(ButtonStyle.Secondary).setEmoji('💰')
+            );
+
+            const replyOptions = { embeds: [embed], components: [row] };
+            if (!isPublic) {
+                replyOptions.flags = 64; // Ephemeral flag
+            }
+            await interaction.reply(replyOptions);
         }
         else if (subcommand === 'deposit') {
             const amount = interaction.options.getInteger('amount');
@@ -56,7 +66,7 @@ module.exports = {
                     .setDescription(`Deposit failed: ${result.message}`);
             }
             embed.setFooter({ text: `New Bank Balance: ${wallet.bank.toLocaleString()} 🪙 | New On-Hand Balance: ${wallet.balance.toLocaleString()} 🪙` });
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: 64 });
         }
         else if (subcommand === 'withdraw') {
             const amount = interaction.options.getInteger('amount');
@@ -73,7 +83,7 @@ module.exports = {
                     .setDescription(`Withdrawal failed: ${result.message}`);
             }
             embed.setFooter({ text: `New Bank Balance: ${wallet.bank.toLocaleString()} 🪙 | New On-Hand Balance: ${wallet.balance.toLocaleString()} 🪙` });
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: 64 });
         }
     },
 };

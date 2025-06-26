@@ -1,6 +1,7 @@
 ﻿// commands/economy/daily.js
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 const economyManager = require('../../utils/economyManager');
+const { formatTimestamp } = require('../../utils/timestampFormatter');
 const { getDay } = require('date-fns');
 
 module.exports = {
@@ -8,13 +9,16 @@ module.exports = {
         .setName('daily')
         .setDescription('Check your daily reward status.'),
     async execute(interaction) {
-        const { canClaim, weekly_claim_state } = economyManager.getDailyStatus(interaction.user.id);
-        const todayIndex = getDay(new Date());
+        const { canClaim, weekly_claim_state, nextClaim } = economyManager.getDailyStatus(interaction.user.id);
 
         const embed = new EmbedBuilder()
             .setColor(canClaim ? '#2ECC71' : '#E74C3C')
             .setTitle('Daily Reward')
             .setDescription(`Claim your daily reward of **${economyManager.DAILY_REWARD}** 🪙 once per day.\nYour weekly progress is shown below.`);
+
+        if (!canClaim) {
+            embed.description += `\n\nYou can claim again ${formatTimestamp(Math.floor(nextClaim.getTime() / 1000), 'R')}.`;
+        }
 
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const dayFields = days.map((day, index) => ({
@@ -33,13 +37,13 @@ module.exports = {
 
         const row = new ActionRowBuilder().addComponents(claimButton);
 
-        const reply = await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+        const reply = await interaction.reply({ embeds: [embed], components: [row], flags: 64 });
 
         const collector = reply.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60000 });
 
         collector.on('collect', async i => {
             if (i.user.id !== interaction.user.id) {
-                return i.reply({ content: 'This is not for you!', ephemeral: true });
+                return i.reply({ content: 'This is not for you!', flags: 64 });
             }
             if (i.customId === 'claim_daily_reward') {
                 const result = economyManager.claimDaily(i.user.id);
@@ -54,7 +58,7 @@ module.exports = {
                     newEmbed.setColor('#00FF00')
                         .setTitle('Daily Reward Claimed!')
                         .setDescription(`**${result.reward}** 🪙 has been deposited directly into your bank.`)
-                        .setFooter({ text: 'This Gold is safe in your bank. Use /bank withdraw to move it to your balance.' });
+                        .setFooter({ text: 'This Gold is safe in your bank. Use `/bank withdraw` to move it to your pockets(balance).' });
                 } else {
                     newEmbed.setColor('#FF0000')
                         .setTitle('Claim Failed')

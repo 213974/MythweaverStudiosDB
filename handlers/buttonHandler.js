@@ -1,5 +1,5 @@
 ﻿// handlers/buttonHandler.js
-const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
+const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { sendOrUpdateDashboard } = require('../utils/dashboardManager');
 const economyManager = require('../utils/economyManager');
 
@@ -39,8 +39,14 @@ async function handleViewBank(interaction) {
         )
         .setFooter({ text: 'Gold in your bank is safe. Use /bank deposit or /bank withdraw to manage it.' });
 
-    // Reply to the button interaction with a new ephemeral message
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('nav_deposit').setLabel('Deposit').setStyle(ButtonStyle.Success).setEmoji('📥'),
+        new ButtonBuilder().setCustomId('nav_withdraw').setLabel('Withdraw').setStyle(ButtonStyle.Primary).setEmoji('📤'),
+        new ButtonBuilder().setCustomId('nav_view_balance').setLabel('View Balance').setStyle(ButtonStyle.Secondary).setEmoji('💰')
+    );
+
+    // Using .update() because this handler is called from another component's interaction
+    await interaction.update({ embeds: [embed], components: [row] });
 }
 
 async function handleViewShop(interaction) {
@@ -62,14 +68,61 @@ async function handleViewShop(interaction) {
         });
     }
 
-    // Reply to the button interaction with a new ephemeral message
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    // Using .update() because this handler is called from another component's interaction
+    await interaction.update({ embeds: [embed], components: [] });
 }
 
+async function handleViewBalance(interaction) {
+    const user = interaction.user;
+    const wallet = economyManager.getWallet(user.id, 'Gold');
+    const embed = new EmbedBuilder()
+        .setColor('#FFD700')
+        .setAuthor({ name: `${user.username}'s Wallet`, iconURL: user.displayAvatarURL() })
+        .addFields({ name: 'On-Hand Balance', value: `${wallet.balance.toLocaleString()} 🪙` })
+        .setFooter({ text: 'This is the Gold you can spend and donate. Use /bank to see your saved Gold.' });
+
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('nav_view_bank').setLabel('View Bank').setStyle(ButtonStyle.Primary).setEmoji('🏦')
+    );
+
+    // Using .update() because this handler is called from another component's interaction
+    await interaction.update({ embeds: [embed], components: [row] });
+}
+
+async function handleNavDeposit(interaction) {
+    const modal = new ModalBuilder()
+        .setCustomId('nav_deposit_modal')
+        .setTitle('Deposit to Bank');
+    const amountInput = new TextInputBuilder()
+        .setCustomId('amount_input')
+        .setLabel('Amount of Gold to deposit')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('e.g., 500')
+        .setRequired(true);
+    modal.addComponents(new ActionRowBuilder().addComponents(amountInput));
+    await interaction.showModal(modal);
+}
+
+async function handleNavWithdraw(interaction) {
+    const modal = new ModalBuilder()
+        .setCustomId('nav_withdraw_modal')
+        .setTitle('Withdraw from Bank');
+    const amountInput = new TextInputBuilder()
+        .setCustomId('amount_input')
+        .setLabel('Amount of Gold to withdraw')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('e.g., 500')
+        .setRequired(true);
+    modal.addComponents(new ActionRowBuilder().addComponents(amountInput));
+    await interaction.showModal(modal);
+}
 
 module.exports = {
     handleSetDashboardChannel,
     handleRefreshDashboard,
     handleViewBank,
     handleViewShop,
+    handleViewBalance,
+    handleNavDeposit,
+    handleNavWithdraw,
 };
