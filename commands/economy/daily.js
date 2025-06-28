@@ -56,7 +56,7 @@ module.exports = {
 
             const result = economyManager.claimDaily(i.user.id);
 
-            // Send a NEW, EPHEMERAL follow-up message with the results
+            // Send a NEW, flag 64 follow-up message with the results
             const followUpEmbed = new EmbedBuilder();
             const followUpButtons = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId('view_bank_after_claim').setLabel('View Bank').setStyle(ButtonStyle.Primary).setEmoji('🏦'),

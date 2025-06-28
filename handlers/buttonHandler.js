@@ -4,9 +4,8 @@ const { sendOrUpdateDashboard } = require('../utils/dashboardManager');
 const { sendOrUpdateAdminDashboard } = require('../utils/adminDashboardManager');
 const economyManager = require('../utils/economyManager');
 
-// Each of these functions is now exported individually
 module.exports = {
-    handleClanDashboardButton: async (interaction) => {
+    handleDashboardButton: async (interaction) => {
         const customId = interaction.customId;
         if (customId === 'dash_clan_set_channel') {
             const modal = new ModalBuilder().setCustomId('dash_clan_set_channel_modal').setTitle('Set Clan Dashboard Channel');
@@ -17,12 +16,7 @@ module.exports = {
             await interaction.deferReply({ flags: 64 });
             await sendOrUpdateDashboard(interaction.client);
             await interaction.editReply({ content: 'Clan Dashboard refresh initiated.' });
-        }
-    },
-
-    handleAdminDashboardButton: async (interaction) => {
-        const customId = interaction.customId;
-        if (customId === 'dash_admin_set_channel') {
+        } else if (customId === 'dash_admin_set_channel') {
             const modal = new ModalBuilder().setCustomId('dash_admin_set_channel_modal').setTitle('Set Admin Dashboard Channel');
             const channelInput = new TextInputBuilder().setCustomId('channel_id_input').setLabel('Enter the ID of the text channel').setStyle(TextInputStyle.Short).setRequired(true);
             modal.addComponents(new ActionRowBuilder().addComponents(channelInput));
@@ -74,7 +68,34 @@ module.exports = {
             const amountInput = new TextInputBuilder().setCustomId('amount_input').setLabel('Amount to withdraw to Sanctuary').setStyle(TextInputStyle.Short).setRequired(true);
             modal.addComponents(new ActionRowBuilder().addComponents(amountInput));
             await interaction.showModal(modal);
-        } else if (customId === 'upgrade_bank') {
+        } else if (customId === 'view_shop_after_claim') {
+            const shopCommand = interaction.client.commands.get('shop');
+            await shopCommand.execute(interaction);
+        }
+    },
+
+    handleUpgradeButton: async (interaction) => {
+        const customId = interaction.customId;
+        const parts = customId.split('_');
+        const user = interaction.user;
+
+        if (parts[1] === 'bank' && parts[2] === 'confirm') {
+            const userId = parts[3];
+            if (user.id !== userId) return interaction.reply({ content: 'This confirmation is not for you.', flags: 64 });
+
+            const result = economyManager.upgradeBankTier(userId, 'Gold');
+            const embed = new EmbedBuilder();
+            if (result.success) {
+                embed.setColor('#2ECC71').setTitle('🚀 Bank Upgrade Successful!').setDescription(`You have successfully upgraded your bank to **Tier ${result.newTier}**!`).addFields(
+                    { name: 'Cost', value: `> ${result.cost.toLocaleString()} 🪙`, inline: true },
+                    { name: 'New Capacity', value: `> ${result.newCapacity.toLocaleString()} 🪙`, inline: true }
+                );
+            } else {
+                embed.setColor('#E74C3C').setTitle('Upgrade Failed').setDescription(result.message);
+            }
+            await interaction.update({ embeds: [embed], components: [] });
+        }
+        else if (parts[1] === 'bank') { // This is the initial "Upgrade Bank" click
             const wallet = economyManager.getWallet(user.id, 'Gold');
             const cost = economyManager.getBankUpgradeCost(wallet.bank_tier);
             const embed = new EmbedBuilder().setColor('#F1C40F').setTitle(`Confirm Bank Upgrade: Tier ${wallet.bank_tier} ➔ ${wallet.bank_tier + 1}`).setDescription(`Are you sure you want to upgrade your bank? This action is irreversible.`).addFields(
@@ -86,11 +107,6 @@ module.exports = {
                 new ButtonBuilder().setCustomId('nav_view_bank').setLabel('Cancel').setStyle(ButtonStyle.Secondary)
             );
             await interaction.update({ embeds: [embed], components: [row] });
-        } else if (customId === 'view_shop_after_claim') {
-            const shopCommand = interaction.client.commands.get('shop');
-            const originalReply = interaction.reply;
-            interaction.reply = (options) => originalReply.call(interaction, { ...options, flags: 64 });
-            await shopCommand.execute(interaction);
         }
-    }
+    },
 };

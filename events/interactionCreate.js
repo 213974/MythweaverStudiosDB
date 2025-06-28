@@ -56,10 +56,9 @@ module.exports = {
                 setTimeout(() => buttonCooldowns.delete(interaction.user.id), COMMAND_COOLDOWN_SECONDS * 1000);
 
                 // --- Button Routing by Prefix ---
-                if (parts[0] === 'dash' && parts[1] === 'clan') await buttonHandler.handleClanDashboardButton(interaction);
-                else if (parts[0] === 'dash' && parts[1] === 'admin') await buttonHandler.handleAdminDashboardButton(interaction);
+                if (parts[0] === 'dash') await buttonHandler.handleDashboardButton(interaction);
                 else if (parts[0] === 'nav') await buttonHandler.handleNavButton(interaction);
-                else if (parts[0] === 'upgrade' && parts[1] === 'bank' && parts[2] === 'confirm') await modalSubmitHandler.handleUpgradeBankConfirm(interaction);
+                else if (parts[0] === 'upgrade') await buttonHandler.handleUpgradeButton(interaction);
                 else if (parts[0] === 'clan' && (parts[1] === 'accept' || parts[1] === 'deny')) {
                     const originalMessage = interaction.message;
                     const originalEmbed = originalMessage.embeds[0];

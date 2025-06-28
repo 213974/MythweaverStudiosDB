@@ -45,7 +45,7 @@ module.exports = {
             // If the user is the bot owner, send the help message publicly.
             await interaction.reply({ embeds: [helpEmbed] });
         } else {
-            // For all other users, send it as an ephemeral message.
+            // For all other users, send it as an flag 64 message.
             await interaction.reply({ embeds: [helpEmbed], flags: 64 });
         }
     },

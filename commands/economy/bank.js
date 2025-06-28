@@ -49,7 +49,11 @@ module.exports = {
                 new ButtonBuilder().setCustomId('nav_view_sanctuary').setLabel('View Sanctuary').setStyle(ButtonStyle.Secondary).setEmoji('⛩️')
             );
 
-            await interaction.reply({ embeds: [embed], components: [row], ephemeral: !isPublic });
+            const replyOptions = { embeds: [embed], components: [row] };
+            if (!isPublic) {
+                replyOptions.flags = 64;
+            }
+            await interaction.reply(replyOptions);
         }
         else if (subcommand === 'deposit') {
             const amount = interaction.options.getInteger('amount');

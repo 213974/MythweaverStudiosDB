@@ -30,7 +30,7 @@ module.exports = {
         }
 
         const row = new ActionRowBuilder().addComponents(claimButton);
-        // Reply is now ephemeral as requested
+        // Reply is now flag 64 as requested
         const reply = await interaction.reply({ embeds: [embed], components: canClaim ? [row] : [], flags: 64 });
 
         if (!canClaim) return;
@@ -60,7 +60,7 @@ module.exports = {
                     .setDescription(result.message);
             }
 
-            // Update the original ephemeral message
+            // Update the original flag 64 message
             await i.update({ embeds: [newEmbed], components: [newButtons] });
             collector.stop();
         });

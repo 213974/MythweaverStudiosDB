@@ -13,7 +13,6 @@ async function parseUser(guild, userInput) {
     return null;
 }
 
-// --- Dashboard Channel Modals ---
 async function handleSetClanChannelModal(interaction) {
     await interaction.deferReply({ flags: 64 });
     const channelId = interaction.fields.getTextInputValue('channel_id_input');
@@ -36,7 +35,6 @@ async function handleSetAdminChannelModal(interaction) {
     await interaction.editReply({ content: `Admin dashboard channel has been set to ${channel}.` });
 }
 
-// --- Clan Dashboard Modals ---
 async function handleClanDashboardModal(interaction) {
     const customId = interaction.customId;
 
@@ -45,16 +43,29 @@ async function handleClanDashboardModal(interaction) {
         const userInput = interaction.fields.getTextInputValue('user_input');
         const authorityInput = interaction.fields.getTextInputValue('authority_input').trim();
         const validAuthorities = ['member', 'officer', 'vice guild master'];
-        if (!validAuthorities.includes(authorityInput.toLowerCase())) return interaction.editReply({ content: 'Invalid authority level.' });
-
+        if (!validAuthorities.includes(authorityInput.toLowerCase())) {
+            return interaction.editReply({ content: 'Invalid authority level. Please use Member, Officer, or Vice Guild Master.' });
+        }
         const targetMember = await parseUser(interaction.guild, userInput);
-        if (!targetMember) return interaction.editReply({ content: 'Could not find that user.' });
-
+        if (!targetMember) {
+            return interaction.editReply({ content: 'Could not find the specified user in this server.' });
+        }
         const actingUserClan = clanManager.findClanContainingUser(interaction.user.id);
+        if (!actingUserClan) {
+            return interaction.editReply({ content: 'Could not find your clan data. Please try again.' });
+        }
+        const actorIsOwner = actingUserClan.clanOwnerUserID === interaction.user.id;
+        if (authorityInput.toLowerCase() === 'vice guild master' && !actorIsOwner) {
+            return interaction.editReply({ content: 'Only the Clan Owner can invite a Vice Guild Master.' });
+        }
         const clanDiscordRole = await interaction.guild.roles.fetch(actingUserClan.clanRoleId).catch(() => null);
-        if (!clanDiscordRole) return interaction.editReply({ content: 'Could not find the clan role.' });
-
-        // This is the same logic as the /clan invite command
+        if (!clanDiscordRole) {
+            return interaction.editReply({ content: 'An error occurred: Your clan\'s Discord role could not be found.' });
+        }
+        const targetUserAnyClan = clanManager.findClanContainingUser(targetMember.id);
+        if (targetUserAnyClan) {
+            return interaction.editReply({ content: `${targetMember.user.username} is already in a clan. They must leave first.` });
+        }
         const inviteTimestamp = Math.floor(Date.now() / 1000) + 300;
         const inviteEmbed = new EmbedBuilder().setColor(clanDiscordRole.color || '#0099ff').setTitle(`⚔️ Clan Invitation: ${clanDiscordRole.name} ⚔️`)
             .setDescription(`<@${interaction.user.id}> has invited you to join **${clanDiscordRole.name}** as **${authorityInput}**.`)
@@ -64,44 +75,36 @@ async function handleClanDashboardModal(interaction) {
             new ButtonBuilder().setCustomId(`clan_accept_${actingUserClan.clanRoleId}_${targetMember.id}_${authorityInput.replace(/\s+/g, '-')}`).setLabel('Accept').setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId(`clan_deny_${actingUserClan.clanRoleId}_${targetMember.id}`).setLabel('Deny').setStyle(ButtonStyle.Danger)
         );
-
         await interaction.channel.send({ content: `<@${targetMember.id}>`, embeds: [inviteEmbed], components: [row] });
         await interaction.editReply({ content: 'Invitation sent.' });
-
     } else if (customId === 'dashboard_kick_modal') {
         await interaction.deferReply({ flags: 64 });
         const userInput = interaction.fields.getTextInputValue('user_input');
         const reason = interaction.fields.getTextInputValue('reason_input') || 'No reason provided.';
         const targetMember = await parseUser(interaction.guild, userInput);
         if (!targetMember) return interaction.editReply({ content: 'Could not find that user.' });
-
         const actingUserClan = clanManager.findClanContainingUser(interaction.user.id);
         const removeResult = clanManager.removeUserFromClan(actingUserClan.clanRoleId, targetMember.id);
-
         if (removeResult.success) {
             await targetMember.roles.remove(actingUserClan.clanRoleId).catch(() => { });
-            await interaction.editReply({ content: `Successfully kicked ${targetMember.user.username} from the clan.` });
+            await interaction.editReply({ content: `Successfully kicked ${targetMember.user.username} from the clan for: ${reason}` });
         } else {
             await interaction.editReply({ content: `Failed to kick member: ${removeResult.message}` });
         }
-
     } else if (customId === 'dashboard_motto_modal') {
         await interaction.deferReply({ flags: 64 });
         const motto = interaction.fields.getTextInputValue('motto_input');
         const actingUserClan = clanManager.findClanContainingUser(interaction.user.id);
         clanManager.setClanMotto(actingUserClan.clanRoleId, motto || null);
         await interaction.editReply({ content: 'Your clan motto has been updated.' });
-
     } else if (customId === 'dashboard_authority_modal') {
         await interaction.deferReply({ flags: 64 });
         const userInput = interaction.fields.getTextInputValue('user_input');
         const authorityInput = interaction.fields.getTextInputValue('authority_input').trim();
         const targetMember = await parseUser(interaction.guild, userInput);
         if (!targetMember) return interaction.editReply({ content: 'Could not find that user.' });
-
         const actingUserClan = clanManager.findClanContainingUser(interaction.user.id);
         const result = clanManager.manageClanMemberRole(actingUserClan.clanRoleId, targetMember.id, authorityInput);
-
         if (result.success) {
             await interaction.editReply({ content: `Successfully changed ${targetMember.user.username}'s authority to **${authorityInput}**.` });
         } else {
@@ -110,7 +113,6 @@ async function handleClanDashboardModal(interaction) {
     }
 }
 
-// --- Admin Dashboard Modals ---
 async function handleAdminDashboardModal(interaction) {
     await interaction.deferReply({ flags: 64 });
     const customId = interaction.customId;
@@ -127,14 +129,12 @@ async function handleAdminDashboardModal(interaction) {
         if (isNaN(amount) || amount < 0) return interaction.editReply({ content: 'Invalid amount.' });
         if (!['bank', 'balance'].includes(destination)) return interaction.editReply({ content: 'Invalid destination.' });
 
-        const db = require('../utils/database');
         if (action === 'give') db.prepare(`UPDATE wallets SET ${destination} = ${destination} + ? WHERE user_id = ? AND currency = ?`).run(amount, targetUser.id, 'Gold');
         else if (action === 'remove') db.prepare(`UPDATE wallets SET ${destination} = ${destination} - ? WHERE user_id = ? AND currency = ?`).run(amount, targetUser.id, 'Gold');
         else if (action === 'set') db.prepare(`UPDATE wallets SET ${destination} = ? WHERE user_id = ? AND currency = ?`).run(amount, targetUser.id, 'Gold');
 
         await interaction.editReply({ content: `Successfully performed '${action}' on ${targetUser.user.username}'s ${destination} for ${amount} Gold.` });
-    }
-    else if (customId === 'admin_dash_shop_modal') {
+    } else if (customId === 'admin_dash_shop_modal') {
         const action = interaction.fields.getTextInputValue('action_input').toLowerCase();
         const roleId = interaction.fields.getTextInputValue('role_input');
         const price = parseInt(interaction.fields.getTextInputValue('price_input'), 10);
@@ -142,23 +142,21 @@ async function handleAdminDashboardModal(interaction) {
 
         if (!['add', 'remove', 'update'].includes(action)) return interaction.editReply({ content: 'Invalid action.' });
         if (!role) return interaction.editReply({ content: 'Invalid role ID.' });
+        if ((action === 'add' || action === 'update') && (isNaN(price) || price < 0)) return interaction.editReply({ content: 'Invalid price for this action.' });
 
         if (action === 'add') {
-            if (isNaN(price) || price < 0) return interaction.editReply({ content: 'Invalid price for add action.' });
             economyManager.addShopItem(role.id, price, role.name, '');
             await interaction.editReply({ content: `Added ${role.name} to the shop.` });
         } else if (action === 'remove') {
             economyManager.removeShopItem(role.id);
             await interaction.editReply({ content: `Removed ${role.name} from the shop.` });
         } else if (action === 'update') {
-            if (isNaN(price) || price < 0) return interaction.editReply({ content: 'Invalid price for update action.' });
             economyManager.updateShopItem(role.id, price);
             await interaction.editReply({ content: `Updated ${role.name}'s price in the shop.` });
         }
     }
 }
 
-// --- Economy Navigation Modals ---
 async function handleNavModal(interaction) {
     const customId = interaction.customId;
     if (customId === 'nav_deposit_modal') {
