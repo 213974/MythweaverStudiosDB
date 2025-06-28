@@ -12,11 +12,12 @@ module.exports = {
                 .setDescription('The setting you want to manage.')
                 .setRequired(true)
                 .addChoices(
-                    { name: 'Clan Dashboard', value: 'clan_dashboard' }
+                    { name: 'Clan Dashboard', value: 'clan_dashboard' },
+                    { name: 'Admin Dashboard', value: 'admin_dashboard' }
                 )),
 
     async execute(interaction) {
-        if (interaction.user.id !== config.ownerID) {
+        if (interaction.user.id !== config.ownerID && !interaction.member.roles.cache.has(config.serverAdminRoleID)) {
             return interaction.reply({ content: 'You do not have permission to use this command.', flags: 64 });
         }
 
@@ -30,12 +31,32 @@ module.exports = {
 
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
-                    .setCustomId('admin_dashboard_set_channel')
+                    .setCustomId('dash_clan_set_channel')
                     .setLabel('Set Channel')
                     .setStyle(ButtonStyle.Primary)
                     .setEmoji('🔧'),
                 new ButtonBuilder()
-                    .setCustomId('admin_dashboard_refresh')
+                    .setCustomId('dash_clan_refresh')
+                    .setLabel('Refresh Dashboard')
+                    .setStyle(ButtonStyle.Success)
+                    .setEmoji('🔄')
+            );
+
+            await interaction.reply({ embeds: [embed], components: [row], flags: 64 });
+        } else if (settingToManage === 'admin_dashboard') {
+            const embed = new EmbedBuilder()
+                .setColor('#E74C3C')
+                .setTitle('Administrator Dashboard Management')
+                .setDescription('Use the buttons below to manage the administrator control panel.');
+
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('dash_admin_set_channel')
+                    .setLabel('Set Channel')
+                    .setStyle(ButtonStyle.Primary)
+                    .setEmoji('🔧'),
+                new ButtonBuilder()
+                    .setCustomId('dash_admin_refresh')
                     .setLabel('Refresh Dashboard')
                     .setStyle(ButtonStyle.Success)
                     .setEmoji('🔄')

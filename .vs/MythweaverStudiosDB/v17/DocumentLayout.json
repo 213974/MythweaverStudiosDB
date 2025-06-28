@@ -3,44 +3,72 @@
   "WorkspaceRootPath": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\modalSubmitHandler.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:handlers\\modalSubmitHandler.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\donate.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\economy\\donate.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\shop.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\economy\\shop.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\admin\\settings.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\admin\\settings.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\buttonHandler.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:handlers\\buttonHandler.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\clan\\clan.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\clan\\clan.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\deploy-commands.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:deploy-commands.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\balance.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\economy\\balance.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\utils\\adminDashboardManager.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:utils\\adminDashboardManager.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\utils\\dashboardManager.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:utils\\dashboardManager.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\daily.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\economy\\daily.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\weekly.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\economy\\weekly.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\admin\\reload.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\admin\\reload.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\admin\\adminEconomy.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\admin\\adminEconomy.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\admin\\adminShop.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\admin\\adminShop.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\events\\ready.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:events\\ready.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\events\\interactionCreate.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:events\\interactionCreate.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\chatInputCommandHandler.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:handlers\\chatInputCommandHandler.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\selectMenuHandler.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:handlers\\selectMenuHandler.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\modalSubmitHandler.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:handlers\\modalSubmitHandler.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\bank.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\economy\\bank.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\player\\sanctuary.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:commands\\player\\sanctuary.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\utils\\economyManager.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:utils\\economyManager.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\utils\\database.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:utils\\database.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\LilGavin\\MythweaverStudiosDB\\src\\index.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
@@ -58,7 +86,7 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 17,
               "Title": "index.js",
               "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\src\\index.js",
               "RelativeDocumentMoniker": "src\\index.js",
@@ -72,120 +100,132 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "shop.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\shop.js",
+              "RelativeDocumentMoniker": "commands\\economy\\shop.js",
+              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\shop.js",
+              "RelativeToolTip": "commands\\economy\\shop.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-28T18:09:53.197Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "donate.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\donate.js",
+              "RelativeDocumentMoniker": "commands\\economy\\donate.js",
+              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\donate.js",
+              "RelativeToolTip": "commands\\economy\\donate.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABwAAABdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-28T18:09:46.78Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "adminDashboardManager.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\utils\\adminDashboardManager.js",
+              "RelativeDocumentMoniker": "utils\\adminDashboardManager.js",
+              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\utils\\adminDashboardManager.js",
+              "RelativeToolTip": "utils\\adminDashboardManager.js",
+              "ViewState": "AgIAACwAAAAAAAAAAAAIwE4AAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-28T17:27:37.701Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "deploy-commands.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\deploy-commands.js",
+              "RelativeDocumentMoniker": "deploy-commands.js",
+              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\deploy-commands.js",
+              "RelativeToolTip": "deploy-commands.js",
+              "ViewState": "AgIAABsAAAAAAAAAAAAIwD0AAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-28T17:03:24.679Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "buttonHandler.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\buttonHandler.js",
+              "RelativeDocumentMoniker": "handlers\\buttonHandler.js",
+              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\buttonHandler.js",
+              "RelativeToolTip": "handlers\\buttonHandler.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAF8AAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-28T14:53:45.346Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "settings.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\admin\\settings.js",
+              "RelativeDocumentMoniker": "commands\\admin\\settings.js",
+              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\admin\\settings.js",
+              "RelativeToolTip": "commands\\admin\\settings.js",
+              "ViewState": "AgIAACEAAAAAAAAAAAAIwEMAAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-28T17:27:23.915Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "chatInputCommandHandler.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\chatInputCommandHandler.js",
+              "RelativeDocumentMoniker": "handlers\\chatInputCommandHandler.js",
+              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\chatInputCommandHandler.js",
+              "RelativeToolTip": "handlers\\chatInputCommandHandler.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAABLAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-28T17:44:24.565Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "selectMenuHandler.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\selectMenuHandler.js",
+              "RelativeDocumentMoniker": "handlers\\selectMenuHandler.js",
+              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\selectMenuHandler.js",
+              "RelativeToolTip": "handlers\\selectMenuHandler.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGcAAABLAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-28T17:57:29.723Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "modalSubmitHandler.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\modalSubmitHandler.js",
+              "RelativeDocumentMoniker": "handlers\\modalSubmitHandler.js",
+              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\modalSubmitHandler.js",
+              "RelativeToolTip": "handlers\\modalSubmitHandler.js",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAAABwAAAAsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-28T16:10:05.451Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 9,
               "Title": "interactionCreate.js",
               "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\events\\interactionCreate.js",
               "RelativeDocumentMoniker": "events\\interactionCreate.js",
               "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\events\\interactionCreate.js",
               "RelativeToolTip": "events\\interactionCreate.js",
-              "ViewState": "AgIAAEcAAAAAAAAAAAAqwF4AAAANAAAAAAAAAA==",
+              "ViewState": "AgIAAE8AAAAAAAAAAAAIwFcAAAAVAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-25T20:45:57.57Z",
-              "IsPinned": true,
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "modalSubmitHandler.js",
-              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\modalSubmitHandler.js",
-              "RelativeDocumentMoniker": "handlers\\modalSubmitHandler.js",
-              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\modalSubmitHandler.js",
-              "RelativeToolTip": "handlers\\modalSubmitHandler.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACEAAAAsAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-26T00:36:59.803Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "buttonHandler.js",
-              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\buttonHandler.js",
-              "RelativeDocumentMoniker": "handlers\\buttonHandler.js",
-              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\handlers\\buttonHandler.js",
-              "RelativeToolTip": "handlers\\buttonHandler.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAawBcAAAAsAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-26T00:36:49.083Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "balance.js",
-              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\balance.js",
-              "RelativeDocumentMoniker": "commands\\economy\\balance.js",
-              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\balance.js",
-              "RelativeToolTip": "commands\\economy\\balance.js",
-              "ViewState": "AgIAAAQAAAAAAAAAAAAawBsAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-26T00:36:18.636Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "dashboardManager.js",
-              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\utils\\dashboardManager.js",
-              "RelativeDocumentMoniker": "utils\\dashboardManager.js",
-              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\utils\\dashboardManager.js",
-              "RelativeToolTip": "utils\\dashboardManager.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGkAAAACAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-26T00:35:49.436Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "clan.js",
-              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\clan\\clan.js",
-              "RelativeDocumentMoniker": "commands\\clan\\clan.js",
-              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\clan\\clan.js",
-              "RelativeToolTip": "commands\\clan\\clan.js",
-              "ViewState": "AgIAAHoAAAAAAAAAAAAawJEAAAA0AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-26T00:35:09.841Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "weekly.js",
-              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\weekly.js",
-              "RelativeDocumentMoniker": "commands\\economy\\weekly.js",
-              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\weekly.js",
-              "RelativeToolTip": "commands\\economy\\weekly.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEgAAAACAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-26T00:34:36.452Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "daily.js",
-              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\daily.js",
-              "RelativeDocumentMoniker": "commands\\economy\\daily.js",
-              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\daily.js",
-              "RelativeToolTip": "commands\\economy\\daily.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFIAAAACAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-26T00:26:40.915Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "adminShop.js",
-              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\admin\\adminShop.js",
-              "RelativeDocumentMoniker": "commands\\admin\\adminShop.js",
-              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\admin\\adminShop.js",
-              "RelativeToolTip": "commands\\admin\\adminShop.js",
-              "ViewState": "AgIAAA8AAAAAAAAAAAAqwDwAAAACAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-26T00:20:13.332Z",
+              "WhenOpened": "2025-06-28T16:10:18.142Z",
               "EditorCaption": ""
             },
             {
@@ -196,9 +236,87 @@
               "RelativeDocumentMoniker": "commands\\admin\\adminEconomy.js",
               "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\admin\\adminEconomy.js",
               "RelativeToolTip": "commands\\admin\\adminEconomy.js",
-              "ViewState": "AgIAAA8AAAAAAAAAAAAqwBwAAAAjAAAAAAAAAA==",
+              "ViewState": "AgIAACIAAAAAAAAAAAD4vy4AAAAgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-06-26T00:20:12.778Z",
+              "WhenOpened": "2025-06-28T17:05:10.109Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "ready.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\events\\ready.js",
+              "RelativeDocumentMoniker": "events\\ready.js",
+              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\events\\ready.js",
+              "RelativeToolTip": "events\\ready.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAA6AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-28T17:02:51.187Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "reload.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\admin\\reload.js",
+              "RelativeDocumentMoniker": "commands\\admin\\reload.js",
+              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\admin\\reload.js",
+              "RelativeToolTip": "commands\\admin\\reload.js",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAwwCoAAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-28T17:02:40.371Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "sanctuary.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\player\\sanctuary.js",
+              "RelativeDocumentMoniker": "commands\\player\\sanctuary.js",
+              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\player\\sanctuary.js",
+              "RelativeToolTip": "commands\\player\\sanctuary.js",
+              "ViewState": "AgIAAAwAAAAAAAAAAIAwwB8AAAB6AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-28T14:03:47.575Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "database.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\utils\\database.js",
+              "RelativeDocumentMoniker": "utils\\database.js",
+              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\utils\\database.js",
+              "RelativeToolTip": "utils\\database.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFoAAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-28T13:08:20.89Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "economyManager.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\utils\\economyManager.js",
+              "RelativeDocumentMoniker": "utils\\economyManager.js",
+              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\utils\\economyManager.js",
+              "RelativeToolTip": "utils\\economyManager.js",
+              "ViewState": "AgIAAKsAAAAAAAAAAAAwwM8AAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-28T12:28:33.427Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "bank.js",
+              "DocumentMoniker": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\bank.js",
+              "RelativeDocumentMoniker": "commands\\economy\\bank.js",
+              "ToolTip": "C:\\Users\\LilGavin\\MythweaverStudiosDB\\commands\\economy\\bank.js",
+              "RelativeToolTip": "commands\\economy\\bank.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAABjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-06-28T12:37:40.89Z",
               "EditorCaption": ""
             },
             {

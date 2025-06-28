@@ -1,17 +1,31 @@
 // commands/admin/reload.js
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, Collection } = require('discord.js');
+const fs = require('node:fs');
+const path = require('node:path');
 const config = require('../../src/config');
-// We need access to the registerCommands function from ready.js
-// This is a bit tricky as ready.js executes. We might need to expose it differently or re-implement.
-// For simplicity, we'll re-implement the core logic here or call it if exposed by client.
+
+// Re-implement the simplified command loader here
+function loadCommands(client) {
+    client.commands.clear();
+    const commandFolders = fs.readdirSync(path.join(__dirname, '..', '..', 'commands'));
+    for (const folder of commandFolders) {
+        const commandFiles = fs.readdirSync(path.join(__dirname, '..', '..', 'commands', folder)).filter(file => file.endsWith('.js'));
+        for (const file of commandFiles) {
+            const filePath = path.join(__dirname, '..', '..', 'commands', folder, file);
+            delete require.cache[require.resolve(filePath)];
+            const command = require(filePath);
+            if (command.data && command.execute) {
+                client.commands.set(command.data.name, command);
+            }
+        }
+    }
+}
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('reload')
-        .setDescription('Reloads all slash commands for the bot.'),
-    // .setDefaultMemberPermissions() has been removed to make this a true "owner only" command.
+        .setDescription('Reloads the logic of all commands.'),
     async execute(interaction) {
-        // This check is now the ONLY permission gate for this command.
         if (interaction.user.id !== config.ownerID) {
             return interaction.reply({ content: 'You do not have permission to use this command.', flags: 64 });
         }
@@ -19,21 +33,8 @@ module.exports = {
         await interaction.deferReply({ flags: 64 });
 
         try {
-            // The command registration logic is in ready.js.
-            // We need a way to call it. Let's assume it's attached to client for this example.
-            // This requires modification in ready.js to attach `registerCommands` to the client.
-            const readyEventHandler = require('../../events/ready.js');
-            if (typeof readyEventHandler.registerCommands === 'function') {
-                await readyEventHandler.registerCommands(interaction.client, config);
-                // Also, re-load event handlers if needed (though typically not required for command reloads unless events themselves changed)
-                delete require.cache[require.resolve('../../handlers/eventHandler.js')];
-                const loadEvents = require('../../handlers/eventHandler.js');
-                loadEvents(interaction.client, config); // Re-attach event listeners
-
-                await interaction.editReply({ content: 'Successfully reloaded all slash commands and re-attached events.' });
-            } else {
-                throw new Error("registerCommands function not found on ready.js module.");
-            }
+            loadCommands(interaction.client);
+            await interaction.editReply({ content: 'Successfully reloaded all command logic.' });
         } catch (error) {
             console.error('Error during /reload command:', error);
             await interaction.editReply({ content: `Failed to reload commands: ${error.message}` });
