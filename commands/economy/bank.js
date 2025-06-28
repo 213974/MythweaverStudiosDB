@@ -37,7 +37,7 @@ module.exports = {
                     { name: 'Bank Capacity', value: `> ${wallet.bank_capacity.toLocaleString()} 🪙`, inline: true },
                     { name: 'On-Hand Balance', value: `> ${wallet.balance.toLocaleString()} 🪙`, inline: false }
                 )
-                .setFooter({ text: 'Gold in your bank is safe. Use /bank deposit or /bank withdraw to manage it.' });
+                .setFooter({ text: 'Gold in your bank is safe.' });
 
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId('nav_deposit').setLabel('Deposit').setStyle(ButtonStyle.Success).setEmoji('📥'),

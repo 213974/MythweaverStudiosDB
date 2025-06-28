@@ -22,6 +22,7 @@ module.exports = {
     DEFAULT_CURRENCY,
     DAILY_REWARD,
     WEEKLY_REWARD,
+    ensureUser, // Add this line to export the function
 
     // --- Balance and Bank Management ---
     getWallet: (userId, currency = DEFAULT_CURRENCY) => {
