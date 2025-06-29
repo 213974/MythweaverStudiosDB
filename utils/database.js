@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS wallets (
     bank_capacity INTEGER DEFAULT 100000,
     bank_tier INTEGER DEFAULT 1,
     sanctuary_balance INTEGER DEFAULT 0,
-    sanctuary_capacity INTEGER DEFAULT 1000,
+    sanctuary_capacity INTEGER DEFAULT 3500,
     PRIMARY KEY (user_id, currency),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );

@@ -6,7 +6,7 @@ const DAILY_REWARD = 25;
 const WEEKLY_REWARD = 175;
 const DEFAULT_CURRENCY = 'Gold';
 const DEFAULT_BANK_CAPACITY = 100000;
-const DEFAULT_SANCTUARY_CAPACITY = 1000;
+const DEFAULT_SANCTUARY_CAPACITY = 3500;
 
 // --- Helper Functions ---
 function ensureUser(userId, username = 'Unknown') {
@@ -52,9 +52,6 @@ module.exports = {
         return { success: true, newTier, newCapacity, cost };
     },
 
-    // Note: The term "balance" in the DB now corresponds to "Sanctuary Balance" for the user.
-    // The term "bank" in the DB corresponds to "Player Balance" for the user.
-
     getWallet: (userId, currency = DEFAULT_CURRENCY) => {
         ensureWallet(userId, currency);
         return db.prepare('SELECT * FROM wallets WHERE user_id = ? AND currency = ?').get(userId, currency);
@@ -78,11 +75,40 @@ module.exports = {
         if (amount <= 0) return { success: false, message: 'Withdrawal amount must be positive.' };
         if (wallet.bank < amount) return { success: false, message: 'You do not have enough Gold in your Player Balance.' };
 
+        const availableSanctuarySpace = wallet.sanctuary_capacity - wallet.balance;
+
+        // If there's no space at all in the Sanctuary
+        if (availableSanctuarySpace <= 0) {
+            return { success: false, message: 'Your Sanctuary is full. You cannot withdraw any more Gold to it.' };
+        }
+
+        let amountToSanctuary = amount;
+        let refundAmount = 0;
+
+        // If the withdrawal amount is more than the available space
+        if (amount > availableSanctuarySpace) {
+            amountToSanctuary = availableSanctuarySpace;
+            refundAmount = amount - availableSanctuarySpace;
+        }
+
         const transaction = db.transaction(() => {
-            db.prepare('UPDATE wallets SET balance = balance + ?, bank = bank - ? WHERE user_id = ? AND currency = ?').run(amount, amount, userId, currency);
+            // Withdraw the full requested amount from the player bank initially
+            let newBankBalance = wallet.bank - amount;
+            // Add back the refunded amount if any
+            newBankBalance += refundAmount;
+
+            // Update Sanctuary balance and Player bank balance in one go
+            db.prepare('UPDATE wallets SET balance = balance + ?, bank = ? WHERE user_id = ? AND currency = ?')
+                .run(amountToSanctuary, newBankBalance, userId, currency);
         });
-        transaction();
-        return { success: true };
+
+        try {
+            transaction();
+            return { success: true, amountWithdrawn: amountToSanctuary, refund: refundAmount };
+        } catch (e) {
+            console.error("Withdrawal transaction failed:", e);
+            return { success: false, message: "A database error occurred during the transaction." };
+        }
     },
 
     transferGold: (fromUserId, toUserId, amount) => {
@@ -102,7 +128,6 @@ module.exports = {
         return { success: true };
     },
 
-    // ... (rest of the file is unchanged, only providing the relevant part for brevity)
     getClaims: (userId) => {
         ensureUser(userId);
         const daily = db.prepare('SELECT * FROM claims WHERE user_id = ? AND claim_type = ?').get(userId, 'daily');

@@ -49,11 +49,7 @@ module.exports = {
                 new ButtonBuilder().setCustomId('nav_view_sanctuary').setLabel('View Sanctuary').setStyle(ButtonStyle.Secondary).setEmoji('⛩️')
             );
 
-            const replyOptions = { embeds: [embed], components: [row] };
-            if (!isPublic) {
-                replyOptions.flags = 64;
-            }
-            await interaction.reply(replyOptions);
+            await interaction.reply({ embeds: [embed], components: [row], ephemeral: !isPublic });
         }
         else if (subcommand === 'deposit') {
             const amount = interaction.options.getInteger('amount');
@@ -78,7 +74,11 @@ module.exports = {
             const embed = new EmbedBuilder().setTitle('Player Account Withdrawal');
 
             if (result.success) {
-                embed.setColor('#2ECC71').setDescription(`You successfully withdrew **${amount.toLocaleString()}** 🪙 from your player account to your Sanctuary Balance.`);
+                let description = `You successfully withdrew **${result.amountWithdrawn.toLocaleString()}** 🪙 from your player account to your Sanctuary Balance.`;
+                if (result.refund > 0) {
+                    description += `\nYour Sanctuary was full, so **${result.refund.toLocaleString()}** 🪙 was returned to your Player Balance.`
+                }
+                embed.setColor('#2ECC71').setDescription(description);
             } else {
                 embed.setColor('#E74C3C').setDescription(`Withdrawal failed: ${result.message}`);
             }

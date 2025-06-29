@@ -35,7 +35,7 @@ module.exports = {
         if (customId === 'nav_view_bank' || customId === 'view_bank_after_claim') {
             const wallet = economyManager.getWallet(user.id, 'Gold');
             const upgradeCost = economyManager.getBankUpgradeCost(wallet.bank_tier);
-            const embed = new EmbedBuilder().setColor('#3498DB').setAuthor({ name: `${user.username}'s Player Account`, iconURL: user.displayAvatarURL() }).addFields(
+            const embed = new EmbedBuilder().setColor('#3498DB').setAuthor({ name: `${user.displayName}'s Player Account`, iconURL: user.displayAvatarURL() }).addFields(
                 { name: 'Player Balance', value: `> ${wallet.bank.toLocaleString()} 🪙`, inline: true },
                 { name: 'Max Capacity', value: `> ${wallet.bank_capacity.toLocaleString()} 🪙`, inline: true },
                 { name: 'Bank Tier', value: `> Tier ${wallet.bank_tier}`, inline: true },

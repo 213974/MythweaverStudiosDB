@@ -24,7 +24,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor('#58D68D')
-            .setAuthor({ name: `${user.username}'s Sanctuary ⛩️`, iconURL: user.displayAvatarURL() })
+            .setAuthor({ name: `${user.displayName}'s Sanctuary ⛩️`, iconURL: user.displayAvatarURL() })
             .addFields(
                 { name: 'Sanctuary Balance', value: `> ${wallet.balance.toLocaleString()} 🪙`, inline: true },
                 { name: 'Max Capacity', value: `> ${wallet.sanctuary_capacity.toLocaleString()} 🪙`, inline: true }
