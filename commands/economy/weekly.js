@@ -12,7 +12,7 @@ module.exports = {
         const user = interaction.user;
 
         const embed = new EmbedBuilder()
-            .setAuthor({ name: `${user.displayName}'s Weekly Claim`, iconURL: user.displayAvatarURL() });
+            .setAuthor({ name: `${user.displayName} | Weekly Claim`, iconURL: user.displayAvatarURL() });
 
         const claimButton = new ButtonBuilder()
             .setCustomId(`claim_weekly_${user.id}`) // User-specific ID

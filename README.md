@@ -6,17 +6,6 @@ A custom Discord bot built with Discord.js v14, featuring a comprehensive, singl
 
 This bot provides a full suite of commands for administrators to create and manage clans, and for clan leaders to manage their members, customize their identity, and maintain their roster.
 
-## Core Features
-
-*   **Advanced Clan System:**
-    *   Admins can create clans, assign owners, and manage clan existence.
-    *   Clan owners can set a clan motto and change their role color.
-    *   Clan leadership can invite, kick, and manage member authority.
-    *   Members can view detailed clan profiles and leave their clan.
-*   **Robust Database:** Uses a SQLite database for fast, reliable, and scalable data storage, managed by `better-sqlite3`.
-*   **Production Ready:** Includes configuration for PM2, a professional process manager to ensure the bot stays online 24/7.
-*   **Structured and Extendable:** Built with a clean handler structure for adding new commands and events easily.
-
 ## Prerequisites
 
 *   [Node.js](https://nodejs.org/) (v16.9.0 or higher)

@@ -14,7 +14,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor(canClaim ? '#2ECC71' : '#E74C3C')
-            .setAuthor({ name: `${user.displayName}'s Daily Claim`, iconURL: user.displayAvatarURL() })
+            .setAuthor({ name: `${user.displayName} | Daily Claim`, iconURL: user.displayAvatarURL() })
             .setDescription(`Claim your daily reward of **${economyManager.DAILY_REWARD}** 🪙 once per calendar day.\nYour weekly progress is shown below.`)
             .setFooter({ text: 'Mythweaver Studios™ | /daily' });
 
