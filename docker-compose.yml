@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  mythweaver-bot:
+    build: .
+    container_name: mythweaver_studios_container
+    restart: unless-stopped
+    volumes:
+      - ./data:/usr/src/app/data
+    env_file:
+      - .env

@@ -5,12 +5,10 @@
     "\\commands\\clan",
     "\\commands\\moderation",
     "\\commands\\utility",
-    "\\data",
     "\\events",
     "\\handlers",
     "\\src",
     "\\utils"
   ],
-  "SelectedNode": "\\commands\\admin\\addClan.js",
   "PreviewInSolutionExplorer": false
 }

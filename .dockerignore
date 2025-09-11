@@ -1,0 +1,17 @@
+# Dependency directories
+node_modules
+
+# Environment variables (should not be in the image)
+.env
+
+# VS Code specific files
+.vscode
+.vs
+
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Logs and databases (we will mount the database as a volume instead)
+*.log
