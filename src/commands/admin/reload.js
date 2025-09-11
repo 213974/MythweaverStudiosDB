@@ -2,7 +2,7 @@
 const { SlashCommandBuilder, Collection } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
-const config = require('../../src/config');
+const config = require('../../config');
 
 // Re-implement the simplified command loader here
 function loadCommands(client) {

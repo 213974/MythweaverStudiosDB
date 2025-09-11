@@ -1,7 +1,7 @@
 // events/guildMemberUpdate.js
 const { Events } = require('discord.js');
 const clanManager = require('../utils/clanManager');
-const config = require('../src/config');
+const config = require('../config');
 const db = require('../utils/database'); // Import the database connection
 
 module.exports = {

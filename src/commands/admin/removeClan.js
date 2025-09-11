@@ -1,7 +1,7 @@
 ﻿// commands/admin/removeClan.js
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const clanManager = require('../../utils/clanManager');
-const config = require('../../src/config');
+const config = require('../../config');
 
 module.exports = {
     data: new SlashCommandBuilder()

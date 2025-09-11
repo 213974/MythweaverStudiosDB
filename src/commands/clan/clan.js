@@ -1,7 +1,7 @@
 ﻿// commands/clan/clan.js
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const clanManager = require('../../utils/clanManager');
-const dashboardManager = require('../../utils/dashboardManager'); // Import dashboard manager
+const dashboardManager = require('../../utils/dashboardManager');
 const { formatTimestamp } = require('../../utils/timestampFormatter');
 
 // Helper function to validate hex color

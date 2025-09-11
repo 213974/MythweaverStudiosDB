@@ -1,6 +1,6 @@
 ﻿// commands/admin/settings.js
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const config = require('../../src/config');
+const config = require('../../config');
 
 module.exports = {
     data: new SlashCommandBuilder()

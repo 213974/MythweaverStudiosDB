@@ -4,8 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { sendOrUpdateDashboard } = require('../utils/dashboardManager');
 const { sendOrUpdateAdminDashboard } = require('../utils/adminDashboardManager');
+const { getLatestChapterInfo } = require('../utils/manhwaTracker');
 
-// This function now only loads commands into the client, it doesn't register them.
 function loadCommands(client) {
     client.commands = new Collection();
     const commandFolders = fs.readdirSync(path.join(__dirname, '..', 'commands'));
@@ -14,7 +14,7 @@ function loadCommands(client) {
         const commandFiles = fs.readdirSync(path.join(__dirname, '..', 'commands', folder)).filter(file => file.endsWith('.js'));
         for (const file of commandFiles) {
             const filePath = path.join(__dirname, '..', 'commands', folder, file);
-            delete require.cache[require.resolve(filePath)]; // Good for hot-reloading
+            delete require.cache[require.resolve(filePath)];
             const command = require(filePath);
             if (command.data && command.execute) {
                 client.commands.set(command.data.name, command);
@@ -28,22 +28,33 @@ function loadCommands(client) {
 module.exports = {
     name: Events.ClientReady,
     once: true,
-    async execute(client, handlerClient, appConfig) {
+    async execute(client, handlerClient, appConfig) { 
         console.log(`Ready! Logged in as ${client.user.tag}`);
         console.log(`Bot is in ${client.guilds.cache.size} servers.`);
 
-        loadCommands(client); // Load commands into the client collection
+        loadCommands(client);
 
-        // Initialize Dashboards
         await sendOrUpdateDashboard(client);
         await sendOrUpdateAdminDashboard(client);
 
         if (appConfig && appConfig.ownerID) {
             try {
+                console.log('[Startup] Fetching latest manhwa chapter info...');
+                const chapterInfo = await getLatestChapterInfo();
+                
+                let startupMessage = 'Hello! I am online and ready to go!';
+                
+                if (chapterInfo.error) {
+                    startupMessage += `\n\nI tried to check for the latest 'Pick Me Up' chapter, but an error occurred: ${chapterInfo.error}`;
+                } else {
+                    startupMessage += `\n\nThe latest English chapter of *Pick Me Up: Infinite Gacha* appears to be **Chapter ${chapterInfo.chapter}**.`;
+                    startupMessage += `\n\nYou can read it at:\n• Asura Comic: <${chapterInfo.link1}>\n• ComicK: <${chapterInfo.link2}>`;
+                }
+
                 const owner = await client.users.fetch(appConfig.ownerID);
                 if (owner) {
-                    await owner.send('Hello! I am online and ready to go!');
-                    console.log(`Successfully DMed owner (${owner.tag}) that the bot is online.`);
+                    await owner.send(startupMessage);
+                    console.log(`Successfully DMed owner (${owner.tag}) with the startup message.`);
                 }
             } catch (error) {
                 console.error(`Failed to DM owner (${appConfig.ownerID}):`, error);

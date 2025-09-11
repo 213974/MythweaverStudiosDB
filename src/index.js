@@ -5,7 +5,7 @@ const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js'
 const path = require('node:path');
 const config = require('./config');
 console.log('[index.js] Loaded config:', JSON.stringify(config));
-const loadEvents = require('../handlers/eventHandler');
+const loadEvents = require('./handlers/eventHandler');
 
 const client = new Client({
     intents: [

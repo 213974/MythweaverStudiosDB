@@ -1,7 +1,7 @@
 ﻿// commands/admin/adminEconomy.js
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const economyManager = require('../../utils/economyManager');
-const config = require('../../src/config');
+const config = require('../../config');
 
 module.exports = {
     data: new SlashCommandBuilder()
