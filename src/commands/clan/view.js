@@ -10,16 +10,16 @@ module.exports = {
 
         if (specifiedRole) {
             clanToViewData = clanManager.getClanData(specifiedRole.id);
-            if (!clanToViewData) return interaction.reply({ content: `**${specifiedRole.name}** is not a registered clan.`, ephemeral: true });
+            if (!clanToViewData) return interaction.reply({ content: `**${specifiedRole.name}** is not a registered clan.`, flags: 64 });
             clanToViewRole = specifiedRole;
         } else {
-            if (!userClanData) return interaction.reply({ content: "You are not in a clan. Specify a clan role to view its details.", ephemeral: true });
+            if (!userClanData) return interaction.reply({ content: "You are not in a clan. Specify a clan role to view its details.", flags: 64 });
             clanToViewData = userClanData;
             clanToViewRole = await interaction.guild.roles.fetch(userClanData.clanRoleId).catch(() => null);
-            if (!clanToViewRole) return interaction.reply({ content: "Could not find your clan's Discord role.", ephemeral: true });
+            if (!clanToViewRole) return interaction.reply({ content: "Could not find your clan's Discord role.", flags: 64 });
         }
 
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64 });
 
         const { clanOwnerUserID, motto, viceGuildMasters = [], officers = [], members = [] } = clanToViewData;
         const embed = new EmbedBuilder().setColor(clanToViewRole.color || '#FFFFFF').setTitle(`${clanToViewRole.name}`).addFields(

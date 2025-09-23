@@ -37,7 +37,7 @@ module.exports = async (interaction) => {
 
     // --- MODALS (Process Data) ---
     if (interaction.isModalSubmit()) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64 });
         const action = interaction.customId.split('_')[3];
         const role = await parseRole(interaction.guild, interaction.fields.getTextInputValue('role_input'));
         if (!role) return interaction.editReply({ content: 'Error: Invalid Role provided.' });

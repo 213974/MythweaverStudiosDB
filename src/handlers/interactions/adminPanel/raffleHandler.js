@@ -30,7 +30,7 @@ module.exports = async (interaction) => {
 
     // --- MODALS (Process Data) ---
     if (interaction.isModalSubmit()) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64 });
         try {
             const title = interaction.fields.getTextInputValue('title_input');
             const durationStr = interaction.fields.getTextInputValue('duration_input');

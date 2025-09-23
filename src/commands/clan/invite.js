@@ -6,25 +6,25 @@ const { formatTimestamp } = require('../../../utils/timestampFormatter');
 module.exports = {
     async execute(interaction, userClanData, permissions) {
         if (!permissions.isOwner && !permissions.isVice) {
-            return interaction.reply({ content: 'Only Clan Owners or Vice Guild Masters can invite members.', ephemeral: true });
+            return interaction.reply({ content: 'Only Clan Owners or Vice Guild Masters can invite members.', flags: 64 });
         }
         if (!userClanData) { // Should not happen if permissions are true, but a good safeguard
-            return interaction.reply({ content: 'Could not find your clan data to send an invite.', ephemeral: true });
+            return interaction.reply({ content: 'Could not find your clan data to send an invite.', flags: 64 });
         }
 
         const targetUser = interaction.options.getUser('user');
         const newAuthority = interaction.options.getString('authority');
 
-        if (targetUser.bot) return interaction.reply({ content: "Bots cannot be invited to clans.", ephemeral: true });
-        if (targetUser.id === interaction.user.id) return interaction.reply({ content: "You cannot invite yourself.", ephemeral: true });
+        if (targetUser.bot) return interaction.reply({ content: "Bots cannot be invited to clans.", flags: 64 });
+        if (targetUser.id === interaction.user.id) return interaction.reply({ content: "You cannot invite yourself.", flags: 64 });
 
         if (newAuthority === 'Vice Guild Master' && !permissions.isOwner) {
-            return interaction.reply({ content: 'Only the Clan Owner can invite members directly as Vice Guild Master.', ephemeral: true });
+            return interaction.reply({ content: 'Only the Clan Owner can invite members directly as Vice Guild Master.', flags: 64 });
         }
 
         const targetUserAnyClan = clanManager.findClanContainingUser(targetUser.id);
         if (targetUserAnyClan) {
-            return interaction.reply({ content: `${targetUser.username} is already in another clan. They must leave first.`, ephemeral: true });
+            return interaction.reply({ content: `${targetUser.username} is already in another clan. They must leave first.`, flags: 64 });
         }
         
         const clanDiscordRole = await interaction.guild.roles.fetch(userClanData.clanRoleId);

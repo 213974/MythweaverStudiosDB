@@ -25,7 +25,7 @@ module.exports = {
                 const myInvite = existingInvites.find(inv => inv.inviter.id === user.id && inv.maxUses === 0 && inv.maxAge === 0);
 
                 if (myInvite) {
-                    return interaction.reply({ content: `Here is your permanent referral link: ${myInvite.url}`, ephemeral: true });
+                    return interaction.reply({ content: `Here is your permanent referral link: ${myInvite.url}`, flags: 64 });
                 }
 
                 // If no permanent invite exists, create one
@@ -36,11 +36,11 @@ module.exports = {
                     reason: `Referral link for ${user.tag}`
                 });
                 
-                await interaction.reply({ content: `Your new permanent referral link has been created: ${newInvite.url}`, ephemeral: true });
+                await interaction.reply({ content: `Your new permanent referral link has been created: ${newInvite.url}`, flags: 64 });
 
             } catch (error) {
                 console.error('Failed to create invite:', error);
-                await interaction.reply({ content: 'I could not create an invite link. Please check my permissions in this channel.', ephemeral: true });
+                await interaction.reply({ content: 'I could not create an invite link. Please check my permissions in this channel.', flags: 64 });
             }
         } else if (subcommand === 'view') {
             const referredUsers = db.prepare('SELECT user_id FROM users WHERE referred_by = ?').all(user.id);
@@ -57,7 +57,7 @@ module.exports = {
                 embed.setDescription(userMentions);
             }
 
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: 64 });
         }
     },
 };

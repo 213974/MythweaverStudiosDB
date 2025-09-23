@@ -22,7 +22,7 @@ module.exports = {
     async execute(interaction) {
         // Permission check
         if (interaction.user.id !== config.ownerID && !interaction.member.roles.cache.has(config.serverAdminRoleID)) {
-            return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+            return interaction.reply({ content: 'You do not have permission to use this command.', flags: 64 });
         }
 
         const section = interaction.options.getString('section');
@@ -41,6 +41,6 @@ module.exports = {
                 response = createMainDashboard();
         }
 
-        await interaction.reply({ ...response, ephemeral: true });
+        await interaction.reply({ ...response, flags: 64 });
     },
 };

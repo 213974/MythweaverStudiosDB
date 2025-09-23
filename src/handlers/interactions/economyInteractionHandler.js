@@ -13,7 +13,7 @@ module.exports = async (interaction) => {
     // --- Claim Buttons ---
     if (customId.startsWith('claim_daily_')) {
         if (interaction.user.id !== customId.split('_')[2]) {
-            return interaction.reply({ content: 'This is not for you!', ephemeral: true });
+            return interaction.reply({ content: 'This is not for you!', flags: 64 });
         }
 
         await interaction.update({ components: [] }); // Disable button immediately
@@ -26,7 +26,7 @@ module.exports = async (interaction) => {
             embed.setColor('#E74C3C').setTitle('Claim Failed').setDescription(result.message);
         }
         // Use followUp for the ephemeral message after the button is disabled
-        return interaction.followUp({ embeds: [embed], ephemeral: true });
+        return interaction.followUp({ embeds: [embed], flags: 64 });
     }
     // TODO: Add weekly claim button logic here if needed
 
@@ -61,10 +61,10 @@ module.exports = async (interaction) => {
             if (interaction.message.components.length > 0) {
                  await interaction.update({ content: 'This raffle has ended.', components: [] }).catch(() => {});
             }
-            return interaction.followUp({ content: 'Could not enter the raffle as it has already ended.', ephemeral: true });
+            return interaction.followUp({ content: 'Could not enter the raffle as it has already ended.', flags: 64 });
         }
 
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64 });
         const wallet = economyManager.getWallet(user.id);
 
         if (wallet.balance < raffle.ticket_cost) {

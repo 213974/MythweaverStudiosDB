@@ -4,15 +4,15 @@ const clanManager = require('../../../utils/clanManager');
 module.exports = {
     async execute(interaction, userClanData) {
         if (!userClanData) {
-            return interaction.reply({ content: "You are not in any clan.", ephemeral: true });
+            return interaction.reply({ content: "You are not in any clan.", flags: 64 });
         }
         if (userClanData.clanOwnerUserID === interaction.user.id) {
-            return interaction.reply({ content: "Clan Owners cannot leave their clan. You must transfer ownership or have the clan disbanded by an admin.", ephemeral: true });
+            return interaction.reply({ content: "Clan Owners cannot leave their clan. You must transfer ownership or have the clan disbanded by an admin.", flags: 64 });
         }
 
         const clanRole = await interaction.guild.roles.fetch(userClanData.clanRoleId).catch(() => null);
         if (!clanRole) {
-            return interaction.reply({ content: "Error: Your clan's Discord role could not be found.", ephemeral: true });
+            return interaction.reply({ content: "Error: Your clan's Discord role could not be found.", flags: 64 });
         }
 
         const leaveResult = clanManager.removeUserFromClan(userClanData.clanRoleId, interaction.user.id);
@@ -24,7 +24,7 @@ module.exports = {
             }
             return interaction.reply({ content: `You have successfully left **${clanRole.name}**.` });
         } else {
-            return interaction.reply({ content: `Failed to leave clan: ${leaveResult.message}`, ephemeral: true });
+            return interaction.reply({ content: `Failed to leave clan: ${leaveResult.message}`, flags: 64 });
         }
     }
 };

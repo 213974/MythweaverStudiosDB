@@ -1,7 +1,7 @@
 // src/utils/scheduler.js
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder } = require('discord.js');
 const db = require('./database');
-const { formatTimestamp } = require('./timestampFormatter');
+const { createAnalyticsEmbed } = require('./analyticsManager');
 
 // Function to shuffle an array (Fisher-Yates shuffle)
 function shuffle(array) {
@@ -19,63 +19,88 @@ async function checkEndedRaffles(client) {
     for (const raffle of endedRaffles) {
         console.log(`[Scheduler] Processing ended raffle ID: ${raffle.raffle_id}`);
         try {
-            // Get all entries for this raffle
             const entries = db.prepare('SELECT user_id FROM raffle_entries WHERE raffle_id = ?').all(raffle.raffle_id);
             const channel = await client.channels.fetch(raffle.channel_id).catch(() => null);
+
             if (!channel) {
-                db.prepare("UPDATE raffles SET status = 'ended', winner_id = 'Channel not found' WHERE raffle_id = ?").run(raffle.raffle_id);
-                continue; // Move to the next raffle
+                db.prepare("UPDATE raffles SET status = 'ended', winner_id = 'Error: Channel not found' WHERE raffle_id = ?").run(raffle.raffle_id);
+                continue;
             }
 
             let winners = [];
             let announcementDescription;
 
-            if (entries.length === 0) {
-                announcementDescription = 'The raffle has ended, but there were no entries. No winners were chosen.';
-            } else {
-                // Get a list of unique participants
+            if (entries.length > 0) {
                 const uniqueParticipants = [...new Set(entries.map(e => e.user_id))];
-                const shuffledParticipants = shuffle(uniqueParticipants);
-                // Select the winners
-                winners = shuffledParticipants.slice(0, raffle.num_winners);
-
+                winners = shuffle(uniqueParticipants).slice(0, raffle.num_winners);
                 const winnerMentions = winners.map(id => `<@${id}>`).join(', ');
                 announcementDescription = `The raffle for **${raffle.title}** has concluded! Congratulations to our winner(s):\n\n${winnerMentions}`;
+            } else {
+                announcementDescription = 'The raffle has ended, but there were no entries. No winners were chosen.';
             }
 
-            // Update the raffle in the database
             db.prepare("UPDATE raffles SET status = 'ended', winner_id = ? WHERE raffle_id = ?").run(winners.join(','), raffle.raffle_id);
-            
-            // Announce the results
+
             const announcementEmbed = new EmbedBuilder()
                 .setColor('#FFD700')
                 .setTitle(`🎉 Raffle Ended: ${raffle.title} 🎉`)
                 .setDescription(announcementDescription)
-                .addFields({ name: 'Total Entries', value: entries.length.toLocaleString(), inline: true })
+                .addFields({ name: 'Total Unique Participants', value: (new Set(entries.map(e => e.user_id))).size.toLocaleString(), inline: true })
+                .addFields({ name: 'Total Tickets', value: entries.length.toLocaleString(), inline: true })
                 .setTimestamp();
             
-            await channel.send({ content: winners.length > 0 ? winners.map(id => `<@${id}>`).join(' ') : '', embeds: [announcementEmbed] });
+            await channel.send({ content: winners.length > 0 ? winners.map(id => `<@${id}>`).join(' ') : ' ', embeds: [announcementEmbed] });
 
-            // Disable the button on the original message
             const originalMessage = await channel.messages.fetch(raffle.message_id).catch(() => null);
             if (originalMessage) {
                 const endedEmbed = EmbedBuilder.from(originalMessage.embeds[0]).setColor('#808080').addFields({ name: 'Status', value: 'This raffle has ended.'});
-                const disabledButton = ButtonBuilder.from(originalMessage.components[0].components[0]).setDisabled(true);
-                const disabledRow = new ActionRowBuilder().addComponents(disabledButton);
+                const disabledRow = ActionRowBuilder.from(originalMessage.components[0]).setComponents(ButtonBuilder.from(originalMessage.components[0].components[0]).setDisabled(true));
                 await originalMessage.edit({ embeds: [endedEmbed], components: [disabledRow] });
             }
-
         } catch (error) {
             console.error(`[Scheduler] Failed to process raffle ID ${raffle.raffle_id}:`, error);
         }
     }
 }
 
+async function updateAnalyticsDashboard(client) {
+    const channelId = db.prepare("SELECT value FROM settings WHERE key = 'analytics_channel_id'").get()?.value;
+    if (!channelId) return;
+
+    let messageId = db.prepare("SELECT value FROM settings WHERE key = 'analytics_message_id'").get()?.value;
+
+    try {
+        const channel = await client.channels.fetch(channelId);
+        const dashboardContent = createAnalyticsEmbed();
+        let message;
+
+        if (messageId) {
+            message = await channel.messages.fetch(messageId).catch(() => null);
+        }
+
+        if (message) {
+            await message.edit(dashboardContent);
+        } else {
+            const newMessage = await channel.send(dashboardContent);
+            db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('analytics_message_id', ?)").run(newMessage.id);
+        }
+    } catch (error) {
+        console.error(`[Scheduler] Failed to update analytics dashboard:`, error);
+        if (error.code === 10008) { // Unknown Message
+            db.prepare("DELETE FROM settings WHERE key = 'analytics_message_id'").run();
+        }
+    }
+}
+
 function startScheduler(client) {
-    console.log('[Scheduler] Raffle scheduler started. Checking every 60 seconds.');
-    // Run once on startup, then every 60 seconds
-    checkEndedRaffles(client);
-    setInterval(() => checkEndedRaffles(client), 60 * 1000);
+    console.log('[Scheduler] Starting background tasks...');
+    setTimeout(() => {
+        checkEndedRaffles(client);
+        updateAnalyticsDashboard(client);
+    }, 5000); // Initial run after 5 seconds to ensure client is fully ready
+
+    setInterval(() => checkEndedRaffles(client), 60 * 1000); // Check raffles every minute
+    setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000); // Update analytics every 5 minutes
 }
 
 module.exports = { startScheduler };

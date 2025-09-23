@@ -39,7 +39,7 @@ function createMainDashboard() {
                 value: 'admin_panel_raffles',
                 emoji: '🎟️',
             },
-             {
+            {
                 label: 'Bot Utilities',
                 description: 'Reload commands or perform other bot actions.',
                 value: 'admin_panel_utils',
@@ -52,4 +52,4 @@ function createMainDashboard() {
     return { embeds: [embed], components: [row] };
 }
 
-module.exports = { createMainDashboard };
+module.exports = { createMainDashboard, createAdminDashboardComponents: createMainDashboard }; // Alias for compatibility with ready.js

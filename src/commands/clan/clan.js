@@ -30,14 +30,14 @@ module.exports = {
 
     async execute(interaction) {
         if (!interaction.inGuild()) {
-            return interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+            return interaction.reply({ content: 'This command can only be used in a server.', flags: 64 });
         }
         
         const subcommandName = interaction.options.getSubcommand();
         const subcommand = subcommands.get(subcommandName);
 
         if (!subcommand) {
-            return interaction.reply({ content: 'Error: Invalid subcommand.', ephemeral: true });
+            return interaction.reply({ content: 'Error: Invalid subcommand.', flags: 64 });
         }
 
         try {
@@ -52,7 +52,7 @@ module.exports = {
             await subcommand.execute(interaction, userClanData, permissions);
         } catch (error) {
             console.error(`Error executing clan subcommand '${subcommandName}':`, error);
-            await interaction.reply({ content: 'An error occurred while executing this clan command.', ephemeral: true });
+            await interaction.reply({ content: 'An error occurred while executing this clan command.', flags: 64 });
         }
     },
 };

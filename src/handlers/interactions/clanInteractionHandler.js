@@ -20,9 +20,9 @@ module.exports = async (interaction) => {
         const actingUserClan = clanManager.findClanContainingUser(user.id);
 
         if (selection === 'dashboard_view') {
-            if (!actingUserClan) return interaction.reply({ content: "You are not in a clan to view. Use `/clan view <role>` to view a specific one.", ephemeral: true });
+            if (!actingUserClan) return interaction.reply({ content: "You are not in a clan to view. Use `/clan view <role>` to view a specific one.", flags: 64 });
             const clanToViewRole = await guild.roles.fetch(actingUserClan.clanRoleId).catch(() => null);
-            if (!clanToViewRole) return interaction.reply({ content: "Could not find your clan's Discord role. Contact an admin.", ephemeral: true });
+            if (!clanToViewRole) return interaction.reply({ content: "Could not find your clan's Discord role. Contact an admin.", flags: 64 });
 
             const { clanOwnerUserID, motto, viceGuildMasters = [], officers = [], members = [] } = actingUserClan;
             const embed = new EmbedBuilder().setColor(clanToViewRole.color || '#FFFFFF').setTitle(`${clanToViewRole.name}`).addFields(
@@ -32,24 +32,24 @@ module.exports = async (interaction) => {
                 { name: `👥 Members (${members.length}/${clanManager.MAX_MEMBERS})`, value: members.length > 0 ? members.slice(0, 40).map(id => `<@${id}>`).join(', ') : 'None' }
             ).setTimestamp().setFooter({ text: `Clan Role ID: ${clanToViewRole.id}` });
             if (motto) embed.setDescription(`*“${motto}”*`);
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         }
 
         if (selection === 'dashboard_leave') {
-            if (!actingUserClan) return interaction.reply({ content: "You are not in a clan.", ephemeral: true });
-            if (actingUserClan.clanOwnerUserID === user.id) return interaction.reply({ content: "Clan Owners cannot leave their clan.", ephemeral: true });
+            if (!actingUserClan) return interaction.reply({ content: "You are not in a clan.", flags: 64 });
+            if (actingUserClan.clanOwnerUserID === user.id) return interaction.reply({ content: "Clan Owners cannot leave their clan.", flags: 64 });
             
             const clanRole = await guild.roles.fetch(actingUserClan.clanRoleId).catch(() => null);
             const leaveResult = clanManager.removeUserFromClan(actingUserClan.clanRoleId, user.id);
             if (leaveResult.success) {
                 const member = await guild.members.fetch(user.id).catch(() => null);
                 if (member && clanRole) await member.roles.remove(clanRole).catch(() => {});
-                return interaction.reply({ content: `You have successfully left **${clanRole.name}**.`, ephemeral: true });
+                return interaction.reply({ content: `You have successfully left **${clanRole.name}**.`, flags: 64 });
             }
         }
 
         // Actions requiring clan membership
-        if (!actingUserClan) return interaction.reply({ content: 'You must be in a clan to use this action.', ephemeral: true });
+        if (!actingUserClan) return interaction.reply({ content: 'You must be in a clan to use this action.', flags: 64 });
 
         const actorIsOwner = actingUserClan.clanOwnerUserID === user.id;
         const actorIsVice = (actingUserClan.viceGuildMasters || []).includes(user.id);
@@ -57,7 +57,7 @@ module.exports = async (interaction) => {
         if (selection === 'dashboard_invite' || selection === 'dashboard_authority' || selection === 'dashboard_kick' || selection === 'dashboard_motto') {
             let modal;
             if (selection === 'dashboard_invite') {
-                if (!actorIsOwner && !actorIsVice) return interaction.reply({ content: 'You do not have permission to invite members.', ephemeral: true });
+                if (!actorIsOwner && !actorIsVice) return interaction.reply({ content: 'You do not have permission to invite members.', flags: 64 });
                 modal = new ModalBuilder().setCustomId('dashboard_invite_modal').setTitle('Invite Member to Clan');
                 modal.addComponents(
                     new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('user_input').setLabel('User ID or @Mention').setStyle(TextInputStyle.Short).setRequired(true)),
@@ -84,7 +84,7 @@ module.exports = async (interaction) => {
             const clanRoleId = parts[2];
             const invitedUserId = parts[3];
 
-            if (interaction.user.id !== invitedUserId) return interaction.followUp({ content: "This invitation is not for you.", ephemeral: true });
+            if (interaction.user.id !== invitedUserId) return interaction.followUp({ content: "This invitation is not for you.", flags: 64 });
 
             const clanDiscordRole = await interaction.guild.roles.fetch(clanRoleId).catch(() => null);
             const updatedEmbed = EmbedBuilder.from(originalMessage.embeds[0]);
@@ -107,7 +107,7 @@ module.exports = async (interaction) => {
         if (customId.startsWith('dashboard_')) {
             // Handle modals for invite, kick, motto, etc.
             // This logic is ported from the old modalSubmitHandler.
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: 64 });
             // ... (Full implementation of modal logic would go here)
             await interaction.editReply({ content: 'Clan action processed.' });
         }

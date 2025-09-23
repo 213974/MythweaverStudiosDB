@@ -22,7 +22,7 @@ module.exports = async (interaction) => {
     }
 
     if (interaction.isModalSubmit()) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64 });
         const action = interaction.customId.split('_')[3];
         const targetMember = await parseUser(interaction.guild, interaction.fields.getTextInputValue('user_input'));
         const amount = parseInt(interaction.fields.getTextInputValue('amount_input').replace(/,/g, ''), 10);
