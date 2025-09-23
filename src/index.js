@@ -2,10 +2,11 @@
 require('dotenv').config();
 
 const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js');
-const path = require('node:path');
+// const path = require('node:path');
 const config = require('./config');
 console.log('[index.js] Loaded config:', JSON.stringify(config));
 const loadEvents = require('./handlers/eventHandler');
+const { startScheduler } = require('./utils/scheduler');
 
 const client = new Client({
     intents: [
@@ -23,6 +24,9 @@ client.commands = new Collection(); // Initialize commands collection
 client.cooldowns = new Collection(); // For user-based cooldowns on interactions
 
 loadEvents(client, config); // This loads event files like ready.js, messageCreate.js etc.
+
+// Start the background task scheduler
+startScheduler(client);
 
 const token = process.env.DISCORD_TOKEN;
 if (!token) {

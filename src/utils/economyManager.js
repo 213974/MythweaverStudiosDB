@@ -53,7 +53,7 @@ module.exports = {
 
         ensureClanWallet(clanId, currency);
         const transaction = db.transaction(() => {
-            db.prepare('UPDATE wallets SET balance = balance - ? WHERE user_id = ? AND currency = ?').run(amount, userId, currency);
+            db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND currency = ?').run(WEEKLY_REWARD, userId, DEFAULT_CURRENCY);
             db.prepare('UPDATE clan_wallets SET balance = balance + ? WHERE clan_id = ? AND currency = ?').run(amount, clanId, currency);
         });
         transaction();
