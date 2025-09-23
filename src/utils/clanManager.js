@@ -6,9 +6,7 @@ const MAX_OFFICERS = 8;
 const MAX_VICE_GUILD_MASTERS = 4;
 
 module.exports = {
-    MAX_MEMBERS,
-    MAX_OFFICERS,
-    MAX_VICE_GUILD_MASTERS,
+    MAX_MEMBERS, MAX_OFFICERS, MAX_VICE_GUILD_MASTERS,
 
     getClanData: (guildId, clanRoleId) => {
         const clan = db.prepare('SELECT * FROM clans WHERE guild_id = ? AND clan_id = ?').get(guildId, clanRoleId);

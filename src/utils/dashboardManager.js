@@ -60,14 +60,11 @@ function createDashboardComponents() {
     return new ActionRowBuilder().addComponents(selectMenu);
 }
 
-async function sendOrUpdateDashboard(client) {
-    const channelId = db.prepare('SELECT value FROM settings WHERE key = ?').get('dashboard_channel_id')?.value;
-    let messageId = db.prepare('SELECT value FROM settings WHERE key = ?').get('dashboard_message_id')?.value;
-
-    if (!channelId) {
-        console.log('[Dashboard] No dashboard channel set. Skipping update.');
-        return;
-    }
+async function sendOrUpdateDashboard(client, guildId) {
+    const channelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'dashboard_channel_id'").get(guildId)?.value;
+    if (!channelId) return;
+    
+    let messageId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'dashboard_message_id'").get(guildId)?.value;
 
     const channel = await client.channels.fetch(channelId).catch(() => null);
     if (!channel) {

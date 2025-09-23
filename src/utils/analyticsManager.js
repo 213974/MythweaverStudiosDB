@@ -9,18 +9,15 @@ const GIFS = [
     'https://i.pinimg.com/originals/56/34/9f/56349f764173af321a640f6e1bac22fd.gif'
 ];
 
-function getAnalyticsData() {
-    const solyxData = db.prepare('SELECT SUM(balance) as total FROM wallets').get();
-    const clanData = db.prepare('SELECT COUNT(*) as total FROM clans').get();
-
-    return {
-        totalSolyx: solyxData.total || 0,
-        totalClans: clanData.total || 0,
-    };
+function getAnalyticsData(guildId) {
+    const solyxData = db.prepare('SELECT SUM(balance) as total FROM wallets WHERE guild_id = ?').get(guildId);
+    const clanData = db.prepare('SELECT COUNT(*) as total FROM clans WHERE guild_id = ?').get(guildId);
+    return { totalSolyx: solyxData.total || 0, totalClans: clanData.total || 0 };
 }
 
+
 function createAnalyticsEmbed() {
-    const data = getAnalyticsData();
+    const data = getAnalyticsData(guildId);
     const randomGif = GIFS[Math.floor(Math.random() * GIFS.length)];
     const timestamp = Math.floor(Date.now() / 1000);
 

@@ -13,7 +13,7 @@ module.exports = {
     async execute(interaction) {
         const targetUser = interaction.options.getUser('user') || interaction.user;
 
-        const wallet = economyManager.getWallet(targetUser.id);
+        const wallet = economyManager.getWallet(targetUser.id, interaction.guild.id);
 
         const embed = new EmbedBuilder()
             .setColor('#3498DB')
