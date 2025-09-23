@@ -1,7 +1,7 @@
 ﻿// commands/economy/daily.js
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
-const economyManager = require('../../utils/economyManager');
-const { formatTimestamp } = require('../../utils/timestampFormatter');
+const economyManager = require('../utils/economyManager');
+const { formatTimestamp } = require('../utils/timestampFormatter');
 const { getDay } = require('date-fns');
 
 module.exports = {

@@ -1,6 +1,6 @@
 ﻿// commands/economy/donate.js
 const { SlashCommandBuilder } = require('discord.js');
-const economyManager = require('../../utils/economyManager');
+const economyManager = require('../utils/economyManager');
 
 module.exports = {
     data: new SlashCommandBuilder()

@@ -1,6 +1,6 @@
 ﻿// commands/economy/buy.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const economyManager = require('../../utils/economyManager');
+const economyManager = require('../utils/economyManager');
 
 module.exports = {
     data: new SlashCommandBuilder()
