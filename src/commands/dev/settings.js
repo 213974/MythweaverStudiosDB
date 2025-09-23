@@ -11,7 +11,7 @@ module.exports = {
     async execute(interaction) {
         if (interaction.user.id !== config.ownerID) {
             return interaction.reply({
-                content: 'Only Solo has access to this command. `:D`, soon to be Choshen as well.',
+                content: 'Access Denied. This command can only be executed by the Bot Owner specified in the configuration file.',
                 flags: 64
             });
         }
@@ -19,19 +19,22 @@ module.exports = {
         const adminRoleId = db.prepare("SELECT value FROM settings WHERE key = 'admin_role_id'").get()?.value;
         const analyticsChannelId = db.prepare("SELECT value FROM settings WHERE key = 'analytics_channel_id'").get()?.value;
         const clanDashChannelId = db.prepare("SELECT value FROM settings WHERE key = 'dashboard_channel_id'").get()?.value;
+        const raffleRoleId = db.prepare("SELECT value FROM settings WHERE key = 'raffle_creator_role_id'").get()?.value; // New
 
         const embed = new EmbedBuilder()
             .setColor('#FFD700')
             .setTitle('🛠️ Bot Core Settings 🛠️')
-            .setDescription('Manage essential bot variables. This interface is only available to I, Solo.')
+            .setDescription('Manage essential bot variables. This interface is only available to the Bot Owner.')
             .addFields(
                 { name: 'Admin Role', value: adminRoleId ? `<@&${adminRoleId}>` : '`Not Set`' },
+                { name: 'Raffle Creator Role', value: raffleRoleId ? `<@&${raffleRoleId}>` : '`Not Set`' }, // New
                 { name: 'Analytics Dashboard', value: analyticsChannelId ? `<#${analyticsChannelId}>` : '`Not Set`' },
                 { name: 'Clan Dashboard', value: clanDashChannelId ? `<#${clanDashChannelId}>` : '`Not Set`' }
             );
 
         const row1 = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('settings_set_admin_role').setLabel('Set Admin Role').setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId('settings_set_raffle_role').setLabel('Set Raffle Role').setStyle(ButtonStyle.Primary), // New
             new ButtonBuilder().setCustomId('settings_set_analytics_channel').setLabel('Set Analytics Channel').setStyle(ButtonStyle.Secondary)
         );
         

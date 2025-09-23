@@ -9,7 +9,8 @@ module.exports = {
         .setName('daily')
         .setDescription('Claim your daily reward.'),
     async execute(interaction) {
-        const { canClaim, weekly_claim_state, nextClaim } = economyManager.getDailyStatus(interaction.user.id);
+        const guildid = interaction.guild.id;
+        const { canClaim, weekly_claim_state, nextClaim } = economyManager.getDailyStatus(interaction.user.id, guildid);
         const user = interaction.user;
 
         const embed = new EmbedBuilder()

@@ -42,6 +42,7 @@ module.exports = {
 
         try {
             // Pre-fetch user's clan data and permissions to avoid redundant calls in sub-handlers
+            const guildid = interaction.guild.id;
             const userClanData = clanManager.findClanContainingUser(interaction.user.id);
             const permissions = {
                 isOwner: userClanData ? userClanData.clanOwnerUserID === interaction.user.id : false,
@@ -49,7 +50,7 @@ module.exports = {
                 isOfficer: userClanData ? (userClanData.officers || []).includes(interaction.user.id) : false,
             };
 
-            await subcommand.execute(interaction, userClanData, permissions);
+            await subcommand.execute(interaction, guildid, userClanData, permissions);
         } catch (error) {
             console.error(`Error executing clan subcommand '${subcommandName}':`, error);
             await interaction.reply({ content: 'An error occurred while executing this clan command.', flags: 64 });

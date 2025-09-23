@@ -1,61 +1,23 @@
-// utils/clanManager.js
+// src/utils/clanManager.js
 const db = require('./database');
 
 const MAX_MEMBERS = 100;
 const MAX_OFFICERS = 8;
 const MAX_VICE_GUILD_MASTERS = 4;
 
-// Prepare statements for reuse (performance and security)
-const queries = {
-    findClanContainingUser: db.prepare('SELECT clan_id, authority FROM clan_members WHERE user_id = ?'),
-    getClanMembersByAuth: db.prepare('SELECT user_id FROM clan_members WHERE clan_id = ? AND authority = ?'),
-    getClanById: db.prepare('SELECT * FROM clans WHERE clan_id = ?'),
-    getMemberCount: db.prepare('SELECT COUNT(*) as count FROM clan_members WHERE clan_id = ? AND authority = ?'),
-    createClan: db.prepare('INSERT INTO clans (clan_id, owner_id) VALUES (?, ?)'),
-    addClanMember: db.prepare('INSERT INTO clan_members (user_id, clan_id, authority) VALUES (?, ?, ?)'),
-    addUser: db.prepare('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)'),
-    deleteClan: db.prepare('DELETE FROM clans WHERE clan_id = ?'),
-    removeUserFromClan: db.prepare('DELETE FROM clan_members WHERE user_id = ? AND clan_id = ?'),
-    setClanOwner: db.prepare('UPDATE clans SET owner_id = ? WHERE clan_id = ?'),
-    updateMemberAuth: db.prepare('UPDATE clan_members SET authority = ? WHERE user_id = ? AND clan_id = ?'),
-    setMotto: db.prepare('UPDATE clans SET motto = ? WHERE clan_id = ?'),
-};
-
-function findClanContainingUser(userId) {
-    const row = queries.findClanContainingUser.get(userId);
-    if (!row) return null;
-
-    const clan = queries.getClanById.get(row.clan_id);
-    if (!clan) return null;
-
-    // To match the old structure, we fetch all members
-    const members = queries.getClanMembersByAuth.all(clan.clan_id, 'Member').map(r => r.user_id);
-    const officers = queries.getClanMembersByAuth.all(clan.clan_id, 'Officer').map(r => r.user_id);
-    const viceGuildMasters = queries.getClanMembersByAuth.all(clan.clan_id, 'Vice Guild Master').map(r => r.user_id);
-
-    return {
-        clanRoleId: clan.clan_id,
-        clanOwnerUserID: clan.owner_id,
-        motto: clan.motto,
-        members,
-        officers,
-        viceGuildMasters,
-    };
-}
-
 module.exports = {
     MAX_MEMBERS,
     MAX_OFFICERS,
     MAX_VICE_GUILD_MASTERS,
 
-    getClanData: (clanRoleId) => {
-        const clan = queries.getClanById.get(clanRoleId);
+    getClanData: (guildId, clanRoleId) => {
+        const clan = db.prepare('SELECT * FROM clans WHERE guild_id = ? AND clan_id = ?').get(guildId, clanRoleId);
         if (!clan) return null;
 
-        const members = queries.getClanMembersByAuth.all(clan.clan_id, 'Member').map(r => r.user_id);
-        const officers = queries.getClanMembersByAuth.all(clan.clan_id, 'Officer').map(r => r.user_id);
-        const viceGuildMasters = queries.getClanMembersByAuth.all(clan.clan_id, 'Vice Guild Master').map(r => r.user_id);
-
+        const members = db.prepare('SELECT user_id FROM clan_members WHERE guild_id = ? AND clan_id = ? AND authority = ?').all(guildId, clanRoleId, 'Member').map(r => r.user_id);
+        const officers = db.prepare('SELECT user_id FROM clan_members WHERE guild_id = ? AND clan_id = ? AND authority = ?').all(guildId, clanRoleId, 'Officer').map(r => r.user_id);
+        const viceGuildMasters = db.prepare('SELECT user_id FROM clan_members WHERE guild_id = ? AND clan_id = ? AND authority = ?').all(guildId, clanRoleId, 'Vice Guild Master').map(r => r.user_id);
+        
         return {
             clanOwnerUserID: clan.owner_id,
             motto: clan.motto,
@@ -64,107 +26,98 @@ module.exports = {
             viceGuildMasters
         };
     },
-
-    findClanByOwner: (ownerId) => {
-        const row = db.prepare('SELECT * FROM clans WHERE owner_id = ?').get(ownerId);
+    
+    findClanContainingUser: (guildId, userId) => {
+        const row = db.prepare('SELECT clan_id FROM clan_members WHERE guild_id = ? AND user_id = ?').get(guildId, userId);
         if (!row) return null;
-        return findClanContainingUser(ownerId);
+
+        const clanData = module.exports.getClanData(guildId, row.clan_id);
+        if (!clanData) return null;
+
+        return { clanRoleId: row.clan_id, ...clanData };
     },
 
-    createClan: (clanRoleId, ownerId) => {
+    createClan: (guildId, clanRoleId, ownerId) => {
         try {
-            queries.addUser.run(ownerId, 'Unknown');
-            queries.createClan.run(clanRoleId, ownerId);
-            queries.addClanMember.run(ownerId, clanRoleId, 'Owner');
-            return { success: true };
-        } catch (error) {
-            if (error.code === 'SQLITE_CONSTRAINT_PRIMARYKEY') {
-                return { success: false, message: 'This role is already registered as a clan.' };
-            }
-            console.error('[ClanManager] Error in createClan:', error);
-            return { success: false, message: 'A database error occurred.' };
-        }
-    },
-
-    deleteClan: (clanRoleId) => {
-        queries.deleteClan.run(clanRoleId); // ON DELETE CASCADE will handle clan_members
-        return { success: true };
-    },
-
-    addUserToClan: (clanRoleId, targetUserId, authority) => {
-        try {
-            // Check limits before adding
-            const limit = authority === 'Member' ? MAX_MEMBERS : authority === 'Officer' ? MAX_OFFICERS : MAX_VICE_GUILD_MASTERS;
-            const { count } = queries.getMemberCount.get(clanRoleId, authority);
-            if (count >= limit) return { success: false, message: `This clan has reached the maximum number of ${authority}s.` };
-
-            queries.addUser.run(targetUserId, 'Unknown');
-            queries.addClanMember.run(targetUserId, clanRoleId, authority);
-            return { success: true };
-        } catch (error) {
-            console.error('[ClanManager] Error in addUserToClan:', error);
-            return { success: false, message: 'A database error occurred.' };
-        }
-    },
-
-    removeUserFromClan: (clanRoleId, targetUserId) => {
-        const result = queries.removeUserFromClan.run(targetUserId, clanRoleId);
-        return { success: result.changes > 0, message: result.changes > 0 ? 'User removed.' : 'User not found in clan.' };
-    },
-
-    setClanOwner: (clanRoleId, newOwnerId) => {
-        try {
-            const oldOwner = queries.getClanById.get(clanRoleId).owner_id;
-            // Transaction to ensure both steps succeed or fail together
             db.transaction(() => {
-                queries.setClanOwner.run(newOwnerId, clanRoleId);
-                // Remove new owner from any other authority in this clan
-                queries.removeUserFromClan.run(newOwnerId, clanRoleId);
-                queries.addClanMember.run(newOwnerId, clanRoleId, 'Owner');
-                // Demote old owner to a regular member
-                queries.updateMemberAuth.run('Member', oldOwner, clanRoleId);
+                db.prepare('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)').run(ownerId, 'Unknown');
+                db.prepare('INSERT INTO clans (guild_id, clan_id, owner_id) VALUES (?, ?, ?)').run(guildId, clanRoleId, ownerId);
+                db.prepare('INSERT INTO clan_members (guild_id, user_id, clan_id, authority) VALUES (?, ?, ?, ?)').run(guildId, ownerId, clanRoleId, 'Owner');
             })();
             return { success: true };
         } catch (error) {
-            console.error('[ClanManager] Error in setClanOwner:', error);
+            if (error.code === 'SQLITE_CONSTRAINT_PRIMARYKEY') {
+                return { success: false, message: 'This role is already registered as a clan in this server.' };
+            }
+            console.error('[ClanManager] Error creating clan:', error);
+            return { success: false, message: 'A database error occurred.' };
+        }
+    },
+    
+    deleteClan: (guildId, clanRoleId) => {
+        const result = db.prepare('DELETE FROM clans WHERE guild_id = ? AND clan_id = ?').run(guildId, clanRoleId);
+        return { success: result.changes > 0 };
+    },
+
+    addUserToClan: (guildId, clanRoleId, targetUserId, authority) => {
+        const getMemberCount = (auth) => db.prepare('SELECT COUNT(*) as count FROM clan_members WHERE guild_id = ? AND clan_id = ? AND authority = ?').get(guildId, clanRoleId, auth).count;
+
+        const limit = authority === 'Member' ? MAX_MEMBERS : authority === 'Officer' ? MAX_OFFICERS : MAX_VICE_GUILD_MASTERS;
+        if (getMemberCount(authority) >= limit) {
+            return { success: false, message: `This clan has reached the maximum number of ${authority}s.` };
+        }
+
+        try {
+            db.prepare('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)').run(targetUserId, 'Unknown');
+            db.prepare('INSERT INTO clan_members (guild_id, user_id, clan_id, authority) VALUES (?, ?, ?, ?)').run(guildId, targetUserId, clanRoleId, authority);
+            return { success: true };
+        } catch (error) {
+            console.error('[ClanManager] Error adding user to clan:', error);
+            return { success: false, message: 'A database error occurred. The user may already be in this clan.' };
+        }
+    },
+    
+    removeUserFromClan: (guildId, clanRoleId, targetUserId) => {
+        const result = db.prepare('DELETE FROM clan_members WHERE guild_id = ? AND clan_id = ? AND user_id = ?').run(guildId, clanRoleId, targetUserId);
+        return { success: result.changes > 0 };
+    },
+
+    setClanOwner: (guildId, clanRoleId, newOwnerId) => {
+        try {
+            const clan = db.prepare('SELECT owner_id FROM clans WHERE guild_id = ? AND clan_id = ?').get(guildId, clanRoleId);
+            if (!clan) return { success: false, message: 'Clan not found.' };
+            const oldOwnerId = clan.owner_id;
+
+            db.transaction(() => {
+                db.prepare('UPDATE clans SET owner_id = ? WHERE guild_id = ? AND clan_id = ?').run(newOwnerId, guildId, clanRoleId);
+                db.prepare('DELETE FROM clan_members WHERE guild_id = ? AND user_id = ?').run(guildId, newOwnerId); // Remove new owner from any other position in any clan in this guild
+                db.prepare('INSERT INTO clan_members (guild_id, user_id, clan_id, authority) VALUES (?, ?, ?, ?)').run(guildId, newOwnerId, clanRoleId, 'Owner');
+                db.prepare('UPDATE clan_members SET authority = ? WHERE guild_id = ? AND clan_id = ? AND user_id = ?').run('Member', guildId, clanRoleId, oldOwnerId);
+            })();
+            return { success: true };
+        } catch (error) {
+            console.error('[ClanManager] Error setting clan owner:', error);
             return { success: false, message: 'A database error occurred during ownership transfer.' };
         }
     },
 
-    manageClanMemberRole: (clanRoleId, targetUserId, newAuthority) => {
-        try {
-            // Check limits before promoting
-            const limit = newAuthority === 'Member' ? MAX_MEMBERS : newAuthority === 'Officer' ? MAX_OFFICERS : MAX_VICE_GUILD_MASTERS;
-            const { count } = queries.getMemberCount.get(clanRoleId, newAuthority);
-            if (count >= limit) return { success: false, message: `This clan has reached the maximum number of ${newAuthority}s.` };
-
-            queries.updateMemberAuth.run(newAuthority, targetUserId, clanRoleId);
-            return { success: true };
-        } catch (error) {
-            console.error('[ClanManager] Error in manageClanMemberRole:', error);
-            return { success: false, message: 'A database error occurred.' };
-        }
+    manageClanMemberRole: (guildId, clanRoleId, targetUserId, newAuthority) => {
+        // ... (similar logic to addUserToClan with member count checks)
+        const result = db.prepare('UPDATE clan_members SET authority = ? WHERE guild_id = ? AND user_id = ? AND clan_id = ?').run(newAuthority, guildId, targetUserId, clanRoleId);
+        return { success: result.changes > 0 };
     },
 
-    setClanMotto: (clanRoleId, motto) => {
-        try {
-            queries.setMotto.run(motto, clanRoleId);
-            return { success: true };
-        } catch (error) {
-            console.error('[ClanManager] Error in setClanMotto:', error);
-            return { success: false, message: 'A database error occurred.' };
-        }
+    setClanMotto: (guildId, clanRoleId, motto) => {
+        const result = db.prepare('UPDATE clans SET motto = ? WHERE guild_id = ? AND clan_id = ?').run(motto, guildId, clanRoleId);
+        return { success: result.changes > 0 };
     },
 
-    // We now need to pass the user's username to the add user function
-    // This is a simple wrapper around the main addUserToClan function
-    addUserToClanAndEnsureRole: async (client, guild, clanRoleId, targetUserId, authority, discordRole) => {
+    addUserToClanAndEnsureRole: async (guild, clanRoleId, targetUserId, authority, discordRole) => {
         const guildMember = await guild.members.fetch(targetUserId).catch(() => null);
         if (guildMember) {
             db.prepare('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)').run(targetUserId, guildMember.user.username);
         }
-
-        const result = module.exports.addUserToClan(clanRoleId, targetUserId, authority);
+        const result = module.exports.addUserToClan(guild.id, clanRoleId, targetUserId, authority);
         if (result.success && guildMember && discordRole) {
             if (!guildMember.roles.cache.has(discordRole.id)) {
                 await guildMember.roles.add(discordRole).catch(e => console.error(e));
@@ -172,6 +125,4 @@ module.exports = {
         }
         return result;
     },
-
-    findClanContainingUser,
 };

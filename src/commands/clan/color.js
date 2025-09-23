@@ -6,24 +6,29 @@ function isValidHexColor(hex) {
 }
 
 module.exports = {
-    async execute(interaction, userClanData, permissions) {
+    async execute(interaction, guildId, userClanData, permissions) {
         if (!permissions.isOwner) {
-            return interaction.reply({ content: 'Only the Clan Owner can change the clan role color.', flags: 64 });
+            return interaction.reply({ content: 'Only the Clan Owner can change the clan role color.', ephemeral: true });
         }
         
         const hexColorInput = interaction.options.getString('hexcolor');
         if (!isValidHexColor(hexColorInput)) {
-            return interaction.reply({ content: `Invalid hex color: \`${hexColorInput}\`. Please use the #RRGGBB format.`, flags: 64 });
+            return interaction.reply({ content: `Invalid hex color: \`${hexColorInput}\`. Please use the #RRGGBB format.`, ephemeral: true });
         }
         
         try {
             const clanDiscordRole = await interaction.guild.roles.fetch(userClanData.clanRoleId);
             await clanDiscordRole.setColor(hexColorInput);
-            const embed = new EmbedBuilder().setColor(hexColorInput).setTitle('🎨 Clan Role Color Updated!').setDescription(`Color for **${clanDiscordRole.name}** changed to **${hexColorInput}**.`);
+
+            const embed = new EmbedBuilder()
+                .setColor(hexColorInput)
+                .setTitle('🎨 Clan Role Color Updated! 🎨')
+                .setDescription(`Color for **${clanDiscordRole.name}** has been changed to **${hexColorInput}**.`);
             await interaction.reply({ embeds: [embed] });
+
         } catch (error) {
             console.error(`[Clan Color] Failed to change color:`, error);
-            await interaction.reply({ content: `An error occurred. I might lack permission to manage the role.`, flags: 64 });
+            await interaction.reply({ content: `An error occurred. I might lack the permission or be lower in the role hierarchy than the clan role.`, ephemeral: true });
         }
     }
 };

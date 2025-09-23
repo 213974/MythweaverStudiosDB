@@ -3,20 +3,25 @@ const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, Channe
 const config = require('../../config');
 const db = require('../../utils/database');
 const { parseRole } = require('../../utils/interactionHelpers');
-const { sendOrUpdateDashboard } = require('../../utils/dashboardManager'); // Restored import
+const { sendOrUpdateDashboard } = require('../../utils/dashboardManager');
 
 module.exports = async (interaction) => {
     if (interaction.user.id !== config.ownerID) {
         return interaction.reply({ content: 'You do not have permission to use this component.', flags: 64 });
     }
 
+    const guildId = interaction.guild.id;
+
     if (interaction.isButton()) {
         const customId = interaction.customId;
         let modal;
 
         if (customId === 'settings_set_admin_role') {
-            modal = new ModalBuilder().setCustomId('settings_modal_admin_role').setTitle('Set Administrator Role');
+            modal = new ModalBuilder().setCustomId('settings_modal_admin_role').setTitle('Set Admin Role');
             modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('role_id_input').setLabel("Admin Role ID or @Mention").setStyle(TextInputStyle.Short).setRequired(true)));
+        } else if (customId === 'settings_set_raffle_role') {
+            modal = new ModalBuilder().setCustomId('settings_modal_raffle_role').setTitle('Set Raffle Creator Role');
+            modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('role_id_input').setLabel("Raffle Creator Role ID or @Mention").setStyle(TextInputStyle.Short).setRequired(true)));
         } else if (customId === 'settings_set_analytics_channel') {
             modal = new ModalBuilder().setCustomId('settings_modal_analytics_channel').setTitle('Set Analytics Channel');
             modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('channel_id_input').setLabel("Analytics Channel ID").setStyle(TextInputStyle.Short).setRequired(true)));
@@ -30,27 +35,32 @@ module.exports = async (interaction) => {
     if (interaction.isModalSubmit()) {
         await interaction.deferReply({ flags: 64 });
         const customId = interaction.customId;
-        const channelInput = interaction.fields.getTextInputValue('channel_id_input');
-        const channelId = channelInput?.match(/\d{17,19}/)?.[0];
 
         if (customId === 'settings_modal_admin_role') {
             const role = await parseRole(interaction.guild, interaction.fields.getTextInputValue('role_id_input'));
             if (!role) return interaction.editReply({ content: 'Invalid Role ID.' });
-            db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('admin_role_id', ?)").run(role.id);
-            await interaction.editReply({ content: `✅ **Admin Role** set to ${role}.` });
+            db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'admin_role_id', ?)").run(guildId, role.id);
+            await interaction.editReply({ content: `✅ **Admin Role** set to ${role} for this server.` });
+        } else if (customId === 'settings_modal_raffle_role') {
+            const role = await parseRole(interaction.guild, interaction.fields.getTextInputValue('role_id_input'));
+            if (!role) return interaction.editReply({ content: 'Invalid Role ID.' });
+            db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'raffle_creator_role_id', ?)").run(guildId, role.id);
+            await interaction.editReply({ content: `✅ **Raffle Creator Role** set to ${role} for this server.` });
         } else if (customId === 'settings_modal_analytics_channel') {
+            const channelId = interaction.fields.getTextInputValue('channel_id_input').match(/\d{17,19}/)?.[0];
             const channel = channelId ? await interaction.guild.channels.fetch(channelId).catch(() => null) : null;
             if (!channel || channel.type !== ChannelType.GuildText) return interaction.editReply({ content: 'Invalid Text Channel ID.' });
-            db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('analytics_channel_id', ?)").run(channel.id);
-            db.prepare("DELETE FROM settings WHERE key = 'analytics_message_id'").run();
-            await interaction.editReply({ content: `✅ **Analytics Channel** set to ${channel}.` });
+            db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'analytics_channel_id', ?)").run(guildId, channel.id);
+            db.prepare("DELETE FROM settings WHERE guild_id = ? AND key = 'analytics_message_id'").run(guildId);
+            await interaction.editReply({ content: `✅ **Analytics Channel** set to ${channel} for this server.` });
         } else if (customId === 'settings_modal_clan_dash') {
+            const channelId = interaction.fields.getTextInputValue('channel_id_input').match(/\d{17,19}/)?.[0];
             const channel = channelId ? await interaction.guild.channels.fetch(channelId).catch(() => null) : null;
             if (!channel || channel.type !== ChannelType.GuildText) return interaction.editReply({ content: 'Invalid Text Channel ID.' });
-            db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('dashboard_channel_id', ?)").run(channel.id);
-            db.prepare("DELETE FROM settings WHERE key = 'dashboard_message_id'").run();
-            await sendOrUpdateDashboard(interaction.client); // Immediately post/update it
-            await interaction.editReply({ content: `✅ **Clan Dashboard Channel** set to ${channel}.` });
+            db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'dashboard_channel_id', ?)").run(guildId, channel.id);
+            db.prepare("DELETE FROM settings WHERE guild_id = ? AND key = 'dashboard_message_id'").run(guildId);
+            await sendOrUpdateDashboard(interaction.client, guildId);
+            await interaction.editReply({ content: `✅ **Clan Dashboard Channel** set to ${channel} for this server.` });
         }
     }
 };
