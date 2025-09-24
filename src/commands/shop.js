@@ -12,7 +12,7 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setColor('#3498DB')
             .setTitle('Role Shop')
-            .setDescription('Here are the roles available for purchase with Gold. Use `/buy <role>` to purchase an item.');
+            .setDescription('Here are the roles available for purchase with Solyx. Use `/buy <role>` to purchase an item.');
 
         if (items.length === 0) {
             embed.addFields({ name: 'No items available', value: 'The shop is currently empty. Check back later!' });

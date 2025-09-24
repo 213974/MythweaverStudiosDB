@@ -1,6 +1,6 @@
-// src/commands/clan/subcommands/view.js
+// src/commands/clan/view.js
 const { EmbedBuilder } = require('discord.js');
-const clanManager = require('../../../utils/clanManager');
+const clanManager = require('../../utils/clanManager');
 
 module.exports = {
     async execute(interaction, guildId, userClanData) {

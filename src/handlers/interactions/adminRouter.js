@@ -3,7 +3,6 @@ const economyHandler = require('./adminPanel/economyHandler');
 const clanHandler = require('./adminPanel/clanHandler');
 const shopHandler = require('./adminPanel/shopHandler');
 const raffleHandler = require('./adminPanel/raffleHandler');
-const setupHandler = require('./adminPanel/setupHandler'); // New Import
 
 module.exports = async (interaction) => {
     const customId = interaction.customId;
@@ -16,8 +15,6 @@ module.exports = async (interaction) => {
         await shopHandler(interaction);
     } else if (customId.startsWith('admin_raffle_') || interaction.values?.[0] === 'admin_panel_raffles') {
         await raffleHandler(interaction);
-    } else if (customId.startsWith('admin_setup_') || interaction.values?.[0] === 'admin_panel_setup') { // New Route
-        await setupHandler(interaction);
     } else if (customId === 'admin_panel_select' || customId === 'admin_panel_back') {
         const { createMainDashboard } = require('../../components/admin-dashboard/mainPanel');
         const response = createMainDashboard();

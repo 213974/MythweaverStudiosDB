@@ -1,5 +1,5 @@
-// src/commands/clan/subcommands/motto.js
-const clanManager = require('../../../utils/clanManager');
+// src/commands/clan/motto.js
+const clanManager = require('../../utils/clanManager');
 
 module.exports = {
     async execute(interaction, guildId, userClanData, permissions) {

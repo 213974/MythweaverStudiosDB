@@ -6,7 +6,7 @@ const { formatTimestamp } = require('../utils/timestampFormatter');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('weekly')
-        .setDescription('Claim your weekly Gold reward.'),
+        .setDescription('Claim your weekly Solyx reward.'),
     async execute(interaction) {
         const { canClaim, nextClaim } = economyManager.canClaimWeekly(interaction.user.id);
         const user = interaction.user;
@@ -53,7 +53,7 @@ module.exports = {
                 newEmbed.setColor('#00FF00')
                     .setTitle('Weekly Reward Claimed!')
                     .setDescription(`**${result.reward}** 💎 has been deposited directly into your bank.`)
-                    .setFooter({ text: 'This Gold is safe in your bank. Use /bank withdraw to move it to your pockets(balance).' });
+                    .setFooter({ text: 'This Solyx is safe in your bank. Use /bank withdraw to move it to your pockets(balance).' });
             } else {
                 newEmbed.setColor('#FF0000')
                     .setTitle('Claim Failed')

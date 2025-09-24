@@ -1,4 +1,4 @@
-// src/commands/clan/subcommands/color.js
+// src/commands/clan/color.js
 const { EmbedBuilder } = require('discord.js');
 
 function isValidHexColor(hex) {

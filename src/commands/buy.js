@@ -39,7 +39,7 @@ module.exports = {
                 console.error('Failed to add role after purchase:', error);
                 // Refund the user if role assignment fails
                 economyManager.updateBalance(user.id, result.price);
-                await interaction.editReply({ content: 'Purchase failed! I could not assign the role. Your Gold has been refunded.' });
+                await interaction.editReply({ content: 'Purchase failed! I could not assign the role. Your Solyx has been refunded.' });
             }
         } else {
             await interaction.editReply({ content: `Purchase failed: ${result.message}` });

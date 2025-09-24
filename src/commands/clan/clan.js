@@ -4,15 +4,14 @@ const fs = require('node:fs');
 const path = require('node:path');
 const clanManager = require('../../utils/clanManager');
 
-// Load subcommand files dynamically
+// Load subcommand logic files from the current directory
 const subcommands = new Map();
-const subcommandsPath = path.join(__dirname, 'subcommands');
-const subcommandFiles = fs.readdirSync(subcommandsPath).filter(file => file.endsWith('.js'));
+const subcommandFiles = fs.readdirSync(__dirname).filter(file => file.endsWith('.js') && file !== 'clan.js'); // Exclude the main file itself
 
 for (const file of subcommandFiles) {
-    const filePath = path.join(subcommandsPath, file);
+    const filePath = path.join(__dirname, file);
     const subcommand = require(filePath);
-    // The name of the subcommand is the filename without .js
+    // The name of the subcommand is the filename without .js (e.g., 'view.js' -> 'view')
     subcommands.set(path.parse(file).name, subcommand);
 }
 
@@ -41,16 +40,17 @@ module.exports = {
         }
 
         try {
-            // Pre-fetch user's clan data and permissions to avoid redundant calls in sub-handlers
-            const guildid = interaction.guild.id;
-            const userClanData = clanManager.findClanContainingUser(interaction.user.id);
+            const guildId = interaction.guild.id;
+            // Pre-fetch user's clan data and permissions for the correct guild
+            const userClanData = clanManager.findClanContainingUser(guildId, interaction.user.id);
             const permissions = {
                 isOwner: userClanData ? userClanData.clanOwnerUserID === interaction.user.id : false,
                 isVice: userClanData ? (userClanData.viceGuildMasters || []).includes(interaction.user.id) : false,
                 isOfficer: userClanData ? (userClanData.officers || []).includes(interaction.user.id) : false,
             };
 
-            await subcommand.execute(interaction, guildid, userClanData, permissions);
+            // Execute the specific subcommand logic file
+            await subcommand.execute(interaction, guildId, userClanData, permissions);
         } catch (error) {
             console.error(`Error executing clan subcommand '${subcommandName}':`, error);
             await interaction.reply({ content: 'An error occurred while executing this clan command.', flags: 64 });

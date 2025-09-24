@@ -1,7 +1,7 @@
-// src/commands/clan/subcommands/kick.js
+// src/commands/clan/kick.js
 const { EmbedBuilder } = require('discord.js');
-const clanManager = require('../../../utils/clanManager');
-const db = require('../../../utils/database');
+const clanManager = require('../../utils/clanManager');
+const db = require('../../utils/database');
 
 module.exports = {
     async execute(interaction, guildId, userClanData, permissions) {

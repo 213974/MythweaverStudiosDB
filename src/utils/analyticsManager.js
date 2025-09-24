@@ -22,7 +22,7 @@ function createAnalyticsEmbed() {
     const timestamp = Math.floor(Date.now() / 1000);
 
     const embed = new EmbedBuilder()
-        .setColor('#FFD700') // Golden color
+        .setColor('#FFD700')
         .setTitle('📊 Server Analytics Dashboard 📊')
         .addFields(
             { name: '💰 Total Solyx™ in Circulation', value: `> **${data.totalSolyx.toLocaleString()}** 🪙`, inline: false },

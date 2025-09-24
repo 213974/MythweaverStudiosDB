@@ -38,6 +38,13 @@ const migrateToMultiGuild = db.transaction(() => {
     const tableMigrationPlan = [ 'settings', 'wallets', 'claims', 'transactions', 'clans', 'clan_members', 'clan_wallets', 'shop_items', 'raffles' ];
     
     for (const tableName of tableMigrationPlan) {
+        // Check if the old table exists before trying to migrate it
+        const oldTableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(`${tableName}`);
+        if (!oldTableExists) {
+            console.log(`[Database Migration] Skipping table '${tableName}' as it does not exist in the old schema.`);
+            continue;
+        }
+
         const columns = db.pragma(`table_info(${tableName})`).map(col => col.name).join(', ');
         db.exec(`ALTER TABLE ${tableName} RENAME TO ${tableName}_old;`);
         
@@ -55,7 +62,6 @@ const migrateToMultiGuild = db.transaction(() => {
 
 try {
     migrateToMultiGuild();
-    // Subsequent migrations for individual columns can go here if needed in the future.
     console.log('[Database] Connected to SQLite and ensured schema is up-to-date.');
 } catch (error) {
     console.error('[Database] FAILED TO RUN MIGRATION:', error);
