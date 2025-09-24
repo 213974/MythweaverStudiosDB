@@ -12,11 +12,13 @@ const GIFS = [
 function getAnalyticsData(guildId) {
     const solyxData = db.prepare('SELECT SUM(balance) as total FROM wallets WHERE guild_id = ?').get(guildId);
     const clanData = db.prepare('SELECT COUNT(*) as total FROM clans WHERE guild_id = ?').get(guildId);
-    return { totalSolyx: solyxData.total || 0, totalClans: clanData.total || 0 };
+    return {
+        totalSolyx: solyxData.total || 0,
+        totalClans: clanData.total || 0,
+    };
 }
 
-
-function createAnalyticsEmbed() {
+function createAnalyticsEmbed(guildId) { // Correctly accepts guildId
     const data = getAnalyticsData(guildId);
     const randomGif = GIFS[Math.floor(Math.random() * GIFS.length)];
     const timestamp = Math.floor(Date.now() / 1000);
@@ -30,10 +32,8 @@ function createAnalyticsEmbed() {
         )
         .setImage(randomGif)
         .setFooter({ text: 'This dashboard updates automatically.' })
-        .setTimestamp();
-        
-    // A separate field for the "live" timestamp to make it stand out.
-    embed.addFields({ name: 'Last Updated', value: `<t:${timestamp}:R>` });
+        .setTimestamp()
+        .addFields({ name: 'Last Updated', value: `<t:${timestamp}:R>` });
 
     return { embeds: [embed] };
 }

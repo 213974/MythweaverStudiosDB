@@ -26,68 +26,43 @@ async function checkEndedRaffles(client) {
                 db.prepare("UPDATE raffles SET status = 'ended', winner_id = 'Error: Channel not found' WHERE raffle_id = ?").run(raffle.raffle_id);
                 continue;
             }
-
-            let winners = [];
-            let announcementDescription;
-
-            if (entries.length > 0) {
-                const uniqueParticipants = [...new Set(entries.map(e => e.user_id))];
-                winners = shuffle(uniqueParticipants).slice(0, raffle.num_winners);
-                const winnerMentions = winners.map(id => `<@${id}>`).join(', ');
-                announcementDescription = `The raffle for **${raffle.title}** has concluded! Congratulations to our winner(s):\n\n${winnerMentions}`;
-            } else {
-                announcementDescription = 'The raffle has ended, but there were no entries. No winners were chosen.';
-            }
-
-            db.prepare("UPDATE raffles SET status = 'ended', winner_id = ? WHERE raffle_id = ?").run(winners.join(','), raffle.raffle_id);
-
-            const announcementEmbed = new EmbedBuilder()
-                .setColor('#FFD700')
-                .setTitle(`🎉 Raffle Ended: ${raffle.title} 🎉`)
-                .setDescription(announcementDescription)
-                .addFields({ name: 'Total Unique Participants', value: (new Set(entries.map(e => e.user_id))).size.toLocaleString(), inline: true })
-                .addFields({ name: 'Total Tickets', value: entries.length.toLocaleString(), inline: true })
-                .setTimestamp();
-            
-            await channel.send({ content: winners.length > 0 ? winners.map(id => `<@${id}>`).join(' ') : ' ', embeds: [announcementEmbed] });
-
-            const originalMessage = await channel.messages.fetch(raffle.message_id).catch(() => null);
-            if (originalMessage) {
-                const endedEmbed = EmbedBuilder.from(originalMessage.embeds[0]).setColor('#808080').addFields({ name: 'Status', value: 'This raffle has ended.'});
-                const disabledRow = ActionRowBuilder.from(originalMessage.components[0]).setComponents(ButtonBuilder.from(originalMessage.components[0].components[0]).setDisabled(true));
-                await originalMessage.edit({ embeds: [endedEmbed], components: [disabledRow] });
-            }
         } catch (error) {
-            console.error(`[Scheduler] Failed to process raffle ID ${raffle.raffle_id}:`, error);
+            console.error(`[Scheduler] Failed to process ended raffle ${raffle.raffle_id}:`, error);
         }
     }
 }
 
 async function updateAnalyticsDashboard(client) {
-    const channelId = db.prepare("SELECT value FROM settings WHERE key = 'analytics_channel_id'").get()?.value;
-    if (!channelId) return;
+    // Get all guilds the bot is in
+    const guilds = client.guilds.cache;
 
-    let messageId = db.prepare("SELECT value FROM settings WHERE key = 'analytics_message_id'").get()?.value;
+    for (const [guildId, guild] of guilds) {
+        const channelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'analytics_channel_id'").get(guildId)?.value;
+        if (!channelId) continue; // Skip this guild if no channel is set
 
-    try {
-        const channel = await client.channels.fetch(channelId);
-        const dashboardContent = createAnalyticsEmbed();
-        let message;
+        let messageId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'analytics_message_id'").get(guildId)?.value;
 
-        if (messageId) {
-            message = await channel.messages.fetch(messageId).catch(() => null);
-        }
+        try {
+            const channel = await client.channels.fetch(channelId);
+            const dashboardContent = createAnalyticsEmbed(guildId); // Pass the guildId
+            let message;
 
-        if (message) {
-            await message.edit(dashboardContent);
-        } else {
-            const newMessage = await channel.send(dashboardContent);
-            db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('analytics_message_id', ?)").run(newMessage.id);
-        }
-    } catch (error) {
-        console.error(`[Scheduler] Failed to update analytics dashboard:`, error);
-        if (error.code === 10008) { // Unknown Message
-            db.prepare("DELETE FROM settings WHERE key = 'analytics_message_id'").run();
+            if (messageId) {
+                message = await channel.messages.fetch(messageId).catch(() => null);
+            }
+
+            if (message) {
+                await message.edit(dashboardContent);
+            } else {
+                const newMessage = await channel.send(dashboardContent);
+                db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'analytics_message_id', ?)")
+                    .run(guildId, newMessage.id);
+            }
+        } catch (error) {
+            console.error(`[Scheduler] Failed to update analytics for guild ${guildId}:`, error);
+            if (error.code === 10008) { // Unknown Message
+                db.prepare("DELETE FROM settings WHERE guild_id = ? AND key = 'analytics_message_id'").run(guildId);
+            }
         }
     }
 }
@@ -97,10 +72,10 @@ function startScheduler(client) {
     setTimeout(() => {
         checkEndedRaffles(client);
         updateAnalyticsDashboard(client);
-    }, 5000); // Initial run after 5 seconds to ensure client is fully ready
+    }, 5000);
 
-    setInterval(() => checkEndedRaffles(client), 60 * 1000); // Check raffles every minute
-    setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000); // Update analytics every 5 minutes
+    setInterval(() => checkEndedRaffles(client), 60 * 1000);
+    setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000);
 }
 
-module.exports = { startScheduler };
+module.exports = { startScheduler, shuffle }; // Export shuffle for raffleHandler

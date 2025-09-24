@@ -19,42 +19,12 @@ function createDashboardComponents() {
         .setCustomId('clan_dashboard_menu')
         .setPlaceholder('Select a clan action...')
         .addOptions([
-            {
-                label: 'View My Clan',
-                description: 'Display the detailed profile and member list of your clan.',
-                value: 'dashboard_view',
-                emoji: '📜',
-            },
-            {
-                label: 'Invite Member',
-                description: 'Generate an invitation for a user to join your clan.',
-                value: 'dashboard_invite',
-                emoji: '📧',
-            },
-            {
-                label: 'Manage Member Authority',
-                description: 'Promote or demote an existing member of your clan.',
-                value: 'dashboard_authority',
-                emoji: '⬆️',
-            },
-            {
-                label: 'Kick Member',
-                description: 'Remove a member from your clan.',
-                value: 'dashboard_kick',
-                emoji: '👢',
-            },
-            {
-                label: 'Set Clan Motto',
-                description: 'Update or remove your clan\'s official motto.',
-                value: 'dashboard_motto',
-                emoji: '🖋️',
-            },
-            {
-                label: 'Leave Clan',
-                description: 'Leave the clan you are currently a member of.',
-                value: 'dashboard_leave',
-                emoji: '👋',
-            },
+            { label: 'View My Clan', description: 'Display the profile and member list of your clan.', value: 'dashboard_view', emoji: '📜' },
+            { label: 'Invite Member', description: 'Generate an invitation for a user to join your clan.', value: 'dashboard_invite', emoji: '📧' },
+            { label: 'Manage Member Authority', description: 'Promote or demote a member of your clan.', value: 'dashboard_authority', emoji: '⬆️' },
+            { label: 'Kick Member', description: 'Remove a member from your clan.', value: 'dashboard_kick', emoji: '👢' },
+            { label: 'Set Clan Motto', description: 'Update or remove your clan\'s official motto.', value: 'dashboard_motto', emoji: '🖋️' },
+            { label: 'Leave Clan', description: 'Leave the clan you are currently a member of.', value: 'dashboard_leave', emoji: '👋' },
         ]);
 
     return new ActionRowBuilder().addComponents(selectMenu);
@@ -68,7 +38,7 @@ async function sendOrUpdateDashboard(client, guildId) {
 
     const channel = await client.channels.fetch(channelId).catch(() => null);
     if (!channel) {
-        console.error('[Dashboard] Could not fetch the dashboard channel. It may have been deleted.');
+        console.error(`[Dashboard] Could not fetch the dashboard channel (${channelId}) for guild ${guildId}.`);
         return;
     }
 
@@ -80,16 +50,17 @@ async function sendOrUpdateDashboard(client, guildId) {
             const message = await channel.messages.fetch(messageId).catch(() => null);
             if (message) {
                 await message.edit({ embeds: [embed], components: [components] });
-                console.log('[Dashboard] Successfully refreshed the clan dashboard.');
-                return; // Success
+                return;
             }
         }
 
-        // If messageId doesn't exist or message fetch failed, send a new one.
         const newMessage = await channel.send({ embeds: [embed], components: [components] });
-        db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)')
-            .run('dashboard_message_id', newMessage.id);
-        console.log('[Dashboard] Sent a new clan dashboard and saved its ID.');
+        // --- THIS IS THE CORRECTED LINE ---
+        // It now correctly includes the guild_id when saving the new message ID.
+        db.prepare('INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, ?, ?)')
+            .run(guildId, 'dashboard_message_id', newMessage.id);
+            
+        console.log(`[Dashboard] Sent a new clan dashboard to guild ${guildId} and saved its ID.`);
 
     } catch (error) {
         console.error('[Dashboard] Failed to send or update dashboard:', error);
