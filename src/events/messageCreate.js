@@ -1,48 +1,44 @@
-// events/messageCreate.js
-const { Events, MessageType } = require('discord.js'); // Added MessageType
+// src/events/messageCreate.js
+const { Events, MessageType } = require('discord.js');
+const config = require('../config');
+const db = require('../utils/database');
+const { updateAnalyticsDashboard } = require('../utils/scheduler');
 
 const PANDA_YAY_EMOJI = '<:PandaYay:1357806568535490812>';
-const COOLDOWN_DURATION = 2500; // 2.5 seconds in milliseconds
+const COOLDOWN_DURATION = 2500;
 
 module.exports = {
     name: Events.MessageCreate,
-    async execute(message, client, config) {
-        // Ignore messages from other bots entirely
-        if (message.author.bot) {
-            return;
-        }
+    async execute(message, client) {
+        if (message.author.bot || !message.guild) return;
 
-        // Check if the message is a reply to this bot's own message
-        // If it is, and there isn't an *additional* explicit mention of this bot in the content, ignore it.
-        if (message.type === MessageType.Reply && message.mentions.repliedUser && message.mentions.repliedUser.id === client.user.id) {
-            // Check if the bot is ALSO explicitly mentioned in the content of the reply,
-            // beyond just the reply ping itself.
-            const contentMentionsThisBot = message.content.includes(`<@${client.user.id}>`) || message.content.includes(`<@!${client.user.id}>`);
-            if (!contentMentionsThisBot) {
-                // It's just a reply to the bot, without a new explicit mention.
-                return;
+        // --- Analytics Dashboard Refresh Trigger ---
+        // Check if the author is the bot owner
+        if (message.author.id === config.ownerID) {
+            const analyticsChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'analytics_channel_id'").get(message.guild.id)?.value;
+            // Check if the message is in the configured analytics channel
+            if (message.channel.id === analyticsChannelId) {
+                console.log(`[Analytics] Owner message detected. Forcing refresh for guild ${message.guild.id}.`);
+                const messageId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'analytics_message_id'").get(message.guild.id)?.value;
+                if (messageId) {
+                    // Attempt to delete the old dashboard message to force a new one.
+                    const oldMessage = await message.channel.messages.fetch(messageId).catch(() => null);
+                    if (oldMessage) await oldMessage.delete().catch(err => console.error("Could not delete old analytics dash:", err.message));
+                }
+                // Trigger an immediate update for this specific guild
+                await updateAnalyticsDashboard(client, message.guild.id);
             }
-            // If it IS a reply AND has an explicit mention in the content, proceed.
         }
 
+        // --- Bot Mention Response ---
+        const isReplyToBot = message.type === MessageType.Reply && message.mentions.repliedUser?.id === client.user.id;
+        const isDirectMention = message.mentions.has(client.user.id);
 
-        // Check if this bot was specifically mentioned
-        // 1. Direct mention in the mentions collection
-        // 2. Content includes <@BOT_ID> or <@!BOT_ID> (the exclamation mark is for nicknames)
-        const specificBotMentioned =
-            message.mentions.has(client.user.id) || // Check by ID for more specificity than `client.user` object
-            message.content.includes(`<@${client.user.id}>`) ||
-            message.content.includes(`<@!${client.user.id}>`);
-
-
-        if (specificBotMentioned) {
+        if (isDirectMention && !isReplyToBot) {
             const now = Date.now();
-
-            if (now - client.lastPandaMentionResponse < COOLDOWN_DURATION) {
-                // console.log(`PandaYay mention response is on cooldown.`);
+            if (now - (client.lastPandaMentionResponse || 0) < COOLDOWN_DURATION) {
                 return;
             }
-
             try {
                 await message.channel.send(PANDA_YAY_EMOJI);
                 client.lastPandaMentionResponse = now;

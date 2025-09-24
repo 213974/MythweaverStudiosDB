@@ -1,4 +1,4 @@
-﻿// commands/economy/weekly.js
+﻿// src/commands/weekly.js
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 const economyManager = require('../utils/economyManager');
 const { formatTimestamp } = require('../utils/timestampFormatter');
@@ -8,7 +8,8 @@ module.exports = {
         .setName('weekly')
         .setDescription('Claim your weekly Solyx reward.'),
     async execute(interaction) {
-        const { canClaim, nextClaim } = economyManager.canClaimWeekly(interaction.user.id);
+        const guildId = interaction.guild.id; // Get the guild ID
+        const { canClaim, nextClaim } = economyManager.canClaimWeekly(interaction.user.id, guildId);
         const user = interaction.user;
 
         const embed = new EmbedBuilder()
@@ -30,7 +31,6 @@ module.exports = {
         }
 
         const row = new ActionRowBuilder().addComponents(claimButton);
-        // Reply is now flag 64 as requested
         const reply = await interaction.reply({ embeds: [embed], components: canClaim ? [row] : [], flags: 64 });
 
         if (!canClaim) return;
@@ -42,7 +42,7 @@ module.exports = {
                 return i.reply({ content: 'This is not for you!', flags: 64 });
             }
 
-            const result = economyManager.claimWeekly(i.user.id);
+            const result = economyManager.claimWeekly(i.user.id, guildId); // Pass guildId here
             const newEmbed = new EmbedBuilder();
             const newButtons = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId('view_bank_after_claim').setLabel('View Bank').setStyle(ButtonStyle.Primary).setEmoji('🏦'),
@@ -60,7 +60,6 @@ module.exports = {
                     .setDescription(result.message);
             }
 
-            // Update the original flag 64 message
             await i.update({ embeds: [newEmbed], components: [newButtons] });
             collector.stop();
         });

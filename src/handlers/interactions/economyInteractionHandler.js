@@ -1,7 +1,9 @@
 // src/handlers/interactions/economyInteractionHandler.js
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const economyManager = require('../../utils/economyManager');
 const db = require('../../utils/database');
+const { getDay } = require('date-fns');
+const { formatTimestamp } = require('../../utils/timestampFormatter');
 
 // --- Main Handler Function ---
 module.exports = async (interaction) => {
@@ -9,6 +11,7 @@ module.exports = async (interaction) => {
 
     const customId = interaction.customId;
     const user = interaction.user;
+    const guildId = interaction.guild.id;
 
     // --- Claim Buttons ---
     if (customId.startsWith('claim_daily_')) {
@@ -16,23 +19,56 @@ module.exports = async (interaction) => {
             return interaction.reply({ content: 'This is not for you!', flags: 64 });
         }
 
-        await interaction.update({ components: [] }); // Disable button immediately
-        const result = economyManager.claimDaily(user.id);
-        const embed = new EmbedBuilder();
+        const result = economyManager.claimDaily(user.id, guildId);
 
         if (result.success) {
-            embed.setColor('#2ECC71').setTitle('Daily Reward Claimed!').setDescription(`**${result.reward.toLocaleString()}** Solyx™ has been added to your wallet.`);
+            // Re-fetch status to build the updated embed with the '✅'
+            const { weekly_claim_state, nextClaim } = economyManager.getDailyStatus(user.id, guildId);
+
+            const updatedEmbed = new EmbedBuilder()
+                .setColor('#E74C3C') // Red to indicate the claim for today has been used
+                .setAuthor({ name: `${user.displayName} | Daily Claim`, iconURL: user.displayAvatarURL() })
+                .setDescription(`Claim your daily reward of **${economyManager.DAILY_REWARD}** 🪙 once per calendar day.\nYour weekly progress is shown below.`)
+                .setFooter({ text: 'Mythweaver Studios™ | /daily' });
+            
+            if (nextClaim) {
+                updatedEmbed.description += `\n\nYou can claim again ${formatTimestamp(Math.floor(nextClaim.getTime() / 1000), 'R')}.`;
+            }
+
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const dayFields = days.map((day, index) => ({
+                name: day,
+                value: weekly_claim_state[index] ? '✅' : '❌',
+                inline: true
+            }));
+            updatedEmbed.addFields(dayFields);
+
+            const disabledButton = new ButtonBuilder()
+                .setCustomId(`claim_daily_${user.id}`)
+                .setLabel('Claim Daily Reward')
+                .setStyle(ButtonStyle.Success)
+                .setEmoji('🪙')
+                .setDisabled(true);
+
+            const updatedRow = new ActionRowBuilder().addComponents(disabledButton);
+            
+            // Update the original public message with the correct embed and disabled button
+            await interaction.update({ embeds: [updatedEmbed], components: [updatedRow] });
+            
+            // Send a private, ephemeral confirmation to the user
+            await interaction.followUp({ content: `✅ **${result.reward.toLocaleString()}** Solyx™ has been added to your wallet.`, flags: 64 });
+
         } else {
-            embed.setColor('#E74C3C').setTitle('Claim Failed').setDescription(result.message);
+            // Handle failure (e.g., already claimed from a rapid double-click, wallet full) with an ephemeral message
+            await interaction.reply({ content: result.message, flags: 64 });
         }
-        // Use followUp for the ephemeral message after the button is disabled
-        return interaction.followUp({ embeds: [embed], flags: 64 });
+        return; // Stop further execution in this handler
     }
     // TODO: Add weekly claim button logic here if needed
 
     // --- Post-Claim Navigation ---
     if (customId === 'view_bank_after_claim') { // Kept ID for compatibility with /daily command for now
-        const wallet = economyManager.getWallet(user.id);
+        const wallet = economyManager.getWallet(user.id, guildId);
         const embed = new EmbedBuilder()
             .setColor('#3498DB')
             .setAuthor({ name: `${user.displayName}'s Wallet`, iconURL: user.displayAvatarURL() })
@@ -65,7 +101,7 @@ module.exports = async (interaction) => {
         }
 
         await interaction.deferReply({ flags: 64 });
-        const wallet = economyManager.getWallet(user.id);
+        const wallet = economyManager.getWallet(user.id, guildId);
 
         if (wallet.balance < raffle.ticket_cost) {
             return interaction.editReply({ content: `You need **${raffle.ticket_cost.toLocaleString()}** Solyx™ to buy a ticket, but you only have **${wallet.balance.toLocaleString()}**.` });
@@ -73,10 +109,10 @@ module.exports = async (interaction) => {
 
         try {
             db.transaction(() => {
-                db.prepare('UPDATE wallets SET balance = balance - ? WHERE user_id = ?').run(raffle.ticket_cost, user.id);
+                db.prepare('UPDATE wallets SET balance = balance - ? WHERE user_id = ? AND guild_id = ?').run(raffle.ticket_cost, user.id, guildId);
                 db.prepare('INSERT INTO raffle_entries (raffle_id, user_id) VALUES (?, ?)').run(raffleId, user.id);
-                db.prepare('INSERT INTO transactions (user_id, amount, reason, timestamp) VALUES (?, ?, ?, ?)')
-                    .run(user.id, -raffle.ticket_cost, `Raffle ticket purchase (ID: ${raffleId})`, new Date().toISOString());
+                db.prepare('INSERT INTO transactions (user_id, guild_id, amount, reason, timestamp) VALUES (?, ?, ?, ?, ?)')
+                    .run(user.id, guildId, -raffle.ticket_cost, `Raffle ticket purchase (ID: ${raffleId})`, new Date().toISOString());
             })(); // Immediately execute the transaction
             
             await interaction.editReply({ content: `✅ Success! You have purchased one ticket for the **${raffle.title}** raffle.` });

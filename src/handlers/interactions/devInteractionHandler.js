@@ -12,20 +12,20 @@ module.exports = async (interaction) => {
 
     const guildId = interaction.guild.id;
 
-    if (interaction.isButton()) {
-        const customId = interaction.customId;
+    if (interaction.isStringSelectMenu()) {
+        const selection = interaction.values[0];
         let modal;
 
-        if (customId === 'settings_set_admin_role') {
-            modal = new ModalBuilder().setCustomId('settings_modal_admin_role').setTitle('Set Admin Role');
+        if (selection === 'settings_set_admin_role') {
+            modal = new ModalBuilder().setCustomId('settings_modal_admin_role').setTitle('Set Administrator Role');
             modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('role_id_input').setLabel("Admin Role ID or @Mention").setStyle(TextInputStyle.Short).setRequired(true)));
-        } else if (customId === 'settings_set_raffle_role') {
+        } else if (selection === 'settings_set_raffle_role') {
             modal = new ModalBuilder().setCustomId('settings_modal_raffle_role').setTitle('Set Raffle Creator Role');
             modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('role_id_input').setLabel("Raffle Creator Role ID or @Mention").setStyle(TextInputStyle.Short).setRequired(true)));
-        } else if (customId === 'settings_set_analytics_channel') {
+        } else if (selection === 'settings_set_analytics_channel') {
             modal = new ModalBuilder().setCustomId('settings_modal_analytics_channel').setTitle('Set Analytics Channel');
             modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('channel_id_input').setLabel("Analytics Channel ID").setStyle(TextInputStyle.Short).setRequired(true)));
-        } else if (customId === 'settings_set_clan_dash') {
+        } else if (selection === 'settings_set_clan_dash') {
             modal = new ModalBuilder().setCustomId('settings_modal_clan_dash').setTitle('Set Clan Dashboard Channel');
             modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('channel_id_input').setLabel("Clan Dashboard Channel ID").setStyle(TextInputStyle.Short).setRequired(true)));
         }
@@ -52,7 +52,7 @@ module.exports = async (interaction) => {
             if (!channel || channel.type !== ChannelType.GuildText) return interaction.editReply({ content: 'Invalid Text Channel ID.' });
             db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'analytics_channel_id', ?)").run(guildId, channel.id);
             db.prepare("DELETE FROM settings WHERE guild_id = ? AND key = 'analytics_message_id'").run(guildId);
-            await interaction.editReply({ content: `✅ **Analytics Channel** set to ${channel} for this server.` });
+            await interaction.editReply({ content: `✅ **Analytics Channel** set to ${channel} for this server. The dashboard will appear within 5 minutes.` });
         } else if (customId === 'settings_modal_clan_dash') {
             const channelId = interaction.fields.getTextInputValue('channel_id_input').match(/\d{17,19}/)?.[0];
             const channel = channelId ? await interaction.guild.channels.fetch(channelId).catch(() => null) : null;

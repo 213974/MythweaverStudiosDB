@@ -1,5 +1,5 @@
 ﻿// src/commands/dev/settings.js
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, PermissionFlagsBits } = require('discord.js');
 const config = require('../../config');
 const db = require('../../utils/database');
 
@@ -16,32 +16,34 @@ module.exports = {
             });
         }
 
-        const adminRoleId = db.prepare("SELECT value FROM settings WHERE key = 'admin_role_id'").get()?.value;
-        const analyticsChannelId = db.prepare("SELECT value FROM settings WHERE key = 'analytics_channel_id'").get()?.value;
-        const clanDashChannelId = db.prepare("SELECT value FROM settings WHERE key = 'dashboard_channel_id'").get()?.value;
-        const raffleRoleId = db.prepare("SELECT value FROM settings WHERE key = 'raffle_creator_role_id'").get()?.value; // New
+        const guildId = interaction.guild.id;
+        const adminRoleId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'admin_role_id'").get(guildId)?.value;
+        const raffleRoleId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'raffle_creator_role_id'").get(guildId)?.value;
+        const analyticsChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'analytics_channel_id'").get(guildId)?.value;
+        const clanDashChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'dashboard_channel_id'").get(guildId)?.value;
 
         const embed = new EmbedBuilder()
             .setColor('#FFD700')
-            .setTitle('🛠️ Bot Core Settings 🛠️')
-            .setDescription('Manage essential bot variables. This interface is only available to the Bot Owner.')
+            .setTitle(`🛠️ Bot Core Settings for ${interaction.guild.name} 🛠️`)
+            .setDescription('Select a setting to manage from the dropdown menu. This interface is only available to the Bot Owner.')
             .addFields(
                 { name: 'Admin Role', value: adminRoleId ? `<@&${adminRoleId}>` : '`Not Set`' },
-                { name: 'Raffle Creator Role', value: raffleRoleId ? `<@&${raffleRoleId}>` : '`Not Set`' }, // New
+                { name: 'Raffle Creator Role', value: raffleRoleId ? `<@&${raffleRoleId}>` : '`Not Set`' },
                 { name: 'Analytics Dashboard', value: analyticsChannelId ? `<#${analyticsChannelId}>` : '`Not Set`' },
                 { name: 'Clan Dashboard', value: clanDashChannelId ? `<#${clanDashChannelId}>` : '`Not Set`' }
             );
 
-        const row1 = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('settings_set_admin_role').setLabel('Set Admin Role').setStyle(ButtonStyle.Primary),
-            new ButtonBuilder().setCustomId('settings_set_raffle_role').setLabel('Set Raffle Role').setStyle(ButtonStyle.Primary), // New
-            new ButtonBuilder().setCustomId('settings_set_analytics_channel').setLabel('Set Analytics Channel').setStyle(ButtonStyle.Secondary)
-        );
-        
-        const row2 = new ActionRowBuilder().addComponents(
-             new ButtonBuilder().setCustomId('settings_set_clan_dash').setLabel('Set Clan Dashboard Channel').setStyle(ButtonStyle.Secondary)
-        );
+        const selectMenu = new StringSelectMenuBuilder()
+            .setCustomId('settings_menu')
+            .setPlaceholder('Select a setting to configure...')
+            .addOptions([
+                { label: 'Set Admin Role', value: 'settings_set_admin_role', emoji: '👑' },
+                { label: 'Set Raffle Role', value: 'settings_set_raffle_role', emoji: '🎟️' },
+                { label: 'Set Analytics Channel', value: 'settings_set_analytics_channel', emoji: '📊' },
+                { label: 'Set Clan Dashboard Channel', value: 'settings_set_clan_dash', emoji: '⚔️' },
+            ]);
 
-        await interaction.reply({ embeds: [embed], components: [row1, row2], flags: 64 });
+        const row = new ActionRowBuilder().addComponents(selectMenu);
+        await interaction.reply({ embeds: [embed], components: [row], flags: 64 });
     },
 };

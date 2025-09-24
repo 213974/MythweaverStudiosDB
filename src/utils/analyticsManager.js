@@ -21,7 +21,7 @@ function getAnalyticsData(guildId) {
 function createAnalyticsEmbed(guildId) { // Correctly accepts guildId
     const data = getAnalyticsData(guildId);
     const randomGif = GIFS[Math.floor(Math.random() * GIFS.length)];
-    const timestamp = Math.floor(Date.now() / 1000);
+    const nextUpdateTimestamp = Math.floor((Date.now() + 5 * 60 * 1000) / 1000);
 
     const embed = new EmbedBuilder()
         .setColor('#FFD700')
@@ -33,7 +33,8 @@ function createAnalyticsEmbed(guildId) { // Correctly accepts guildId
         .setImage(randomGif)
         .setFooter({ text: 'This dashboard updates automatically.' })
         .setTimestamp()
-        .addFields({ name: 'Last Updated', value: `<t:${timestamp}:R>` });
+
+        embed.addFields({ name: 'Next Update', value: `<t:${nextUpdateTimestamp}:R>` });
 
     return { embeds: [embed] };
 }

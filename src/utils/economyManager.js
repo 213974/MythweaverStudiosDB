@@ -91,14 +91,39 @@ module.exports = {
     },
 
     claimDaily: (userId, guildId) => {
-        const { canClaim } = module.exports.getDailyStatus(userId, guildId);
-        if (!canClaim) return { success: false, message: 'You have already claimed your daily reward today.' };
+        const { canClaim, weekly_claim_state } = module.exports.getDailyStatus(userId, guildId);
+        if (!canClaim) {
+            return { success: false, message: 'You have already claimed your daily reward today.' };
+        }
+
         const wallet = module.exports.getWallet(userId, guildId, DEFAULT_CURRENCY);
-        if (wallet.balance + DAILY_REWARD > wallet.capacity) return { success: false, message: 'You do not have enough space in your wallet.' };
-        
+        if (wallet.balance + DAILY_REWARD > wallet.capacity) {
+            return { success: false, message: 'You do not have enough space in your wallet.' };
+        }
+
+        // Prepare the updated weekly state
+        const today = new Date();
+        const todayDayIndex = getDay(today); // 0 for Sunday, 1 for Monday, etc.
+        const updatedWeeklyState = { ...weekly_claim_state };
+        updatedWeeklyState[todayDayIndex] = true;
+        const weeklyStateJson = JSON.stringify(updatedWeeklyState);
+
         db.transaction(() => {
-            db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ? AND currency = ?').run(DAILY_REWARD, userId, guildId, DEFAULT_CURRENCY);
-            db.prepare(`INSERT OR REPLACE INTO claims (user_id, guild_id, claim_type, last_claimed_at, streak) VALUES (?, ?, 'daily', ?, COALESCE((SELECT streak FROM claims WHERE user_id = ? AND guild_id = ? AND claim_type = 'daily'), 0) + 1)`).run(userId, guildId, new Date().toISOString(), userId, guildId);
+            // 1. Update wallet balance
+            db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ? AND currency = ?')
+                .run(DAILY_REWARD, userId, guildId, DEFAULT_CURRENCY);
+
+            // 2. Update claims table with the new weekly state. This uses an UPSERT operation.
+            db.prepare(`
+                INSERT INTO claims (user_id, guild_id, claim_type, last_claimed_at, streak, weekly_claim_state)
+                VALUES (?, ?, 'daily', ?, 1, ?)
+                ON CONFLICT(user_id, guild_id, claim_type) DO UPDATE SET
+                last_claimed_at = excluded.last_claimed_at,
+                streak = streak + 1,
+                weekly_claim_state = excluded.weekly_claim_state;
+            `).run(userId, guildId, today.toISOString(), weeklyStateJson);
+            
+            // 3. Handle referral bonus
             const userRecord = db.prepare('SELECT referred_by FROM users WHERE user_id = ?').get(userId);
             if (userRecord && userRecord.referred_by) {
                 const inviterId = userRecord.referred_by;
@@ -112,6 +137,7 @@ module.exports = {
                 }
             }
         })();
+
         return { success: true, reward: DAILY_REWARD };
     },
 
@@ -130,17 +156,17 @@ module.exports = {
         }
     },
 
-    claimWeekly: (userId) => {
-        const { canClaim } = module.exports.canClaimWeekly(userId);
+    claimWeekly: (userId, guildId) => {
+        const { canClaim } = module.exports.canClaimWeekly(userId, guildId);
         if (!canClaim) return { success: false, message: 'You have already claimed your weekly reward.' };
 
-        const wallet = module.exports.getWallet(userId, DEFAULT_CURRENCY);
+        const wallet = module.exports.getWallet(userId, guildId, DEFAULT_CURRENCY);
         if (wallet.balance + WEEKLY_REWARD > wallet.capacity) {
             return { success: false, message: 'You do not have enough space in your wallet to claim this reward.' };
         }
 
-        db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND currency = ?').run(WEEKLY_REWARD, userId, DEFAULT_CURREY);
-        db.prepare('INSERT OR REPLACE INTO claims (user_id, claim_type, last_claimed_at) VALUES (?, ?, ?)').run(userId, 'weekly', new Date().toISOString());
+        db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ? AND currency = ?').run(WEEKLY_REWARD, userId, guildId, DEFAULT_CURRENCY);
+        db.prepare('INSERT OR REPLACE INTO claims (user_id, guild_id, claim_type, last_claimed_at) VALUES (?, ?, ?, ?)').run(userId, guildId, 'weekly', new Date().toISOString());
 
         return { success: true, reward: WEEKLY_REWARD };
     },
