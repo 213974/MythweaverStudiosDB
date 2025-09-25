@@ -9,6 +9,27 @@ const invites = new Map();
 module.exports = {
     name: Events.GuildMemberAdd,
     async execute(member, client) {
+
+        const guildId = newMember.guild.id;
+        const oldRoles = oldMember.roles.cache;
+        const newRoles = newMember.roles.cache;
+
+        // --- Role Removal Check for Clan Owners ---
+        if (oldRoles.size > newRoles.size) { // A role was removed
+            const ownedClan = clanManager.getClanOwnedByUser(guildId, newMember.id);
+            if (ownedClan) { // This member is a clan owner
+                const removedRole = oldRoles.find(role => !newRoles.has(role.id));
+                if (removedRole && removedRole.id === ownedClan.clan_id) {
+                    try {
+                        console.log(`[guildMemberUpdate] Owner ${newMember.user.tag} of clan ${removedRole.name} had their role removed. Re-applying immediately.`);
+                        await newMember.roles.add(removedRole);
+                    } catch (error) {
+                        console.error(`[guildMemberUpdate] FAILED to re-apply owner role for ${newMember.user.tag}:`, error);
+                    }
+                }
+            }
+        }
+
         // Ensure the user is in the database immediately upon joining.
         db.prepare('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)').run(member.id, member.user.username);
 

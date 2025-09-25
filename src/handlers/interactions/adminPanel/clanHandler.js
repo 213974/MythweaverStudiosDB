@@ -1,39 +1,49 @@
 // src/handlers/interactions/adminPanel/clanHandler.js
-const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, RoleSelectMenuBuilder, UserSelectMenuBuilder } = require('discord.js');
 const { createClanDashboard } = require('../../../components/admin-dashboard/clanPanel');
 const clanManager = require('../../../utils/clanManager');
 const { parseUser, parseRole } = require('../../../utils/interactionHelpers');
 
 module.exports = async (interaction) => {
-    // --- NAVIGATION ---
-    if (interaction.isStringSelectMenu()) {
-        const response = createClanDashboard();
-        // If this interaction comes from the main selection menu, reply ephemerally.
-        // Otherwise, update the existing admin panel message.
-        if (interaction.customId === 'admin_panel_select') {
-            return interaction.reply({ ...response, flags: 64 });
-        } else {
+    const customId = interaction.customId;
+
+    // --- BUTTON CLICKS ---
+    if (interaction.isButton()) {
+        const action = customId.split('_')[2];
+
+        // --- Start of Create Clan Flow ---
+        if (action === 'create') {
+            const embed = new EmbedBuilder()
+                .setColor('#3498DB')
+                .setTitle('Clan Creation: Step 1 of 2')
+                .setDescription('Please select the Discord role that will represent this new clan.');
+            
+            const roleSelect = new RoleSelectMenuBuilder()
+                .setCustomId('admin_clan_create_role_select')
+                .setPlaceholder('Select a role...');
+            
+            const cancel = new ButtonBuilder()
+                .setCustomId('admin_clan_nav')
+                .setLabel('Cancel')
+                .setStyle(ButtonStyle.Secondary);
+
+            const row1 = new ActionRowBuilder().addComponents(roleSelect);
+            const row2 = new ActionRowBuilder().addComponents(cancel);
+
+            return interaction.update({ embeds: [embed], components: [row1, row2] });
+        }
+        
+        // --- Navigation Buttons ---
+        if (customId === 'admin_clan_nav') {
+            const response = createClanDashboard();
             return interaction.update({ ...response });
         }
-    }
 
-    // --- BUTTONS (Open Modals) ---
-    if (interaction.isButton()) {
-        const action = interaction.customId.split('_')[2]; // create, delete, owner
+        // --- Legacy Modal Buttons (Delete/Owner) ---
         let modal;
-
-        if (action === 'create') {
-            modal = new ModalBuilder().setCustomId('admin_clan_modal_create').setTitle('Create a New Clan');
-            modal.addComponents(
-                new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('role_input').setLabel("Clan Role (@Mention or ID)").setStyle(TextInputStyle.Short).setRequired(true)),
-                new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('owner_input').setLabel("Clan Owner (@Mention or ID)").setStyle(TextInputStyle.Short).setRequired(true))
-            );
-        } else if (action === 'delete') {
+        if (action === 'delete') {
             modal = new ModalBuilder().setCustomId('admin_clan_modal_delete').setTitle('Delete a Clan');
-            modal.addComponents(
-                new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('role_input').setLabel("Clan Role (@Mention or ID)").setStyle(TextInputStyle.Short).setRequired(true)),
-                new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('reason_input').setLabel("Reason (Optional)").setStyle(TextInputStyle.Paragraph).setRequired(false))
-            );
+            modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('role_input').setLabel("Clan Role (@Mention or ID)").setStyle(TextInputStyle.Short).setRequired(true)));
         } else if (action === 'owner') {
             modal = new ModalBuilder().setCustomId('admin_clan_modal_owner').setTitle('Change Clan Ownership');
             modal.addComponents(
@@ -41,23 +51,70 @@ module.exports = async (interaction) => {
                 new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('owner_input').setLabel("New Clan Owner (@Mention or ID)").setStyle(TextInputStyle.Short).setRequired(true))
             );
         }
-        if (modal) await interaction.showModal(modal);
+        if (modal) return interaction.showModal(modal);
     }
 
-    // --- MODALS (Process Data) ---
+    // --- ROLE SELECT (Create Clan Step 2) ---
+    if (interaction.isRoleSelectMenu() && customId === 'admin_clan_create_role_select') {
+        const roleId = interaction.values[0];
+        const role = await interaction.guild.roles.fetch(roleId);
+
+        const embed = new EmbedBuilder()
+            .setColor('#3498DB')
+            .setTitle('Clan Creation: Step 2 of 2')
+            .setDescription(`**Clan Role:** ${role}\n\nPlease now select the user who will be the owner of this clan.`);
+
+        const userSelect = new UserSelectMenuBuilder()
+            .setCustomId(`admin_clan_create_owner_select_${roleId}`) // Pass roleId in customId
+            .setPlaceholder('Select a user...');
+        
+        const cancel = new ButtonBuilder()
+            .setCustomId('admin_clan_nav')
+            .setLabel('Cancel')
+            .setStyle(ButtonStyle.Secondary);
+        
+        const row1 = new ActionRowBuilder().addComponents(userSelect);
+        const row2 = new ActionRowBuilder().addComponents(cancel);
+        
+        return interaction.update({ embeds: [embed], components: [row1, row2] });
+    }
+
+    // --- USER SELECT (Create Clan Final Step) ---
+    if (interaction.isUserSelectMenu() && customId.startsWith('admin_clan_create_owner_select_')) {
+        const roleId = customId.split('_')[5];
+        const ownerId = interaction.values[0];
+        const role = await interaction.guild.roles.fetch(roleId);
+        const owner = await interaction.guild.members.fetch(ownerId);
+
+        const result = clanManager.createClan(interaction.guild.id, roleId, ownerId);
+
+        let embed;
+        if (result.success) {
+            embed = new EmbedBuilder()
+                .setColor('#2ECC71')
+                .setTitle('✅ Clan Created Successfully')
+                .setDescription(`**Clan:** ${role}\n**Owner:** ${owner}`);
+        } else {
+            embed = new EmbedBuilder()
+                .setColor('#E74C3C')
+                .setTitle('❌ Clan Creation Failed')
+                .setDescription(result.message);
+        }
+        
+        const backButton = new ButtonBuilder().setCustomId('admin_clan_nav').setLabel('Back to Clan Menu').setStyle(ButtonStyle.Primary);
+        const row = new ActionRowBuilder().addComponents(backButton);
+
+        return interaction.update({ embeds: [embed], components: [row] });
+    }
+
+    // --- MODAL SUBMISSIONS (Legacy Delete/Owner) ---
     if (interaction.isModalSubmit()) {
         await interaction.deferReply({ flags: 64 });
-        const action = interaction.customId.split('_')[3];
+        const action = customId.split('_')[3];
         const clanRole = await parseRole(interaction.guild, interaction.fields.getTextInputValue('role_input'));
         if (!clanRole) return interaction.editReply({ content: 'Error: Invalid Clan Role provided.' });
 
-        if (action === 'create') {
-            const clanOwner = await parseUser(interaction.guild, interaction.fields.getTextInputValue('owner_input'));
-            if (!clanOwner) return interaction.editReply({ content: 'Error: Invalid Clan Owner provided.' });
-            const result = clanManager.createClan(interaction.guild.id, clanRole.id, clanOwner.id);
-            if (result.success) await interaction.editReply({ content: `Successfully created clan **${clanRole.name}** with owner ${clanOwner}.` });
-            else await interaction.editReply({ content: `Failed to create clan: ${result.message}` });
-        } else if (action === 'delete') {
+        if (action === 'delete') {
             const result = clanManager.deleteClan(interaction.guild.id, clanRole.id);
             if (result.success) await interaction.editReply({ content: `Successfully deleted clan **${clanRole.name}**.` });
             else await interaction.editReply({ content: `Failed to delete clan: ${result.message}` });
@@ -68,5 +125,11 @@ module.exports = async (interaction) => {
             if (result.success) await interaction.editReply({ content: `Successfully transferred ownership of **${clanRole.name}** to ${newOwner}.` });
             else await interaction.editReply({ content: `Failed to transfer ownership: ${result.message}` });
         }
+    }
+    
+    // Fallback for main select menu
+    if (interaction.isStringSelectMenu() && customId === 'admin_panel_select') {
+        const response = createClanDashboard();
+        return interaction.reply({ ...response, flags: 64 });
     }
 };

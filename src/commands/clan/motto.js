@@ -4,7 +4,7 @@ const clanManager = require('../../utils/clanManager');
 module.exports = {
     async execute(interaction, guildId, userClanData, permissions) {
         if (!permissions.isOwner) {
-            return interaction.reply({ content: 'Only the Clan Owner can manage the clan motto.', ephemeral: true });
+            return interaction.reply({ content: 'Only the Clan Owner can manage the clan motto.', flags: 64 });
         }
 
         const motto = interaction.options.getString('motto') || null; // Null to remove
@@ -17,7 +17,7 @@ module.exports = {
                 await interaction.reply({ content: `Your clan motto has been removed.` });
             }
         } else {
-            await interaction.reply({ content: `Failed to set motto: ${result.message}`, ephemeral: true });
+            await interaction.reply({ content: `Failed to set motto: ${result.message}`, flags: 64 });
         }
     }
 };

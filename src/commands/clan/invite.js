@@ -1,34 +1,40 @@
 // src/commands/clan/invite.js
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 const clanManager = require('../../utils/clanManager');
 const { formatTimestamp } = require('../../utils/timestampFormatter');
 
 module.exports = {
     async execute(interaction, guildId, userClanData, permissions) {
+        // Initial permission and state checks
         if (!permissions.isOwner && !permissions.isVice) {
-            return interaction.reply({ content: 'Only Clan Owners or Vice Guild Masters can invite members.', ephemeral: true });
+            const replyOptions = { content: 'Only Clan Owners or Vice Guild Masters can invite members.', flags: 64 };
+            return interaction.replied || interaction.deferred ? interaction.editReply(replyOptions) : interaction.reply(replyOptions);
         }
         if (!userClanData) {
-            return interaction.reply({ content: 'Could not find your clan data to send an invite.', ephemeral: true });
+            const replyOptions = { content: 'Could not find your clan data to send an invite.', flags: 64 };
+            return interaction.replied || interaction.deferred ? interaction.editReply(replyOptions) : interaction.reply(replyOptions);
         }
 
         const targetUser = interaction.options.getUser('user');
         const newAuthority = interaction.options.getString('authority');
 
+        // Validation checks
         if (targetUser.bot || targetUser.id === interaction.user.id) {
-            return interaction.reply({ content: "You cannot invite bots or yourself.", ephemeral: true });
+            const replyOptions = { content: "You cannot invite bots or yourself.", flags: 64 };
+            return interaction.replied || interaction.deferred ? interaction.editReply(replyOptions) : interaction.reply(replyOptions);
         }
         if (newAuthority === 'Vice Guild Master' && !permissions.isOwner) {
-            return interaction.reply({ content: 'Only the Clan Owner can invite members directly as Vice Guild Master.', ephemeral: true });
+            const replyOptions = { content: 'Only the Clan Owner can invite members directly as Vice Guild Master.', flags: 64 };
+            return interaction.replied || interaction.deferred ? interaction.editReply(replyOptions) : interaction.reply(replyOptions);
         }
-
         const targetUserAnyClan = clanManager.findClanContainingUser(guildId, targetUser.id);
         if (targetUserAnyClan) {
-            return interaction.reply({ content: `${targetUser.username} is already in a clan in this server.`, ephemeral: true });
+            const replyOptions = { content: `${targetUser.username} is already in a clan in this server.`, flags: 64 };
+            return interaction.replied || interaction.deferred ? interaction.editReply(replyOptions) : interaction.reply(replyOptions);
         }
         
         const clanDiscordRole = await interaction.guild.roles.fetch(userClanData.clanRoleId);
-        const inviteTimestamp = Math.floor(Date.now() / 1000) + 300;
+        const inviteTimestamp = Math.floor(Date.now() / 1000) + 60; // 60 second expiration
 
         const inviteEmbed = new EmbedBuilder()
             .setColor(clanDiscordRole.color || '#0099ff')
@@ -41,10 +47,39 @@ module.exports = {
             new ButtonBuilder().setCustomId(`clan_deny_${userClanData.clanRoleId}_${targetUser.id}`).setLabel('Deny').setStyle(ButtonStyle.Danger)
         );
 
-        await interaction.reply({
+        const replyOptions = {
             content: `${targetUser}`,
             embeds: [inviteEmbed],
-            components: [row]
+            components: [row],
+            flags: 0 // Make it public
+        };
+
+        // --- CORE FIX: Use editReply if called from dashboard, otherwise use reply ---
+        const reply = await (interaction.replied || interaction.deferred ? interaction.editReply(replyOptions) : interaction.reply(replyOptions));
+
+        const collector = reply.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60000 });
+
+        collector.on('collect', i => {
+            // The logic for handling the button press is now in clanInteractionHandler.
+            // This collector is only for the timeout.
+            // We stop it on any valid collection to prevent the timeout message.
+            if (i.user.id === targetUser.id) {
+                collector.stop();
+            }
+        });
+
+        collector.on('end', (collected, reason) => {
+            // If the timer runs out ('time') and no valid button was pressed, edit the message.
+            if (reason === 'time' && collected.size === 0) {
+                const expiredEmbed = EmbedBuilder.from(inviteEmbed)
+                    .setColor('#808080')
+                    .addFields({ name: 'Status', value: '⌛ This invitation has expired.' });
+                
+                const disabledRow = ActionRowBuilder.from(row);
+                disabledRow.components.forEach(c => c.setDisabled(true));
+
+                reply.edit({ embeds: [expiredEmbed], components: [disabledRow] }).catch(() => {});
+            }
         });
     }
 };

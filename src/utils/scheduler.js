@@ -4,6 +4,29 @@ const db = require('./database');
 const { createAnalyticsEmbed } = require('./analyticsManager');
 const { drawRaffleWinners } = require('./raffleManager');
 
+async function syncClanOwnerRoles(client) {
+    try {
+        const allClans = db.prepare('SELECT guild_id, clan_id, owner_id FROM clans').all();
+        for (const clan of allClans) {
+            const guild = await client.guilds.fetch(clan.guild_id).catch(() => null);
+            if (!guild) continue;
+
+            const owner = await guild.members.fetch(clan.owner_id).catch(() => null);
+            if (!owner) continue; // Owner may have left the server
+
+            if (!owner.roles.cache.has(clan.clan_id)) {
+                const clanRole = await guild.roles.fetch(clan.clan_id).catch(() => null);
+                if (clanRole) {
+                    console.log(`[Scheduler] Correcting missing role for clan owner ${owner.user.tag} in guild ${guild.name}.`);
+                    await owner.roles.add(clanRole);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('[Scheduler] Error during clan owner role synchronization:', error);
+    }
+}
+
 // Function to shuffle an array (Fisher-Yates shuffle)
 function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -70,10 +93,12 @@ function startScheduler(client) {
     setTimeout(() => {
         checkEndedRaffles(client);
         updateAnalyticsDashboard(client);
+        syncClanOwnerRoles(client);
     }, 5000);
 
-    setInterval(() => checkEndedRaffles(client), 60 * 1000);
-    setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000);
+    setInterval(() => checkEndedRaffles(client), 60 * 1000); 
+    setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000); // Every 5 minutes
+    setInterval(() => syncClanOwnerRoles(client), 60 * 1000); // Every minute
 }
 
 module.exports = { startScheduler, shuffle, updateAnalyticsDashboard };

@@ -100,9 +100,12 @@ module.exports = {
     },
 
     manageClanMemberRole: (guildId, clanRoleId, targetUserId, newAuthority) => {
-        // ... (similar logic to addUserToClan with member count checks)
         const result = db.prepare('UPDATE clan_members SET authority = ? WHERE guild_id = ? AND user_id = ? AND clan_id = ?').run(newAuthority, guildId, targetUserId, clanRoleId);
         return { success: result.changes > 0 };
+    },
+
+        getClanOwnedByUser: (guildId, userId) => {
+        return db.prepare('SELECT clan_id FROM clans WHERE guild_id = ? AND owner_id = ?').get(guildId, userId);
     },
 
     setClanMotto: (guildId, clanRoleId, motto) => {

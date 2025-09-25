@@ -3,6 +3,7 @@ const { Events, MessageType } = require('discord.js');
 const config = require('../config');
 const db = require('../utils/database');
 const { updateAnalyticsDashboard } = require('../utils/scheduler');
+const { sendOrUpdateDashboard } = require('../utils/dashboardManager');
 
 const PANDA_YAY_EMOJI = '<:PandaYay:1357806568535490812>';
 const COOLDOWN_DURATION = 2500;
@@ -12,21 +13,32 @@ module.exports = {
     async execute(message, client) {
         if (message.author.bot || !message.guild) return;
 
-        // --- Analytics Dashboard Refresh Trigger ---
-        // Check if the author is the bot owner
+        // --- Manual Refresh Triggers for Bot Owner ---
         if (message.author.id === config.ownerID) {
-            const analyticsChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'analytics_channel_id'").get(message.guild.id)?.value;
-            // Check if the message is in the configured analytics channel
+            const guildId = message.guild.id;
+
+            // -- Analytics Dashboard Refresh Trigger --
+            const analyticsChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'analytics_channel_id'").get(guildId)?.value;
             if (message.channel.id === analyticsChannelId) {
-                console.log(`[Analytics] Owner message detected. Forcing refresh for guild ${message.guild.id}.`);
-                const messageId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'analytics_message_id'").get(message.guild.id)?.value;
+                console.log(`[Analytics] Owner message detected. Forcing refresh for guild ${guildId}.`);
+                const messageId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'analytics_message_id'").get(guildId)?.value;
                 if (messageId) {
-                    // Attempt to delete the old dashboard message to force a new one.
                     const oldMessage = await message.channel.messages.fetch(messageId).catch(() => null);
                     if (oldMessage) await oldMessage.delete().catch(err => console.error("Could not delete old analytics dash:", err.message));
                 }
-                // Trigger an immediate update for this specific guild
-                await updateAnalyticsDashboard(client, message.guild.id);
+                await updateAnalyticsDashboard(client, guildId);
+            }
+
+            // -- Clan Dashboard Refresh Trigger --
+            const clanDashChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'dashboard_channel_id'").get(guildId)?.value;
+            if (message.channel.id === clanDashChannelId) {
+                console.log(`[Dashboard] Owner message detected. Forcing refresh for guild ${guildId}.`);
+                const messageId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'dashboard_message_id'").get(guildId)?.value;
+                if (messageId) {
+                    const oldMessage = await message.channel.messages.fetch(messageId).catch(() => null);
+                    if (oldMessage) await oldMessage.delete().catch(err => console.error("Could not delete old clan dash:", err.message));
+                }
+                await sendOrUpdateDashboard(client, guildId);
             }
         }
 

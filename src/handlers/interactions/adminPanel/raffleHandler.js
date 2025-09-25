@@ -83,7 +83,6 @@ module.exports = async (interaction) => {
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder().setCustomId(`raffle_buy_${raffleId}`).setLabel('Buy Ticket').setStyle(ButtonStyle.Success).setEmoji('🎫'),
                     new ButtonBuilder().setCustomId(`raffle_entries_${raffleId}`).setLabel('Participants: 0').setStyle(ButtonStyle.Secondary).setEmoji('👥'),
-                    new ButtonBuilder().setCustomId(`raffle_entrants_list_${raffleId}`).setLabel('View Entrants').setStyle(ButtonStyle.Secondary).setDisabled(true)
                 );
                 
                 const raffleMessage = await interaction.channel.send({ embeds: [raffleEmbed], components: [row] });

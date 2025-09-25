@@ -5,7 +5,7 @@ const economyManager = require('../utils/economyManager');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('wallet')
-        .setDescription('View your Solyx™ balance and capacity.')
+        .setDescription('View your Solyx™ balance.')
         .addUserOption(option =>
             option.setName('user')
                 .setDescription('Optional: View the wallet of another user.')
@@ -19,10 +19,9 @@ module.exports = {
             .setColor('#3498DB')
             .setAuthor({ name: `${targetUser.displayName}'s Wallet`, iconURL: targetUser.displayAvatarURL() })
             .addFields(
-                { name: 'Balance', value: `> ${wallet.balance.toLocaleString()} Solyx™`, inline: true },
-                { name: 'Capacity', value: `> ${wallet.capacity.toLocaleString()} Solyx™`, inline: true }
+                { name: 'Balance', value: `> ${wallet.balance.toLocaleString()} Solyx™`, inline: true }
             )
-            .setFooter({ text: 'A larger capacity may be available through server perks or events.' });
+            .setFooter({ text: 'Earn more Solyx™ by participating in server events!' });
 
         await interaction.reply({ embeds: [embed] });
     },

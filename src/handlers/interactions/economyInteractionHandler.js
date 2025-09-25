@@ -80,8 +80,7 @@ module.exports = async (interaction) => {
             .setColor('#3498DB')
             .setAuthor({ name: `${user.displayName}'s Wallet`, iconURL: user.displayAvatarURL() })
             .addFields(
-                { name: 'Balance', value: `> ${wallet.balance.toLocaleString()} Solyx™`, inline: true },
-                { name: 'Capacity', value: `> ${wallet.capacity.toLocaleString()} Solyx™`, inline: true }
+                { name: 'Balance', value: `> ${wallet.balance.toLocaleString()} Solyx™`, inline: true }
             );
         await interaction.update({ embeds: [embed], components: [] });
     }

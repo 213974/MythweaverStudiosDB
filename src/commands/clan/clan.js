@@ -6,12 +6,11 @@ const clanManager = require('../../utils/clanManager');
 
 // Load subcommand logic files from the current directory
 const subcommands = new Map();
-const subcommandFiles = fs.readdirSync(__dirname).filter(file => file.endsWith('.js') && file !== 'clan.js'); // Exclude the main file itself
+const subcommandFiles = fs.readdirSync(__dirname).filter(file => file.endsWith('.js') && file !== 'clan.js');
 
 for (const file of subcommandFiles) {
     const filePath = path.join(__dirname, file);
     const subcommand = require(filePath);
-    // The name of the subcommand is the filename without .js (e.g., 'view.js' -> 'view')
     subcommands.set(path.parse(file).name, subcommand);
 }
 
@@ -26,6 +25,10 @@ module.exports = {
         .addSubcommand(sub => sub.setName('authority').setDescription('Promotes or demotes a clan member.').addUserOption(opt => opt.setName('user').setDescription('The user to manage.').setRequired(true)).addStringOption(opt => opt.setName('authority').setDescription('The new authority level.').setRequired(true).addChoices({ name: 'Member', value: 'Member' }, { name: 'Officer', value: 'Officer' }, { name: 'Vice Guild Master', value: 'Vice Guild Master' })))
         .addSubcommand(sub => sub.setName('motto').setDescription("Sets or removes your clan's motto.").addStringOption(opt => opt.setName('motto').setDescription('The motto for your clan.')))
         .addSubcommand(sub => sub.setName('color').setDescription("Changes your clan's role color.").addStringOption(opt => opt.setName('hexcolor').setDescription('The new hex color code (e.g., #RRGGBB).').setRequired(true))),
+    
+    // --- NEW EXPORT ---
+    // Make the subcommands map available to other handlers.
+    subcommands,
 
     async execute(interaction) {
         if (!interaction.inGuild()) {
@@ -41,15 +44,13 @@ module.exports = {
 
         try {
             const guildId = interaction.guild.id;
-            // Pre-fetch user's clan data and permissions for the correct guild
             const userClanData = clanManager.findClanContainingUser(guildId, interaction.user.id);
             const permissions = {
                 isOwner: userClanData ? userClanData.clanOwnerUserID === interaction.user.id : false,
                 isVice: userClanData ? (userClanData.viceGuildMasters || []).includes(interaction.user.id) : false,
                 isOfficer: userClanData ? (userClanData.officers || []).includes(interaction.user.id) : false,
             };
-
-            // Execute the specific subcommand logic file
+            
             await subcommand.execute(interaction, guildId, userClanData, permissions);
         } catch (error) {
             console.error(`Error executing clan subcommand '${subcommandName}':`, error);

@@ -3,7 +3,6 @@ const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('dis
 const db = require('./database');
 
 const GIFS = [
-    'https://i.pinimg.com/originals/4c/5b/67/4c5b67093fdc45ae36e08ca67d9c59fa.gif',
     'https://i.pinimg.com/originals/a6/10/8b/a6108b31b391378d30856edba57172a4.gif',
     'https://i.pinimg.com/originals/d2/85/69/d285699262b0a27472b3fa8f7352c145.gif',
     'https://i.pinimg.com/originals/56/34/9f/56349f764173af321a640f6e1bac22fd.gif'

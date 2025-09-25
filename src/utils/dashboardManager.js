@@ -20,7 +20,6 @@ function createDashboardComponents() {
         .setPlaceholder('Select a clan action...')
         .addOptions([
             { label: 'View My Clan', description: 'Display the profile and member list of your clan.', value: 'dashboard_view', emoji: '📜' },
-            { label: 'Invite Member', description: 'Generate an invitation for a user to join your clan.', value: 'dashboard_invite', emoji: '📧' },
             { label: 'Manage Member Authority', description: 'Promote or demote a member of your clan.', value: 'dashboard_authority', emoji: '⬆️' },
             { label: 'Kick Member', description: 'Remove a member from your clan.', value: 'dashboard_kick', emoji: '👢' },
             { label: 'Set Clan Motto', description: 'Update or remove your clan\'s official motto.', value: 'dashboard_motto', emoji: '🖋️' },
