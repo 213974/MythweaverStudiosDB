@@ -39,12 +39,6 @@ function createMainDashboard() {
                 value: 'admin_panel_raffles',
                 emoji: '🎟️',
             },
-            {
-                label: 'Bot Utilities',
-                description: 'Reload commands or perform other bot actions.',
-                value: 'admin_panel_utils',
-                emoji: '⚙️',
-            },
         ]);
 
     const row = new ActionRowBuilder().addComponents(selectMenu);

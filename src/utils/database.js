@@ -23,6 +23,20 @@ CREATE TABLE IF NOT EXISTS raffle_entries ( entry_id INTEGER PRIMARY KEY AUTOINC
 `;
 db.exec(schema);
 
+// --- Additive Migrations for Existing Schemas ---
+try {
+    const raffleColumns = db.pragma(`table_info(raffles)`).map(col => col.name);
+    if (!raffleColumns.includes('image_url')) {
+        console.log('[Database Migration] Adding image_url column to raffles table.');
+        db.exec('ALTER TABLE raffles ADD COLUMN image_url TEXT');
+    }
+} catch (err) {
+    // This can happen if the raffles table doesn't exist yet, which is fine.
+    if (!err.message.includes('no such table')) {
+        console.error('[Database Migration] Error applying additive migration:', err);
+    }
+}
+
 // --- Automated Multi-Server Migration Script ---
 const migrateToMultiGuild = db.transaction(() => {
     const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='guilds'").get();

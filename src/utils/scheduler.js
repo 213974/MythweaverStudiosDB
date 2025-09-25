@@ -2,6 +2,7 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder } = require('discord.js');
 const db = require('./database');
 const { createAnalyticsEmbed } = require('./analyticsManager');
+const { drawRaffleWinners } = require('./raffleManager');
 
 // Function to shuffle an array (Fisher-Yates shuffle)
 function shuffle(array) {
@@ -20,46 +21,9 @@ async function checkEndedRaffles(client) {
     for (const raffle of endedRaffles) {
         console.log(`[Scheduler] Processing ended raffle ID: ${raffle.raffle_id}`);
         try {
-            const entries = db.prepare('SELECT user_id FROM raffle_entries WHERE raffle_id = ?').all(raffle.raffle_id);
-            const channel = await client.channels.fetch(raffle.channel_id).catch(() => null);
-
-            if (!channel) {
-                db.prepare("UPDATE raffles SET status = 'ended', winner_id = 'Error: Channel not found' WHERE raffle_id = ?").run(raffle.raffle_id);
-                continue;
-            }
-
-            let winners = [];
-            let announcementDescription;
-
-            if (entries.length > 0) {
-                const uniqueParticipants = [...new Set(entries.map(e => e.user_id))];
-                winners = shuffle(uniqueParticipants).slice(0, raffle.num_winners);
-                const winnerMentions = winners.map(id => `<@${id}>`).join(', ');
-                announcementDescription = `The raffle for **${raffle.title}** has concluded! Congratulations to our winner(s):\n\n${winnerMentions}`;
-            } else {
-                announcementDescription = 'The raffle has ended, but there were no entries. No winners were chosen.';
-            }
-
-            db.prepare("UPDATE raffles SET status = 'ended', winner_id = ? WHERE raffle_id = ?").run(winners.join(','), raffle.raffle_id);
-
-            const announcementEmbed = new EmbedBuilder()
-                .setColor('#FFD700')
-                .setTitle(`🎉 Raffle Ended: ${raffle.title} 🎉`)
-                .setDescription(announcementDescription)
-                .addFields(
-                    { name: 'Total Unique Participants', value: (new Set(entries.map(e => e.user_id))).size.toLocaleString(), inline: true },
-                    { name: 'Total Tickets', value: entries.length.toLocaleString(), inline: true }
-                )
-                .setTimestamp();
-            
-            await channel.send({ content: winners.length > 0 ? winners.map(id => `<@${id}>`).join(' ') : ' ', embeds: [announcementEmbed] });
-
-            const originalMessage = await channel.messages.fetch(raffle.message_id).catch(() => null);
-            if (originalMessage) {
-                const endedEmbed = EmbedBuilder.from(originalMessage.embeds[0]).setColor('#808080').addFields({ name: 'Status', value: 'This raffle has ended.'});
-                const disabledRow = ActionRowBuilder.from(originalMessage.components[0]).setComponents(ButtonBuilder.from(originalMessage.components[0].components[0]).setDisabled(true));
-                await originalMessage.edit({ embeds: [endedEmbed], components: [disabledRow] });
-            }
+            // All complex logic for drawing winners, sending messages, and editing
+            // the original post is now handled by the centralized raffleManager.
+            await drawRaffleWinners(client, raffle.raffle_id);
         } catch (error) {
             console.error(`[Scheduler] Failed to process raffle ID ${raffle.raffle_id}:`, error);
         }

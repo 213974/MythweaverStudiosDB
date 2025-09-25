@@ -1,5 +1,5 @@
-﻿// src/commands/weekly.js
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+﻿// commands/economy/weekly.js
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const economyManager = require('../utils/economyManager');
 const { formatTimestamp } = require('../utils/timestampFormatter');
 
@@ -8,7 +8,7 @@ module.exports = {
         .setName('weekly')
         .setDescription('Claim your weekly Solyx reward.'),
     async execute(interaction) {
-        const guildId = interaction.guild.id; // Get the guild ID
+        const guildId = interaction.guild.id;
         const { canClaim, nextClaim } = economyManager.canClaimWeekly(interaction.user.id, guildId);
         const user = interaction.user;
 
@@ -16,7 +16,7 @@ module.exports = {
             .setAuthor({ name: `${user.displayName} | Weekly Claim`, iconURL: user.displayAvatarURL() });
 
         const claimButton = new ButtonBuilder()
-            .setCustomId(`claim_weekly_${user.id}`) // User-specific ID
+            .setCustomId(`claim_weekly_${user.id}`)
             .setLabel('Claim Weekly Reward')
             .setStyle(ButtonStyle.Success)
             .setEmoji('💎')
@@ -31,43 +31,6 @@ module.exports = {
         }
 
         const row = new ActionRowBuilder().addComponents(claimButton);
-        const reply = await interaction.reply({ embeds: [embed], components: canClaim ? [row] : [], flags: 64 });
-
-        if (!canClaim) return;
-
-        const collector = reply.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60000 });
-
-        collector.on('collect', async i => {
-            if (i.user.id !== interaction.user.id) {
-                return i.reply({ content: 'This is not for you!', flags: 64 });
-            }
-
-            const result = economyManager.claimWeekly(i.user.id, guildId); // Pass guildId here
-            const newEmbed = new EmbedBuilder();
-            const newButtons = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('view_bank_after_claim').setLabel('View Bank').setStyle(ButtonStyle.Primary).setEmoji('🏦'),
-                new ButtonBuilder().setCustomId('view_shop_after_claim').setLabel('View Shop').setStyle(ButtonStyle.Secondary).setEmoji('🛍️')
-            );
-
-            if (result.success) {
-                newEmbed.setColor('#00FF00')
-                    .setTitle('Weekly Reward Claimed!')
-                    .setDescription(`**${result.reward}** 💎 has been deposited directly into your bank.`)
-                    .setFooter({ text: 'This Solyx is safe in your bank. Use /bank withdraw to move it to your pockets(balance).' });
-            } else {
-                newEmbed.setColor('#FF0000')
-                    .setTitle('Claim Failed')
-                    .setDescription(result.message);
-            }
-
-            await i.update({ embeds: [newEmbed], components: [newButtons] });
-            collector.stop();
-        });
-
-        collector.on('end', (collected, reason) => {
-            if (reason === 'time' && collected.size === 0) {
-                interaction.editReply({ components: [] }).catch(() => { });
-            }
-        });
+        await interaction.reply({ embeds: [embed], components: canClaim ? [row] : [], flags: 64 });
     },
 };

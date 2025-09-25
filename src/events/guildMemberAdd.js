@@ -9,6 +9,9 @@ const invites = new Map();
 module.exports = {
     name: Events.GuildMemberAdd,
     async execute(member, client) {
+        // Ensure the user is in the database immediately upon joining.
+        db.prepare('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)').run(member.id, member.user.username);
+
         // On startup, fetch all invites and store them
         if (invites.size === 0) {
             try {
@@ -17,7 +20,8 @@ module.exports = {
                     invites.set(invite.code, invite.uses);
                 });
                 console.log('[guildMemberAdd] Initialized invite cache.');
-            } catch (error) {
+            } catch (error)
+            {
                 console.error('[guildMemberAdd] Could not fetch invites on init:', error);
             }
         }
@@ -47,29 +51,25 @@ module.exports = {
             db.prepare('UPDATE users SET referred_by = ? WHERE user_id = ?').run(inviterId, newMemberId);
 
             // Award the bonus to the inviter
-            const inviterWallet = economyManager.getWallet(inviterId);
-            if (inviterWallet.balance + JOIN_BONUS <= inviterWallet.capacity) {
-                db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ?').run(JOIN_BONUS, inviterId);
+            const inviterWallet = economyManager.getWallet(inviterId, member.guild.id);
+            // Award the bonus
+            db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ?').run(JOIN_BONUS, inviterId, member.guild.id);
 
-                // Log the transaction
-                db.prepare('INSERT INTO transactions (user_id, amount, reason, timestamp) VALUES (?, ?, ?, ?)')
-                    .run(inviterId, JOIN_BONUS, `Referral bonus for ${member.user.tag}`, new Date().toISOString());
+            // Log the transaction
+            db.prepare('INSERT INTO transactions (user_id, guild_id, amount, reason, timestamp) VALUES (?, ?, ?, ?, ?)')
+                .run(inviterId, member.guild.id, JOIN_BONUS, `Referral bonus for ${member.user.tag}`, new Date().toISOString());
 
-                console.log(`[guildMemberAdd] Awarded ${JOIN_BONUS} Solyx to ${usedInvite.inviter.tag} for referring ${member.user.tag}.`);
-                
-                // Optional: DM the inviter
-                const inviter = await client.users.fetch(inviterId).catch(() => null);
-                if(inviter) {
-                    const embed = new EmbedBuilder()
-                        .setColor('#2ECC71')
-                        .setTitle('🎉 New Referral! 🎉')
-                        .setDescription(`**${member.user.tag}** joined using your invite link!`)
-                        .addFields({ name: 'Bonus Awarded', value: `You have received **${JOIN_BONUS.toLocaleString()}** Solyx™.` });
-                    await inviter.send({ embeds: [embed] }).catch(e => console.error(`Could not DM inviter ${inviter.tag}: ${e.message}`));
-                }
-
-            } else {
-                console.log(`[guildMemberAdd] Could not award bonus to ${usedInvite.inviter.tag}, wallet is full.`);
+            console.log(`[guildMemberAdd] Awarded ${JOIN_BONUS} Solyx to ${usedInvite.inviter.tag} for referring ${member.user.tag}.`);
+            
+            // Optional: DM the inviter
+            const inviter = await client.users.fetch(inviterId).catch(() => null);
+            if(inviter) {
+                const embed = new EmbedBuilder()
+                    .setColor('#2ECC71')
+                    .setTitle('🎉 New Referral! 🎉')
+                    .setDescription(`**${member.user.tag}** joined using your invite link!`)
+                    .addFields({ name: 'Bonus Awarded', value: `You have received **${JOIN_BONUS.toLocaleString()}** Solyx™.` });
+                await inviter.send({ embeds: [embed] }).catch(e => console.error(`Could not DM inviter ${inviter.tag}: ${e.message}`));
             }
 
         } catch (error) {

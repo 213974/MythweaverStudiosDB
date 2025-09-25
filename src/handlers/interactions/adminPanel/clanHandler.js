@@ -8,7 +8,13 @@ module.exports = async (interaction) => {
     // --- NAVIGATION ---
     if (interaction.isStringSelectMenu()) {
         const response = createClanDashboard();
-        await interaction.update({ ...response });
+        // If this interaction comes from the main selection menu, reply ephemerally.
+        // Otherwise, update the existing admin panel message.
+        if (interaction.customId === 'admin_panel_select') {
+            return interaction.reply({ ...response, flags: 64 });
+        } else {
+            return interaction.update({ ...response });
+        }
     }
 
     // --- BUTTONS (Open Modals) ---
@@ -48,17 +54,17 @@ module.exports = async (interaction) => {
         if (action === 'create') {
             const clanOwner = await parseUser(interaction.guild, interaction.fields.getTextInputValue('owner_input'));
             if (!clanOwner) return interaction.editReply({ content: 'Error: Invalid Clan Owner provided.' });
-            const result = clanManager.createClan(clanRole.id, clanOwner.id);
+            const result = clanManager.createClan(interaction.guild.id, clanRole.id, clanOwner.id);
             if (result.success) await interaction.editReply({ content: `Successfully created clan **${clanRole.name}** with owner ${clanOwner}.` });
             else await interaction.editReply({ content: `Failed to create clan: ${result.message}` });
         } else if (action === 'delete') {
-            const result = clanManager.deleteClan(clanRole.id);
+            const result = clanManager.deleteClan(interaction.guild.id, clanRole.id);
             if (result.success) await interaction.editReply({ content: `Successfully deleted clan **${clanRole.name}**.` });
             else await interaction.editReply({ content: `Failed to delete clan: ${result.message}` });
         } else if (action === 'owner') {
             const newOwner = await parseUser(interaction.guild, interaction.fields.getTextInputValue('owner_input'));
             if (!newOwner) return interaction.editReply({ content: 'Error: Invalid New Owner provided.' });
-            const result = clanManager.setClanOwner(clanRole.id, newOwner.id);
+            const result = clanManager.setClanOwner(interaction.guild.id, clanRole.id, newOwner.id);
             if (result.success) await interaction.editReply({ content: `Successfully transferred ownership of **${clanRole.name}** to ${newOwner}.` });
             else await interaction.editReply({ content: `Failed to transfer ownership: ${result.message}` });
         }
