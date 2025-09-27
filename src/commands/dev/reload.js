@@ -26,7 +26,7 @@ module.exports = {
         .setName('reload')
         .setDescription('Reloads the logic of all commands.'),
     async execute(interaction) {
-        if (interaction.user.id !== config.ownerID) {
+        if (interaction.user.id !== config.ownerIDs) {
             return interaction.reply({ content: 'You do not have permission to use this command.', flags: 64 });
         }
 

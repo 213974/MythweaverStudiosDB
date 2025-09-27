@@ -14,7 +14,7 @@ module.exports = {
         if (message.author.bot || !message.guild) return;
 
         // --- Manual Refresh Triggers for Bot Owner ---
-        if (message.author.id === config.ownerID) {
+        if (message.author.id === config.ownerIDs) {
             const guildId = message.guild.id;
 
             // -- Analytics Dashboard Refresh Trigger --

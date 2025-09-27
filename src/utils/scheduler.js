@@ -1,42 +1,9 @@
 // src/utils/scheduler.js
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder } = require('discord.js');
+const { ActionRowBuilder } = require('discord.js');
 const db = require('./database');
 const { createAnalyticsEmbed } = require('./analyticsManager');
 const { drawRaffleWinners } = require('./raffleManager');
 
-async function syncClanOwnerRoles(client) {
-    try {
-        const allClans = db.prepare('SELECT guild_id, clan_id, owner_id FROM clans').all();
-        for (const clan of allClans) {
-            const guild = await client.guilds.fetch(clan.guild_id).catch(() => null);
-            if (!guild) continue;
-
-            const owner = await guild.members.fetch(clan.owner_id).catch(() => null);
-            if (!owner) continue; // Owner may have left the server
-
-            if (!owner.roles.cache.has(clan.clan_id)) {
-                const clanRole = await guild.roles.fetch(clan.clan_id).catch(() => null);
-                if (clanRole) {
-                    console.log(`[Scheduler] Correcting missing role for clan owner ${owner.user.tag} in guild ${guild.name}.`);
-                    await owner.roles.add(clanRole);
-                }
-            }
-        }
-    } catch (error) {
-        console.error('[Scheduler] Error during clan owner role synchronization:', error);
-    }
-}
-
-// Function to shuffle an array (Fisher-Yates shuffle)
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-}
-
-// CORRECTED: This function is now fully implemented.
 async function checkEndedRaffles(client) {
     const now = Math.floor(Date.now() / 1000);
     const endedRaffles = db.prepare('SELECT * FROM raffles WHERE status = ? AND end_timestamp <= ?').all('active', now);
@@ -44,8 +11,6 @@ async function checkEndedRaffles(client) {
     for (const raffle of endedRaffles) {
         console.log(`[Scheduler] Processing ended raffle ID: ${raffle.raffle_id}`);
         try {
-            // All complex logic for drawing winners, sending messages, and editing
-            // the original post is now handled by the centralized raffleManager.
             await drawRaffleWinners(client, raffle.raffle_id);
         } catch (error) {
             console.error(`[Scheduler] Failed to process raffle ID ${raffle.raffle_id}:`, error);
@@ -54,7 +19,6 @@ async function checkEndedRaffles(client) {
 }
 
 async function updateAnalyticsDashboard(client, specificGuildId = null) {
-    // CORRECTED: The typo '.cach' has been fixed to '.cache'.
     const guilds = specificGuildId ? [[specificGuildId, await client.guilds.fetch(specificGuildId)]] : client.guilds.cache;
 
     for (const [guildId, guild] of guilds) {
@@ -81,9 +45,40 @@ async function updateAnalyticsDashboard(client, specificGuildId = null) {
             }
         } catch (error) {
             console.error(`[Scheduler] Failed to update analytics for guild ${guildId}:`, error);
-            if (error.code === 10008) { // Unknown Message
+            if (error.code === 10008) {
                 db.prepare("DELETE FROM settings WHERE guild_id = ? AND key = 'analytics_message_id'").run(guildId);
             }
+        }
+    }
+}
+
+async function updateRaffleMessages(client) {
+    if (client.raffleUpdateQueue.size === 0) return;
+
+    const rafflesToUpdate = new Set(client.raffleUpdateQueue);
+    client.raffleUpdateQueue.clear();
+
+    for (const raffleId of rafflesToUpdate) {
+        try {
+            const raffle = db.prepare('SELECT channel_id, message_id FROM raffles WHERE raffle_id = ?').get(raffleId);
+            if (!raffle || !raffle.message_id) continue;
+
+            const channel = await client.channels.fetch(raffle.channel_id).catch(() => null);
+            if (!channel) continue;
+
+            const message = await channel.messages.fetch(raffle.message_id).catch(() => null);
+            if (!message || message.components.length === 0) continue;
+
+            const entryCount = db.prepare('SELECT COUNT(DISTINCT user_id) as count FROM raffle_entries WHERE raffle_id = ?').get(raffleId).count;
+            const updatedRow = ActionRowBuilder.from(message.components[0]);
+            const participantsButton = updatedRow.components.find(c => c.customId === `raffle_entries_${raffleId}`);
+
+            if (participantsButton && participantsButton.label !== `Participants: ${entryCount}`) {
+                participantsButton.setLabel(`Participants: ${entryCount}`);
+                await message.edit({ components: [updatedRow] });
+            }
+        } catch (error) {
+            console.error(`[RaffleUpdater] Failed to update message for raffle ID ${raffleId}:`, error);
         }
     }
 }
@@ -93,12 +88,11 @@ function startScheduler(client) {
     setTimeout(() => {
         checkEndedRaffles(client);
         updateAnalyticsDashboard(client);
-        syncClanOwnerRoles(client);
     }, 5000);
 
-    setInterval(() => checkEndedRaffles(client), 60 * 1000); 
-    setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000); // Every 5 minutes
-    setInterval(() => syncClanOwnerRoles(client), 60 * 1000); // Every minute
+    setInterval(() => checkEndedRaffles(client), 60 * 1000);
+    setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000);
+    setInterval(() => updateRaffleMessages(client), 3000);
 }
 
-module.exports = { startScheduler, shuffle, updateAnalyticsDashboard };
+module.exports = { startScheduler };

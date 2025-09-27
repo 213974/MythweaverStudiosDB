@@ -10,7 +10,7 @@ const raffleManager = require('../../../utils/raffleManager');
 module.exports = async (interaction) => {
     const guildId = interaction.guild.id;
     const raffleCreatorRoleId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'raffle_creator_role_id'").get(guildId)?.value;
-    const isOwner = interaction.user.id === config.ownerID;
+    const isOwner = interaction.user.id === config.ownerIDs;
     const isRaffleCreator = raffleCreatorRoleId && interaction.member.roles.cache.has(raffleCreatorRoleId);
 
     if (!isOwner && !isRaffleCreator) {
@@ -77,7 +77,7 @@ module.exports = async (interaction) => {
                 const result = db.prepare('INSERT INTO raffles (guild_id, title, channel_id, ticket_cost, num_winners, end_timestamp, status, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(guildId, title, channelId, ticketCost, numWinners, endTimestamp, 'active', imageUrl);
                 const raffleId = result.lastInsertRowid;
 
-                const raffleEmbed = new EmbedBuilder().setColor('#1ABC9C').setTitle(`🎟️ Raffle Started: ${title} 🎟️`).addFields({ name: '🏆 Winners', value: `**${numWinners}**`, inline: true }, { name: '🎫 Ticket Cost', value: `**${ticketCost.toLocaleString()}** Solyx™`, inline: true }, { name: '⏰ Ends', value: `${formatTimestamp(endTimestamp, 'R')}` }).setFooter({ text: `Raffle ID: ${raffleId}` });
+                const raffleEmbed = new EmbedBuilder().setColor('#1ABC9C').setTitle(`🎟️ ${title} 🎟️`).addFields({ name: '🏆 Winners', value: `**${numWinners}**`, inline: true }, { name: '🎫 Ticket Cost', value: `**${ticketCost.toLocaleString()}** Solyx™`, inline: true }, { name: '⏰ Ends', value: `${formatTimestamp(endTimestamp, 'R')}` }).setFooter({ text: `Raffle ID: ${raffleId}` });
                 if (imageUrl) raffleEmbed.setImage(imageUrl);
 
                 const row = new ActionRowBuilder().addComponents(

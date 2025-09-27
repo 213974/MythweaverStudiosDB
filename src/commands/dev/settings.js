@@ -9,9 +9,9 @@ module.exports = {
         .setDescription('Manage core bot configuration. [BOT OWNER ONLY]')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     async execute(interaction) {
-        if (interaction.user.id !== config.ownerID) {
+       if (!config.ownerIDs.includes(interaction.user.id)) {
             return interaction.reply({
-                content: 'Access Denied. This command can only be executed by the Bot Owner specified in the configuration file.',
+                content: 'Access Denied. If you hug me I might let you in...',
                 flags: 64
             });
         }

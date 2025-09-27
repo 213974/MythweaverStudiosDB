@@ -36,7 +36,7 @@ module.exports = async (interaction) => {
     if (customId.startsWith('raffle_entries_')) {
         const raffleId = customId.split('_')[2];
         const counts = db.prepare('SELECT COUNT(*) as total_entries, COUNT(DISTINCT user_id) as unique_entrants FROM raffle_entries WHERE raffle_id = ?').get(raffleId);
-        const embed = new EmbedBuilder().setColor('#3498DB').setTitle('Raffle Statistics').addFields({ name: 'Unique Participants', value: `**${(counts.unique_entrants || 0).toLocaleString()}**`, inline: true }, { name: 'Total Tickets Sold', value: `**${(counts.total_entries || 0).toLocaleString()}**`, inline: true });
+        const embed = new EmbedBuilder().setColor('#3498DB').setTitle('Raffle Statistics').addFields({ name: 'Participants', value: `**${(counts.unique_entrants || 0).toLocaleString()}**`, inline: true }, { name: 'Total Tickets Sold', value: `**${(counts.total_entries || 0).toLocaleString()}**`, inline: true });
         await interaction.reply({ embeds: [embed], flags: 64 });
     }
 };
