@@ -3,6 +3,7 @@ const { ActionRowBuilder } = require('discord.js');
 const db = require('./database');
 const { createAnalyticsEmbed } = require('./analyticsManager');
 const { drawRaffleWinners } = require('./raffleManager');
+const { sendOrUpdateLeaderboard } = require('./leaderboardManager');
 
 async function checkEndedRaffles(client) {
     const now = Math.floor(Date.now() / 1000);
@@ -88,11 +89,13 @@ function startScheduler(client) {
     setTimeout(() => {
         checkEndedRaffles(client);
         updateAnalyticsDashboard(client);
+        sendOrUpdateLeaderboard(client); // Initial run for all guilds
     }, 5000);
 
     setInterval(() => checkEndedRaffles(client), 60 * 1000);
-    setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000);
+    setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000); // Update every 5 mins
     setInterval(() => updateRaffleMessages(client), 3000);
+    setInterval(() => sendOrUpdateLeaderboard(client), 60 * 60 * 1000); // Update every 60 mins
 }
 
 module.exports = { startScheduler };

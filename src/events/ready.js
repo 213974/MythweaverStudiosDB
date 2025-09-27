@@ -84,7 +84,7 @@ console.log(`[Ready] Cached ${guildInvites.size} invites for guild: ${guild.name
             const startupEmbed = new EmbedBuilder()
                 .setColor('#2ECC71')
                 .setTitle('Bot Online & Ready')
-                .setDescription(`Restart Reason: *Maintenance & Improvements*`)
+                .setDescription(`Restart Reason: *Solyx Leaderboard | Maintenance & Improvements*`)
                 .setFields(
                     { name: 'Status', value: 'Online | Debug Mode', inline: true },
                     { name: 'Startup Time', value: `${startupTime}s`, inline: true },

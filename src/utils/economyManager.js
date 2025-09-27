@@ -196,4 +196,17 @@ module.exports = {
         db.prepare('UPDATE wallets SET balance = balance - ? WHERE user_id = ? AND guild_id = ? AND currency = ?').run(item.price, userId, guildId, item.currency);
         return { success: true, price: item.price, currency: item.currency };
     },
+
+    // --- Leaderboard Functions ---
+    getTopUsers: (guildId, limit = 25) => {
+        return db.prepare('SELECT user_id, balance FROM wallets WHERE guild_id = ? ORDER BY balance DESC LIMIT ?').all(guildId, limit);
+    },
+
+    getUserRank: (userId, guildId) => {
+        const allUsers = db.prepare('SELECT user_id, balance FROM wallets WHERE guild_id = ? ORDER BY balance DESC').all(guildId);
+        const rank = allUsers.findIndex(user => user.user_id === userId) + 1;
+        
+        if (rank === 0) return null; // User not found
+        return { rank, balance: allUsers[rank - 1].balance };
+    },
 };

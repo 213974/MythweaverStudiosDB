@@ -34,7 +34,7 @@ async function drawRaffleWinners(client, raffleId) {
     if (originalMessage) {
         const endedEmbed = EmbedBuilder.from(originalMessage.embeds[0])
             .setColor('#808080')
-            .setTitle(`🎉 Raffle Ended: ${raffle.title} 🎉`);
+            .setTitle(`🎉 ${raffle.title} 🎉`);
 
         // Clear existing fields and add new result fields
         endedEmbed.setFields(
@@ -59,7 +59,7 @@ async function drawRaffleWinners(client, raffleId) {
             
         const announcementEmbed = new EmbedBuilder()
             .setColor('#808080')
-            .setTitle(`🎉 Raffle Ended: ${raffle.title} 🎉`)
+            .setTitle(`🎉 ${raffle.title} 🎉`)
             .setDescription(announcementDescription)
             .addFields(
                 { name: 'Total Participants', value: (new Set(entries.map(e => e.user_id))).size.toLocaleString() }

@@ -4,13 +4,14 @@ const db = require('./database');
 
 function createDashboardEmbed() {
     return new EmbedBuilder()
-        .setColor('#D3A0F5')
+        .setColor('#ff8100')
         .setTitle('⚔️ Clan Receptionist Dashboard ⚔️')
         .setDescription(
             "Welcome to the Clan Hall.\n\n" +
             "This is the central dashboard for all clan operations. Whether you are a seasoned leader or a new recruit, your journey begins here. Please select an action from the dropdown menu below.\n\n" +
             "*Note: Certain actions require appropriate clan permissions to use.*"
         )
+        // .setImage()
         .setFooter({ text: 'Mythweaver Studios | Clan Operations' });
 }
 

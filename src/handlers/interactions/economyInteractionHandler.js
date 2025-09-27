@@ -2,6 +2,7 @@
 const claimHandler = require('./economy/claimHandler');
 const navigationHandler = require('./economy/navigationHandler');
 const raffleHandler = require('./economy/raffleHandler');
+const leaderboardHandler = require('./economy/leaderboardHandler');
 
 // This file is now a lean router, delegating to specialized handlers.
 module.exports = async (interaction) => {
@@ -13,5 +14,7 @@ module.exports = async (interaction) => {
         await navigationHandler(interaction);
     } else if (customId.startsWith('raffle_')) {
         await raffleHandler(interaction);
+    } else if (customId.startsWith('leaderboard_')) {
+        await leaderboardHandler(interaction);
     }
 };
