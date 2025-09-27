@@ -1,6 +1,6 @@
 // src/handlers/interactions/adminPanel/shopHandler.js
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
-const { createShopDashboard } = require('../../../components/admin-dashboard/shopPanel');
+const { createShopDashboard } = require('../../../components/adminDashboard/shopPanel');
 const economyManager = require('../../../utils/economyManager');
 const { parseRole } = require('../../../utils/interactionHelpers');
 

@@ -1,6 +1,8 @@
 // src/commands/clan/view.js
 const { EmbedBuilder } = require('discord.js');
 const clanManager = require('../../utils/clanManager');
+const db = require('../../utils/database');
+const config = require('../../config');
 
 module.exports = {
     async execute(interaction, guildId, userClanData) {
@@ -13,13 +15,26 @@ module.exports = {
             if (!clanToViewData) return interaction.reply({ content: `**${specifiedRole.name}** is not a registered clan in this server.`, flags: 64 });
             clanToViewRole = specifiedRole;
         } else {
-            if (!userClanData) return interaction.reply({ content: "You are not in a clan in this server. Specify a clan role to view its details.", flags: 64 });
+            if (!userClanData) return interaction.reply({ content: "You are not in a clan. Specify a clan role to view its details.", flags: 64 });
             clanToViewData = userClanData;
             clanToViewRole = await interaction.guild.roles.fetch(userClanData.clanRoleId).catch(() => null);
             if (!clanToViewRole) return interaction.reply({ content: "Could not find your clan's Discord role.", flags: 64 });
         }
 
-        await interaction.deferReply({ flags: 64 });
+        // --- PERMISSION CHECK LOGIC ---
+        const member = interaction.member;
+        const adminRoleId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'admin_role_id'").get(guildId)?.value;
+        const raffleRoleId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'raffle_creator_role_id'").get(guildId)?.value;
+
+        const hasElevatedPerms = 
+            member.id === config.ownerID ||
+            (adminRoleId && member.roles.cache.has(adminRoleId)) ||
+            (raffleRoleId && member.roles.cache.has(raffleRoleId)) ||
+            (clanToViewData && member.id === clanToViewData.clanOwnerUserID) ||
+            (clanToViewData && (clanToViewData.viceGuildMasters || []).includes(member.id));
+
+        const isEphemeral = !hasElevatedPerms;
+        await interaction.deferReply({ flags: isEphemeral ? 64 : 0 });
 
         const { clanOwnerUserID, motto, viceGuildMasters = [], officers = [], members = [] } = clanToViewData;
         const embed = new EmbedBuilder().setColor(clanToViewRole.color || '#FFFFFF').setTitle(`${clanToViewRole.name}`).addFields(

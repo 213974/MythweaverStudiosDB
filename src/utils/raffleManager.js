@@ -39,7 +39,7 @@ async function drawRaffleWinners(client, raffleId) {
         // Clear existing fields and add new result fields
         endedEmbed.setFields(
             { name: 'Winner(s)', value: winners.length > 0 ? winners.map(id => `<@${id}>`).join('\n') : 'No entries were submitted.' },
-            { name: 'Total Unique Participants', value: (new Set(entries.map(e => e.user_id))).size.toLocaleString() }
+            { name: 'Total Participants', value: (new Set(entries.map(e => e.user_id))).size.toLocaleString() }
         );
 
         // Disable all components on the message
@@ -62,7 +62,7 @@ async function drawRaffleWinners(client, raffleId) {
             .setTitle(`🎉 Raffle Ended: ${raffle.title} 🎉`)
             .setDescription(announcementDescription)
             .addFields(
-                { name: 'Total Unique Participants', value: (new Set(entries.map(e => e.user_id))).size.toLocaleString() }
+                { name: 'Total Participants', value: (new Set(entries.map(e => e.user_id))).size.toLocaleString() }
             )
             .setTimestamp();
         await channel.send({ embeds: [announcementEmbed] });

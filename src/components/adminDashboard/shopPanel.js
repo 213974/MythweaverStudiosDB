@@ -1,24 +1,24 @@
-// src/components/admin-dashboard/economyPanel.js
+// src/components/adminDashboard/shopPanel.js
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-function createEconomyDashboard() {
+function createShopDashboard() {
     const embed = new EmbedBuilder()
-        .setColor('#F1C40F')
-        .setTitle('🪙 Economy Management 🪙')
-        .setDescription('Select an action to perform on a user\'s Solyx™ balance.');
+        .setColor('#9B59B6')
+        .setTitle('🛍️ Shop Management 🛍️')
+        .setDescription('Add, remove, or update the price of roles available for purchase in the shop.');
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
-            .setCustomId('admin_eco_give')
-            .setLabel('Give Solyx')
+            .setCustomId('admin_shop_add')
+            .setLabel('Add Item')
             .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
-            .setCustomId('admin_eco_remove')
-            .setLabel('Remove Solyx')
+            .setCustomId('admin_shop_remove')
+            .setLabel('Remove Item')
             .setStyle(ButtonStyle.Danger),
         new ButtonBuilder()
-            .setCustomId('admin_eco_set')
-            .setLabel('Set Solyx')
+            .setCustomId('admin_shop_update')
+            .setLabel('Update Price')
             .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
             .setCustomId('admin_panel_back')
@@ -29,4 +29,4 @@ function createEconomyDashboard() {
     return { embeds: [embed], components: [row] };
 }
 
-module.exports = { createEconomyDashboard };
+module.exports = { createShopDashboard };

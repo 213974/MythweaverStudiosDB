@@ -1,24 +1,24 @@
-// src/components/admin-dashboard/clanPanel.js
+// src/components/adminDashboard/rafflePanel.js
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-function createClanDashboard() {
+function createRaffleDashboard() {
     const embed = new EmbedBuilder()
-        .setColor('#3498DB')
-        .setTitle('🛡️ Clan Management 🛡️')
-        .setDescription('Use the buttons below to perform administrative actions on server clans.');
+        .setColor('#1ABC9C')
+        .setTitle('🎟️ Raffle Management 🎟️')
+        .setDescription('Create new raffles, view active ones, or draw winners for ended ones.');
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
-            .setCustomId('admin_clan_create')
-            .setLabel('Create Clan')
+            .setCustomId('admin_raffle_create')
+            .setLabel('Create Raffle')
             .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
-            .setCustomId('admin_clan_delete')
-            .setLabel('Delete Clan')
+            .setCustomId('admin_raffle_end')
+            .setLabel('End Raffle Early')
             .setStyle(ButtonStyle.Danger),
         new ButtonBuilder()
-            .setCustomId('admin_clan_owner')
-            .setLabel('Change Owner')
+            .setCustomId('admin_raffle_view')
+            .setLabel('View Active Raffles')
             .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
             .setCustomId('admin_panel_back')
@@ -29,4 +29,4 @@ function createClanDashboard() {
     return { embeds: [embed], components: [row] };
 }
 
-module.exports = { createClanDashboard };
+module.exports = { createRaffleDashboard };

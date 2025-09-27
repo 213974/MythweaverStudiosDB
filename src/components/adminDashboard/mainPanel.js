@@ -1,4 +1,4 @@
-// src/components/admin-dashboard/mainPanel.js
+// src/components/adminDashboard/mainPanel.js
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
 
 function createMainDashboard() {

@@ -1,6 +1,6 @@
 // src/handlers/interactions/adminPanel/clanHandler.js
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, RoleSelectMenuBuilder, UserSelectMenuBuilder } = require('discord.js');
-const { createClanDashboard } = require('../../../components/admin-dashboard/clanPanel');
+const { createClanDashboard } = require('../../../components/adminDashboard/clanPanel');
 const clanManager = require('../../../utils/clanManager');
 const { parseUser, parseRole } = require('../../../utils/interactionHelpers');
 

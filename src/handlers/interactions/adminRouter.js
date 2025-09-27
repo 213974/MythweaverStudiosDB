@@ -16,7 +16,7 @@ module.exports = async (interaction) => {
     } else if (customId.startsWith('admin_raffle_') || interaction.values?.[0] === 'admin_panel_raffles') {
         await raffleHandler(interaction);
     } else if (customId === 'admin_panel_select' || customId === 'admin_panel_back') {
-        const { createMainDashboard } = require('../../components/admin-dashboard/mainPanel');
+        const { createMainDashboard } = require('../../components/adminDashboard/mainPanel');
         const response = createMainDashboard();
         await interaction.update({ ...response });
     }

@@ -1,6 +1,6 @@
 // src/handlers/interactions/adminPanel/economyHandler.js
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
-const { createEconomyDashboard } = require('../../../components/admin-dashboard/economyPanel');
+const { createEconomyDashboard } = require('../../../components/adminDashboard/economyPanel');
 const economyManager = require('../../../utils/economyManager');
 const { parseUser } = require('../../../utils/interactionHelpers');
 

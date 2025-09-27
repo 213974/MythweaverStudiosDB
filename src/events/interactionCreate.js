@@ -49,7 +49,7 @@ module.exports = {
                 return;
             }
 
-            if (customId.startsWith('claim_') || customId.startsWith('nav_') || customId.includes('_after_claim') || customId.startsWith('raffle_buy_')) {
+            if (customId.startsWith('claim_') || customId.startsWith('nav_') || customId.startsWith('raffle_')) {
                 await economyInteractionHandler(interaction);
                 return;
             }

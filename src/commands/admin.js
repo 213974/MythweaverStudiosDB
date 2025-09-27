@@ -1,7 +1,7 @@
 // src/commands/admin/admin.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { createMainDashboard } = require('../components/admin-dashboard/mainPanel');
-const { createEconomyDashboard } = require('../components/admin-dashboard/economyPanel');
+const { createMainDashboard } = require('../components/adminDashboard/mainPanel');
+const { createEconomyDashboard } = require('../components/adminDashboard/economyPanel');
 const config = require('../config');
 
 module.exports = {

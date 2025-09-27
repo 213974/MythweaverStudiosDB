@@ -1,6 +1,6 @@
 // src/handlers/interactions/adminPanel/raffleHandler.js
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
-const { createRaffleDashboard } = require('../../../components/admin-dashboard/rafflePanel');
+const { createRaffleDashboard } = require('../../../components/adminDashboard/rafflePanel');
 const chrono = require('chrono-node');
 const { formatTimestamp } = require('../../../utils/timestampFormatter');
 const db = require('../../../utils/database');
