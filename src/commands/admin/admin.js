@@ -1,8 +1,12 @@
 // src/commands/admin/admin.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { createMainDashboard } = require('../components/adminDashboard/mainPanel');
-const { createEconomyDashboard } = require('../components/adminDashboard/economyPanel');
-const config = require('../config');
+const { createMainDashboard } = require('../../components/adminDashboard/mainPanel');
+const { createEconomyDashboard } = require('../../components/adminDashboard/economyPanel');
+const { createClanDashboard } = require('../../components/adminDashboard/clanPanel');
+const { createShopDashboard } = require('../../components/adminDashboard/shopPanel');
+const { createRaffleDashboard } = require('../../components/adminDashboard/rafflePanel');
+const config = require('../../config');
+const db = require('../../utils/database'); // Import the database
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -20,23 +24,33 @@ module.exports = {
                     { name: 'Raffles', value: 'raffles' }
                 )),
     async execute(interaction) {
-        // Permission check
-        if (interaction.user.id !== config.ownerID && !interaction.member.roles.cache.has(config.serverAdminRoleID)) {
+        // --- THIS IS THE CORRECTED PERMISSION CHECK ---
+        const adminRoleId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'admin_role_id'").get(interaction.guild.id)?.value;
+        
+        const isOwner = config.ownerIDs.includes(interaction.user.id);
+        const isAdmin = adminRoleId && interaction.member.roles.cache.has(adminRoleId);
+
+        if (!isOwner && !isAdmin) {
             return interaction.reply({ content: 'You do not have permission to use this command.', flags: 64 });
         }
 
         const section = interaction.options.getString('section');
         let response;
 
-        // Route to a specific panel or the main one
+        // --- COMPLETED SWITCH STATEMENT ---
         switch (section) {
             case 'economy':
                 response = createEconomyDashboard();
                 break;
-            // Add cases for 'clans', 'shop', 'raffles' here when they are built
-            // case 'clans':
-            //     response = createClanDashboard();
-            //     break;
+            case 'clans':
+                response = createClanDashboard();
+                break;
+            case 'shop':
+                response = createShopDashboard();
+                break;
+            case 'raffles':
+                response = createRaffleDashboard();
+                break;
             default:
                 response = createMainDashboard();
         }

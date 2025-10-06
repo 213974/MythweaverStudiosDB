@@ -95,7 +95,9 @@ function startScheduler(client) {
     setInterval(() => checkEndedRaffles(client), 60 * 1000);
     setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000); // Update every 5 mins
     setInterval(() => updateRaffleMessages(client), 3000);
-    setInterval(() => sendOrUpdateLeaderboard(client), 60 * 60 * 1000); // Update every 60 mins
+    // --- THIS IS THE FIX ---
+    // The interval is now set correctly to 5 minutes.
+    setInterval(() => sendOrUpdateLeaderboard(client), 5 * 60 * 1000); // Update every 5 mins
 }
 
 module.exports = { startScheduler };

@@ -9,80 +9,42 @@ const invites = new Map();
 module.exports = {
     name: Events.GuildMemberAdd,
     async execute(member, client) {
-
-        const guildId = newMember.guild.id;
-        const oldRoles = oldMember.roles.cache;
-        const newRoles = newMember.roles.cache;
-
-        // --- Role Removal Check for Clan Owners ---
-        if (oldRoles.size > newRoles.size) { // A role was removed
-            const ownedClan = clanManager.getClanOwnedByUser(guildId, newMember.id);
-            if (ownedClan) { // This member is a clan owner
-                const removedRole = oldRoles.find(role => !newRoles.has(role.id));
-                if (removedRole && removedRole.id === ownedClan.clan_id) {
-                    try {
-                        console.log(`[guildMemberUpdate] Owner ${newMember.user.tag} of clan ${removedRole.name} had their role removed. Re-applying immediately.`);
-                        await newMember.roles.add(removedRole);
-                    } catch (error) {
-                        console.error(`[guildMemberUpdate] FAILED to re-apply owner role for ${newMember.user.tag}:`, error);
-                    }
-                }
-            }
-        }
-
         // Ensure the user is in the database immediately upon joining.
         db.prepare('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)').run(member.id, member.user.username);
 
         // On startup, fetch all invites and store them
-        if (invites.size === 0) {
-            try {
-                const fetchedInvites = await member.guild.invites.fetch();
-                fetchedInvites.forEach(invite => {
-                    invites.set(invite.code, invite.uses);
-                });
-                console.log('[guildMemberAdd] Initialized invite cache.');
-            } catch (error)
-            {
-                console.error('[guildMemberAdd] Could not fetch invites on init:', error);
-            }
-        }
-
-        // To compare, we need to fetch the current invites on every join
-        const newInvites = await member.guild.invites.fetch();
-
-        // Find the invite that was used
-        const usedInvite = newInvites.find(inv => inv.uses > (invites.get(inv.code) || 0));
-        
-        // Update the cache with the new uses
-        newInvites.forEach(invite => {
-            invites.set(invite.code, invite.uses);
-        });
-
-        if (!usedInvite || usedInvite.inviter.bot) {
-            console.log(`[guildMemberAdd] User ${member.user.tag} joined, but the invite could not be determined or was from a bot.`);
-            return;
-        }
-
-        const inviterId = usedInvite.inviter.id;
-        const newMemberId = member.id;
-        const JOIN_BONUS = 20; // As per GDD
-
+        // This logic is slightly inefficient on every join, but necessary for the invite tracking system.
+        // A more advanced system might use the ready event to populate the cache initially.
         try {
-            // Update the new member's record with who referred them
+            const fetchedInvites = await member.guild.invites.fetch();
+            const currentInvites = new Map();
+            fetchedInvites.forEach(invite => {
+                currentInvites.set(invite.code, invite.uses);
+            });
+
+            // Find the invite that was used
+            const usedInvite = fetchedInvites.find(inv => inv.uses > (invites.get(member.guild.id)?.get(inv.code) || 0));
+
+            // Update the global cache
+            invites.set(member.guild.id, currentInvites);
+            
+            if (!usedInvite || usedInvite.inviter.bot) {
+                console.log(`[guildMemberAdd] User ${member.user.tag} joined, but the invite could not be determined or was from a bot.`);
+                return;
+            }
+
+            const inviterId = usedInvite.inviter.id;
+            const newMemberId = member.id;
+            const JOIN_BONUS = 20;
+
+            db.prepare('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)').run(inviterId, usedInvite.inviter.username);
             db.prepare('UPDATE users SET referred_by = ? WHERE user_id = ?').run(inviterId, newMemberId);
-
-            // Award the bonus to the inviter
-            const inviterWallet = economyManager.getWallet(inviterId, member.guild.id);
-            // Award the bonus
             db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ?').run(JOIN_BONUS, inviterId, member.guild.id);
-
-            // Log the transaction
             db.prepare('INSERT INTO transactions (user_id, guild_id, amount, reason, timestamp) VALUES (?, ?, ?, ?, ?)')
                 .run(inviterId, member.guild.id, JOIN_BONUS, `Referral bonus for ${member.user.tag}`, new Date().toISOString());
 
             console.log(`[guildMemberAdd] Awarded ${JOIN_BONUS} Solyx to ${usedInvite.inviter.tag} for referring ${member.user.tag}.`);
             
-            // Optional: DM the inviter
             const inviter = await client.users.fetch(inviterId).catch(() => null);
             if(inviter) {
                 const embed = new EmbedBuilder()
@@ -94,7 +56,7 @@ module.exports = {
             }
 
         } catch (error) {
-            console.error(`[guildMemberAdd] Database error during referral processing:`, error);
+            console.error(`[guildMemberAdd] Could not process referral for ${member.user.tag}:`, error);
         }
     },
 };
