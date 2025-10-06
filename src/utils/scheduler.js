@@ -100,4 +100,4 @@ function startScheduler(client) {
     setInterval(() => sendOrUpdateLeaderboard(client), 5 * 60 * 1000); // Update every 5 mins
 }
 
-module.exports = { startScheduler };
+module.exports = { startScheduler, updateAnalyticsDashboard };

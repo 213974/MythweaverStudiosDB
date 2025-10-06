@@ -11,15 +11,19 @@ function createLeaderboardEmbed(guild, topUsers) {
     if (topUsers.length === 0) {
         descriptionString = 'The leaderboard is currently empty. Start earning Solyx™ to get on the board!';
     } else {
+        // --- THIS IS THE FIX ---
+        // Top 3 ranks now use Markdown headers for increased size.
         descriptionString = topUsers.map((user, index) => {
             const medals = ['🥇', '🥈', '🥉'];
-            const rank = index < 3 ? `${medals[index]}` : `#${index + 1}`;
-            return `> ${rank} <@${user.user_id}> - **${user.balance.toLocaleString()}** 🪙`;
+            const rankText = `<@${user.user_id}> - **${user.balance.toLocaleString()}** 🪙`;
+            if (index === 0) return `# ${medals[0]} ${rankText}`;
+            if (index === 1) return `## ${medals[1]} ${rankText}`;
+            if (index === 2) return `### ${medals[2]} ${rankText}`;
+            return `#${index + 1} ${rankText}`;
         }).join('\n');
     }
 
-    // The timestamp is now appended directly to the description for reliability.
-    descriptionString += `\n\n-# Updates ${formatTimestamp(nextUpdateTimestamp, 'R')}`;
+    descriptionString += `\n\n*Updates ${formatTimestamp(nextUpdateTimestamp, 'R')}*`;
 
     const embed = new EmbedBuilder()
         .setColor('#ff8100')

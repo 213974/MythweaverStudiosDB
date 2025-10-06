@@ -5,6 +5,8 @@ const db = require('../../utils/database');
 const { parseRole } = require('../../utils/interactionHelpers');
 const { sendOrUpdateDashboard } = require('../../utils/dashboardManager');
 const { sendOrUpdateLeaderboard } = require('../../utils/leaderboardManager');
+// --- THIS IS THE FIX ---
+const { updateAnalyticsDashboard } = require('../../utils/scheduler');
 
 module.exports = async (interaction) => {
     // --- THIS IS THE FIX ---
@@ -59,7 +61,9 @@ module.exports = async (interaction) => {
             if (!channel || channel.type !== ChannelType.GuildText) return interaction.editReply({ content: 'Invalid Text Channel ID.' });
             db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'analytics_channel_id', ?)").run(guildId, channel.id);
             db.prepare("DELETE FROM settings WHERE guild_id = ? AND key = 'analytics_message_id'").run(guildId);
-            await interaction.editReply({ content: `✅ **Analytics Channel** set to ${channel} for this server. The dashboard will appear within 5 minutes.` });
+            // --- THIS IS THE FIX ---
+            await updateAnalyticsDashboard(interaction.client, guildId);
+            await interaction.editReply({ content: `✅ **Analytics Channel** set to ${channel} for this server. The dashboard has been posted.` });
         } else if (customId === 'settings_modal_clan_dash') {
             const channelId = interaction.fields.getTextInputValue('channel_id_input').match(/\d{17,19}/)?.[0];
             const channel = channelId ? await interaction.guild.channels.fetch(channelId).catch(() => null) : null;
