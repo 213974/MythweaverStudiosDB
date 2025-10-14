@@ -4,6 +4,16 @@ const db = require('./database');
 const economyManager = require('./economyManager');
 const { formatTimestamp } = require('../utils/timestampFormatter');
 
+const GIFS = [
+    'https://i.pinimg.com/originals/56/34/9f/56349f764173af321a640f6e1bac22fd.gif',
+    'https://i.pinimg.com/originals/a6/10/8b/a6108b31b391378d30856edba57172a4.gif',
+    'https://i.pinimg.com/originals/9d/3e/2f/9d3e2f3f2e46a9f4dd0a016415433af8.gif',
+    'https://i.pinimg.com/originals/0f/43/10/0f4310bc3442432f7667605968cc9e80.gif',
+    'https://i.pinimg.com/originals/92/97/74/929774b033a66c070f5da21ef21c0090.gif',
+    'https://i.pinimg.com/originals/d2/85/69/d285699262b0a27472b3fa8f7352c145.gif',
+    'https://i.pinimg.com/originals/a3/63/9b/a3639be246d40f97fddbcd888b1b1a60.gif'
+];
+
 function createLeaderboardEmbed(guild, topUsers) {
     const nextUpdateTimestamp = Math.floor((Date.now() + 5 * 60 * 1000) / 1000);
     let descriptionString = '';
@@ -11,11 +21,9 @@ function createLeaderboardEmbed(guild, topUsers) {
     if (topUsers.length === 0) {
         descriptionString = 'The leaderboard is currently empty. Start earning Solyx™ to get on the board!';
     } else {
-        // --- THIS IS THE FIX ---
-        // Top 3 ranks now use Markdown headers for increased size.
         descriptionString = topUsers.map((user, index) => {
             const medals = ['🥇', '🥈', '🥉'];
-            const rankText = `<@${user.user_id}> - **${user.balance.toLocaleString()}** 🪙`;
+            const rankText = `<@${user.user_id}> - **${user.balance.toLocaleString()}**`;
             if (index === 0) return `# ${medals[0]} ${rankText}`;
             if (index === 1) return `## ${medals[1]} ${rankText}`;
             if (index === 2) return `### ${medals[2]} ${rankText}`;
@@ -24,12 +32,14 @@ function createLeaderboardEmbed(guild, topUsers) {
     }
 
     descriptionString += `\n\n*Updates ${formatTimestamp(nextUpdateTimestamp, 'R')}*`;
+    
+    const randomGif = GIFS[Math.floor(Math.random() * GIFS.length)];
 
     const embed = new EmbedBuilder()
         .setColor('#ff8100')
-        .setTitle(`Solyx™ Leaderboard`)
-        .setThumbnail(guild.iconURL())
+        .setTitle(`<a:Yellow_Crown:1427764440689938634> Solyx™ Leaderboard <a:Yellow_Crown:1427764440689938634>`)
         .setDescription(descriptionString)
+        .setImage(randomGif)
         .setTimestamp();
 
     return embed;
@@ -44,8 +54,6 @@ function createLeaderboardComponents() {
     return new ActionRowBuilder().addComponents(button);
 }
 
-// --- THIS IS THE FIX ---
-// The function now iterates through all guilds, making it compatible with the scheduler.
 async function sendOrUpdateLeaderboard(client, specificGuildId = null) {
     const guildsToUpdate = specificGuildId ? [[specificGuildId, await client.guilds.fetch(specificGuildId)]] : client.guilds.cache;
 
@@ -58,8 +66,20 @@ async function sendOrUpdateLeaderboard(client, specificGuildId = null) {
 
         let messageId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'leaderboard_message_id'").get(guildId)?.value;
         
-        const topUsers = economyManager.getTopUsers(guildId, 25);
-        const embed = createLeaderboardEmbed(guild, topUsers);
+        // --- THIS IS THE FIX ---
+        // 1. Fetch a larger pool of users from the database.
+        const topUsersFromDb = economyManager.getTopUsers(guildId, 50);
+        
+        // 2. Fetch all current members of the server.
+        const currentMembers = await guild.members.fetch();
+
+        // 3. Filter the database list to include only current members.
+        const filteredTopUsers = topUsersFromDb.filter(user => currentMembers.has(user.user_id));
+
+        // 4. Take the top 25 from the filtered list for display.
+        const finalTopUsers = filteredTopUsers.slice(0, 25);
+
+        const embed = createLeaderboardEmbed(guild, finalTopUsers);
         const components = createLeaderboardComponents();
 
         try {

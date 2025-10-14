@@ -13,13 +13,13 @@ module.exports = {
     async execute(interaction) {
         const targetUser = interaction.options.getUser('user') || interaction.user;
 
-        const wallet = economyManager.getWallet(targetUser.id, interaction.guild.id);
+        const totalBalance = economyManager.getConsolidatedBalance(targetUser.id, interaction.guild.id);
 
         const embed = new EmbedBuilder()
             .setColor('#3498DB')
             .setAuthor({ name: `${targetUser.displayName}'s Wallet`, iconURL: targetUser.displayAvatarURL() })
             .addFields(
-                { name: 'Balance', value: `> ${wallet.balance.toLocaleString()} Solyx™`, inline: true }
+                { name: 'Balance', value: `> ${totalBalance.toLocaleString()} Solyx™`, inline: true }
             )
             .setFooter({ text: 'Earn more Solyx™ by participating in server events!' });
 

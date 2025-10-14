@@ -34,6 +34,17 @@ module.exports = {
         return db.prepare('SELECT * FROM wallets WHERE user_id = ? AND guild_id = ? AND currency = ?').get(userId, guildId, currency);
     },
 
+    // --- THIS IS THE NEW FUNCTION ---
+    getConsolidatedBalance: (userId, guildId) => {
+        ensureUser(userId); // Ensure the user exists in the database first.
+        const result = db.prepare(`
+            SELECT SUM(balance) as total 
+            FROM wallets 
+            WHERE user_id = ? AND guild_id = ?
+        `).get(userId, guildId);
+        return result.total || 0;
+    },
+
     // --- Clan Wallet (Guild Bank) Management ---
 
     getClanWallet: (clanId, guildId, currency = DEFAULT_CURRENCY) => {
@@ -55,8 +66,6 @@ module.exports = {
         if (amount <= 0) return { success: false, message: 'Withdrawal amount must be positive.' };
         const clanWallet = module.exports.getClanWallet(clanId, guildId, currency);
         if (clanWallet.balance < amount) return { success: false, message: `The clan bank does not have enough ${DEFAULT_CURRENCY}.` };
-        // Capacity check disabled as requested.
-        // if (userWallet.balance + amount > userWallet.capacity) return { success: false, message: 'Your personal wallet does not have enough space.' };
         db.transaction(() => {
             db.prepare('UPDATE clan_wallets SET balance = balance - ? WHERE clan_id = ? AND guild_id = ? AND currency = ?').run(amount, clanId, guildId, currency);
             db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ? AND currency = ?').run(amount, userId, guildId, currency);
@@ -95,26 +104,15 @@ module.exports = {
         if (!canClaim) {
             return { success: false, message: 'You have already claimed your daily reward today.' };
         }
-
-        // Capacity check disabled as requested.
-        // const wallet = module.exports.getWallet(userId, guildId, DEFAULT_CURRENCY);
-        // if (wallet.balance + DAILY_REWARD > wallet.capacity) {
-        //     return { success: false, message: 'You do not have enough space in your wallet.' };
-        // }
-
-        // Prepare the updated weekly state
         const today = new Date();
-        const todayDayIndex = getDay(today); // 0 for Sunday, 1 for Monday, etc.
+        const todayDayIndex = getDay(today);
         const updatedWeeklyState = { ...weekly_claim_state };
         updatedWeeklyState[todayDayIndex] = true;
         const weeklyStateJson = JSON.stringify(updatedWeeklyState);
 
         db.transaction(() => {
-            // 1. Update wallet balance
             db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ? AND currency = ?')
                 .run(DAILY_REWARD, userId, guildId, DEFAULT_CURRENCY);
-
-            // 2. Update claims table with the new weekly state. This uses an UPSERT operation.
             db.prepare(`
                 INSERT INTO claims (user_id, guild_id, claim_type, last_claimed_at, streak, weekly_claim_state)
                 VALUES (?, ?, 'daily', ?, 1, ?)
@@ -124,13 +122,11 @@ module.exports = {
                 weekly_claim_state = excluded.weekly_claim_state;
             `).run(userId, guildId, today.toISOString(), weeklyStateJson);
             
-            // 3. Handle referral bonus
             const userRecord = db.prepare('SELECT referred_by FROM users WHERE user_id = ?').get(userId);
             if (userRecord && userRecord.referred_by) {
                 const inviterId = userRecord.referred_by;
                 const passiveBonus = Math.floor(DAILY_REWARD * 0.10);
                 if (passiveBonus > 0) {
-                    // Capacity check for inviter disabled as requested.
                     db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ? AND currency = ?').run(passiveBonus, inviterId, guildId, DEFAULT_CURRENCY);
                     db.prepare('INSERT INTO transactions (user_id, guild_id, amount, reason, timestamp) VALUES (?, ?, ?, ?, ?)').run(inviterId, guildId, passiveBonus, `Passive bonus from user ${userId}`, new Date().toISOString());
                 }
@@ -143,11 +139,9 @@ module.exports = {
     canClaimWeekly: (userId, guildId) => {
         const { weekly } = module.exports.getClaims(userId, guildId);
         if (!weekly) return { canClaim: true };
-
         const lastClaimDate = parseISO(weekly.last_claimed_at);
         const hoursSinceLastClaim = differenceInHours(new Date(), lastClaimDate);
-
-        if (hoursSinceLastClaim >= 168) { // 7 days * 24 hours
+        if (hoursSinceLastClaim >= 168) {
             return { canClaim: true };
         } else {
             const nextClaimDate = new Date(lastClaimDate.getTime() + 168 * 60 * 60 * 1000);
@@ -158,16 +152,8 @@ module.exports = {
     claimWeekly: (userId, guildId) => {
         const { canClaim } = module.exports.canClaimWeekly(userId, guildId);
         if (!canClaim) return { success: false, message: 'You have already claimed your weekly reward.' };
-
-        // Capacity check disabled as requested.
-        // const wallet = module.exports.getWallet(userId, guildId, DEFAULT_CURRENCY);
-        // if (wallet.balance + WEEKLY_REWARD > wallet.capacity) {
-        //     return { success: false, message: 'You do not have enough space in your wallet to claim this reward.' };
-        // }
-
         db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ? AND currency = ?').run(WEEKLY_REWARD, userId, guildId, DEFAULT_CURRENCY);
         db.prepare('INSERT OR REPLACE INTO claims (user_id, guild_id, claim_type, last_claimed_at) VALUES (?, ?, ?, ?)').run(userId, guildId, 'weekly', new Date().toISOString());
-
         return { success: true, reward: WEEKLY_REWARD };
     },
 
@@ -199,11 +185,25 @@ module.exports = {
 
     // --- Leaderboard Functions ---
     getTopUsers: (guildId, limit = 25) => {
-        return db.prepare('SELECT user_id, balance FROM wallets WHERE guild_id = ? ORDER BY balance DESC LIMIT ?').all(guildId, limit);
+        return db.prepare(`
+            SELECT user_id, SUM(balance) as balance 
+            FROM wallets 
+            WHERE guild_id = ? 
+            GROUP BY user_id 
+            ORDER BY balance DESC 
+            LIMIT ?
+        `).all(guildId, limit);
     },
 
     getUserRank: (userId, guildId) => {
-        const allUsers = db.prepare('SELECT user_id, balance FROM wallets WHERE guild_id = ? ORDER BY balance DESC').all(guildId);
+        const allUsers = db.prepare(`
+            SELECT user_id, SUM(balance) as balance 
+            FROM wallets 
+            WHERE guild_id = ? 
+            GROUP BY user_id 
+            ORDER BY balance DESC
+        `).all(guildId);
+        
         const rank = allUsers.findIndex(user => user.user_id === userId) + 1;
         
         if (rank === 0) return null; // User not found
