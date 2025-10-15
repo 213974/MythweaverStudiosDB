@@ -4,7 +4,7 @@ const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('dis
 function createMainDashboard() {
     const embed = new EmbedBuilder()
         .setColor('#E74C3C')
-        .setTitle('👑 Administrator Dashboard 👑')
+        .setTitle('<a:Yellow_Crown:1427764440689938634> Administrator Dashboard <a:Yellow_Crown:1427764440689938634>')
         .setDescription(
             "Welcome, Administrator.\n\n" +
             "This is the central control panel for bot and server management. Select a system from the dropdown menu to manage it."
@@ -39,6 +39,12 @@ function createMainDashboard() {
                 value: 'admin_panel_raffles',
                 emoji: '🎟️',
             },
+            {
+                label: 'Manage Events',
+                description: 'Configure and run special server-wide events.',
+                value: 'admin_panel_events',
+                emoji: '🎉',
+            },
         ]);
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
@@ -46,4 +52,4 @@ function createMainDashboard() {
     return { embeds: [embed], components: [row] };
 }
 
-module.exports = { createMainDashboard, createAdminDashboardComponents: createMainDashboard }; // Alias for compatibility with ready.js
+module.exports = { createMainDashboard };

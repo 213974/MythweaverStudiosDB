@@ -5,12 +5,10 @@ const db = require('../../utils/database');
 const { parseRole } = require('../../utils/interactionHelpers');
 const { sendOrUpdateDashboard } = require('../../utils/dashboardManager');
 const { sendOrUpdateLeaderboard } = require('../../utils/leaderboardManager');
-// --- THIS IS THE FIX ---
 const { updateAnalyticsDashboard } = require('../../utils/scheduler');
+const { createHelpDashboard } = require('../../commands/help');
 
 module.exports = async (interaction) => {
-    // --- THIS IS THE FIX ---
-    // The check now correctly verifies if the user's ID is in the ownerIDs array.
     if (!config.ownerIDs.includes(interaction.user.id)) {
         return interaction.reply({ content: 'You do not have permission to use this component.', flags: 64 });
     }
@@ -36,6 +34,9 @@ module.exports = async (interaction) => {
             modal.addComponents(channelInput);
         } else if (selection === 'settings_set_leaderboard_channel') {
             modal = new ModalBuilder().setCustomId('settings_modal_leaderboard_channel').setTitle('Set Solyx™ Leaderboard Channel');
+            modal.addComponents(channelInput);
+        } else if (selection === 'settings_set_help_channel') {
+            modal = new ModalBuilder().setCustomId('settings_modal_help_channel').setTitle('Set Help Dashboard Channel');
             modal.addComponents(channelInput);
         }
         if (modal) await interaction.showModal(modal);
@@ -80,6 +81,19 @@ module.exports = async (interaction) => {
             db.prepare("DELETE FROM settings WHERE guild_id = ? AND key = 'leaderboard_message_id'").run(guildId);
             await sendOrUpdateLeaderboard(interaction.client, guildId);
             await interaction.editReply({ content: `✅ **Solyx™ Leaderboard Channel** set to ${channel} for this server.` });
+        } else if (customId === 'settings_modal_help_channel') {
+            const channelId = interaction.fields.getTextInputValue('channel_id_input').match(/\d{17,19}/)?.[0];
+            const channel = channelId ? await interaction.guild.channels.fetch(channelId).catch(() => null) : null;
+            if (!channel || channel.type !== ChannelType.GuildText) return interaction.editReply({ content: 'Invalid Text Channel ID.' });
+
+            db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'help_dashboard_channel_id', ?)").run(guildId, channel.id);
+            db.prepare("DELETE FROM settings WHERE guild_id = ? AND key = 'help_dashboard_message_id'").run(guildId);
+            
+            const dashboard = createHelpDashboard();
+            const newMessage = await channel.send(dashboard);
+            db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'help_dashboard_message_id', ?)").run(guildId, newMessage.id);
+
+            await interaction.editReply({ content: `✅ **Help Dashboard Channel** set to ${channel} for this server.` });
         }
     }
 };

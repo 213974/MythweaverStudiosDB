@@ -183,6 +183,14 @@ module.exports = {
         return { success: true, price: item.price, currency: item.currency };
     },
 
+    // --- Admin Event Management ---
+    addEventBalance: (userId, guildId, amount, currency = DEFAULT_CURRENCY) => {
+        ensureWallet(userId, guildId, currency);
+        db.prepare(
+            `UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ? AND currency = ?`
+        ).run(amount, userId, guildId, currency);
+    },
+
     // --- Leaderboard Functions ---
     getTopUsers: (guildId, limit = 25) => {
         return db.prepare(`

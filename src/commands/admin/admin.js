@@ -5,8 +5,9 @@ const { createEconomyDashboard } = require('../../components/adminDashboard/econ
 const { createClanDashboard } = require('../../components/adminDashboard/clanPanel');
 const { createShopDashboard } = require('../../components/adminDashboard/shopPanel');
 const { createRaffleDashboard } = require('../../components/adminDashboard/rafflePanel');
+const { createEventDashboard } = require('../../components/adminDashboard/eventPanel');
 const config = require('../../config');
-const db = require('../../utils/database'); // Import the database
+const db = require('../../utils/database');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -21,10 +22,10 @@ module.exports = {
                     { name: 'Economy', value: 'economy' },
                     { name: 'Clans', value: 'clans' },
                     { name: 'Shop', value: 'shop' },
-                    { name: 'Raffles', value: 'raffles' }
+                    { name: 'Raffles', value: 'raffles' },
+                    { name: 'Events', value: 'events' }
                 )),
     async execute(interaction) {
-        // --- THIS IS THE CORRECTED PERMISSION CHECK ---
         const adminRoleId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'admin_role_id'").get(interaction.guild.id)?.value;
         
         const isOwner = config.ownerIDs.includes(interaction.user.id);
@@ -37,7 +38,6 @@ module.exports = {
         const section = interaction.options.getString('section');
         let response;
 
-        // --- COMPLETED SWITCH STATEMENT ---
         switch (section) {
             case 'economy':
                 response = createEconomyDashboard();
@@ -50,6 +50,9 @@ module.exports = {
                 break;
             case 'raffles':
                 response = createRaffleDashboard();
+                break;
+            case 'events':
+                response = createEventDashboard(interaction.guild.id);
                 break;
             default:
                 response = createMainDashboard();

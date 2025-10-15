@@ -23,7 +23,7 @@ function createLeaderboardEmbed(guild, topUsers) {
     } else {
         descriptionString = topUsers.map((user, index) => {
             const medals = ['🥇', '🥈', '🥉'];
-            const rankText = `<@${user.user_id}> - **${user.balance.toLocaleString()}**`;
+            const rankText = `<@${user.user_id}> - **${user.balance.toLocaleString()}** <a:Yellow_Gem:1427764380489224295>`;
             if (index === 0) return `# ${medals[0]} ${rankText}`;
             if (index === 1) return `## ${medals[1]} ${rankText}`;
             if (index === 2) return `### ${medals[2]} ${rankText}`;

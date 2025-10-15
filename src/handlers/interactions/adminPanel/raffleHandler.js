@@ -1,5 +1,5 @@
 // src/handlers/interactions/adminPanel/raffleHandler.js
-const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
+const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { createRaffleDashboard } = require('../../../components/adminDashboard/rafflePanel');
 const chrono = require('chrono-node');
 const { formatTimestamp } = require('../../../utils/timestampFormatter');
@@ -10,7 +10,8 @@ const raffleManager = require('../../../utils/raffleManager');
 module.exports = async (interaction) => {
     const guildId = interaction.guild.id;
     const raffleCreatorRoleId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'raffle_creator_role_id'").get(guildId)?.value;
-    const isOwner = interaction.user.id === config.ownerIDs;
+    
+    const isOwner = config.ownerIDs.includes(interaction.user.id);
     const isRaffleCreator = raffleCreatorRoleId && interaction.member.roles.cache.has(raffleCreatorRoleId);
 
     if (!isOwner && !isRaffleCreator) {
@@ -19,8 +20,6 @@ module.exports = async (interaction) => {
 
     if (interaction.isStringSelectMenu()) {
         const response = createRaffleDashboard();
-        // If this interaction comes from the main selection menu, reply ephemerally.
-        // Otherwise, update the existing admin panel message.
         if (interaction.customId === 'admin_panel_select') {
             return interaction.reply({ ...response, flags: 64 });
         } else {

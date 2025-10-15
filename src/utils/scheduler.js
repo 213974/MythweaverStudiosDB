@@ -84,14 +84,28 @@ async function updateRaffleMessages(client) {
     }
 }
 
+async function checkEndedEvents(client) {
+    const now = Math.floor(Date.now() / 1000);
+    const expiredEvents = db.prepare("SELECT guild_id FROM settings WHERE key = 'event_end_timestamp' AND value <= ?").all(now);
+
+    for (const event of expiredEvents) {
+        const guildId = event.guild_id;
+        console.log(`[Scheduler] Cleaning up expired event for guild ${guildId}...`);
+        db.prepare("DELETE FROM settings WHERE guild_id = ? AND key LIKE 'event_%'").run(guildId);
+        client.activeEvents.delete(guildId);
+    }
+}
+
 function startScheduler(client) {
     console.log('[Scheduler] Starting background tasks...');
     setTimeout(() => {
         checkEndedRaffles(client);
         updateAnalyticsDashboard(client);
         sendOrUpdateLeaderboard(client); // Initial run for all guilds
+        checkEndedEvents(client);
     }, 5000);
 
+    setInterval(() => checkEndedEvents(client), 5 * 60 * 1000); // Check every 5 mins
     setInterval(() => checkEndedRaffles(client), 60 * 1000);
     setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000); // Update every 5 mins
     setInterval(() => updateRaffleMessages(client), 3000);
