@@ -3,65 +3,67 @@ const { Events } = require('discord.js');
 const db = require('../utils/database');
 const { isEligibleForPerks } = require('../utils/perksManager');
 
+async function sendTemporaryReply(message, content) {
+    const reply = await message.channel.send(content);
+    setTimeout(() => reply.delete().catch(() => {}), 7500); // Delete after 7.5 seconds
+}
+
 module.exports = {
     name: Events.MessageReactionAdd,
-    async execute(reaction, user) {
+    async execute(reaction, user, client) {
         if (user.bot) return;
-
-        const message = reaction.message;
-        // Ensure the message is cached
-        if (reaction.partial) {
-            try {
-                await reaction.fetch();
-            } catch (error) {
-                console.error('Something went wrong when fetching the reaction:', error);
-                return;
-            }
-        }
-        if (message.partial) {
-            try {
-                await message.fetch();
-            } catch (error) {
-                console.error('Something went wrong when fetching the message:', error);
-                return;
-            }
+        
+        try {
+            if (reaction.partial) await reaction.fetch();
+            if (reaction.message.partial) await reaction.message.fetch();
+        } catch (error) {
+            console.error('Failed to fetch reaction/message:', error);
+            return;
         }
 
-        // --- Feature Logic ---
+        // --- THIS IS THE FIX (Guard Clause) ---
+        // If for any reason the reaction event is malformed and lacks an emoji,
+        // stop all execution immediately to prevent a crash.
+        if (!reaction.emoji) {
+            console.warn('[ReactionAdd] Received a reaction event without an emoji object. Aborting.');
+            return;
+        }
 
-        // 1. User is trying to SET/UPDATE their perk by reacting to their own message
-        if (message.author.id === user.id) {
+        const { message } = reaction;
+
+        // --- THIS IS THE FIX (Restructured Logic) ---
+        // Block 1: Check for REMOVAL condition first.
+        const botReactions = message.reactions.cache.filter(r => r.users.cache.has(client.user.id));
+        if (message.author.id === user.id && botReactions.some(r => (r.emoji.id || r.emoji.name) === (reaction.emoji.id || reaction.emoji.name))) {
+            db.prepare(`DELETE FROM booster_perks WHERE guild_id = ? AND user_id = ?`).run(message.guild.id, user.id);
+            await sendTemporaryReply(message, `-# ${user}, your booster auto-reaction emoji has been removed.`);
+        
+        // Block 2: Only if it's not a removal, check for SET/UPDATE condition.
+        } else if (message.author.id === user.id) {
             const member = await message.guild.members.fetch(user.id).catch(() => null);
-            if (!member) return;
-
-            const isEligible = await isEligibleForPerks(member);
-            if (!isEligible) return;
-
-            const emojiIdentifier = reaction.emoji.id || reaction.emoji.name;
+            if (!member || !(await isEligibleForPerks(member))) return;
             
-            db.prepare(
-                `INSERT OR REPLACE INTO booster_perks (guild_id, user_id, emoji) VALUES (?, ?, ?)`
-            ).run(message.guild.id, user.id, emojiIdentifier);
+            let finalEmoji = reaction.emoji;
+            let emojiIdentifier = reaction.emoji.id || reaction.emoji.name;
 
-            await user.send(`Your booster auto-reaction has been set to: ${reaction.emoji}`).catch(() => {
-                // If DMs are off, send an ephemeral follow-up in the channel
-                message.reply({ content: `Your booster auto-reaction has been set to: ${reaction.emoji}`, flags: 64 }).catch(() => {});
-            });
-            return; // End execution here
-        }
+            // Auto-import external emoji
+            if (reaction.emoji.id && !client.emojis.cache.has(reaction.emoji.id)) {
+                try {
+                    const newEmoji = await client.application.emojis.create({
+                        attachment: reaction.emoji.url,
+                        name: reaction.emoji.name.substring(0, 32)
+                    });
+                    finalEmoji = newEmoji;
+                    emojiIdentifier = newEmoji.id;
+                } catch (error) {
+                    console.error('[BoosterPerk] Failed to import emoji:', error.message);
+                    await sendTemporaryReply(message, `-# ${user}, I could not use that emoji. It may be from a server I cannot access, or my emoji slots might be full.`);
+                    return;
+                }
+            }
 
-        // 2. User is trying to REMOVE their perk
-        const botReactions = message.reactions.cache.filter(r => r.users.cache.has(message.client.user.id));
-        const userIsAuthor = message.author.id === user.id;
-
-        if (userIsAuthor && botReactions.some(r => r.emoji.id === reaction.emoji.id || r.emoji.name === reaction.emoji.name)) {
-            db.prepare(
-                `DELETE FROM booster_perks WHERE guild_id = ? AND user_id = ?`
-            ).run(message.guild.id, user.id);
-            
-            await user.send(`Your booster auto-reaction has been removed.`).catch(() => {
-                message.reply({ content: `Your booster auto-reaction has been removed.`, flags: 64 }).catch(() => {});
-            });
+            db.prepare(`INSERT OR REPLACE INTO booster_perks (guild_id, user_id, emoji) VALUES (?, ?, ?)`).run(message.guild.id, user.id, emojiIdentifier);
+            await sendTemporaryReply(message, `-# ${user}, your booster auto-reaction emoji has been set to: ${finalEmoji}`);
         }
     },
 };

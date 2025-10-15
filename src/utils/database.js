@@ -1,7 +1,6 @@
 // src/utils/database.js
 const path = require('node:path');
 const Database = require('better-sqlite3');
-const config = require('../config');
 
 const dbPath = path.join(__dirname, '..', '..', 'data', 'database.db');
 const db = new Database(dbPath);
@@ -26,13 +25,6 @@ db.exec(schema);
 
 // --- Safe Migration to REAL data type for balances ---
 const migrateBalancesToReal = db.transaction(() => {
-    const walletInfo = db.pragma('table_info(wallets)');
-    const balanceColumn = walletInfo.find(col => col.name === 'balance');
-    if (balanceColumn && balanceColumn.type === 'REAL') {
-        return; // Migration already complete
-    }
-
-    console.log('[Database Migration] INTEGER balance type detected. Beginning migration to REAL...');
     const tablesToMigrate = {
         wallets: 'balance',
         clan_wallets: 'balance',
@@ -40,48 +32,51 @@ const migrateBalancesToReal = db.transaction(() => {
         shop_items: 'price'
     };
 
-    const tableSchemas = {};
-    for (const tableName in tablesToMigrate) {
-        const result = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`).get(tableName);
-        if (result) {
-            tableSchemas[tableName] = result.sql;
-        }
+    let needsMigration = false;
+    for (const tableName of Object.keys(tablesToMigrate)) {
+        try {
+            const tableInfo = db.pragma(`table_info(${tableName})`);
+            const column = tableInfo.find(col => col.name === tablesToMigrate[tableName]);
+            if (column && column.type.toUpperCase() !== 'REAL') {
+                needsMigration = true;
+                break;
+            }
+        } catch (e) { /* Table might not exist yet, which is fine */ }
     }
 
+    if (!needsMigration) return;
+
+    console.log('[Database Migration] INTEGER balance type detected. Beginning migration to REAL...');
+    
     for (const [tableName, columnName] of Object.entries(tablesToMigrate)) {
-        if (!tableSchemas[tableName]) {
-            console.log(`[Database Migration] Table ${tableName} not found, skipping.`);
-            continue;
+        try {
+            const tableInfo = db.pragma(`table_info(${tableName})`);
+            if (!tableInfo.length) continue; // Skip if table doesn't exist
+
+            const column = tableInfo.find(col => col.name === columnName);
+            if (column && column.type.toUpperCase() === 'REAL') continue; // Skip if already migrated
+
+            const originalSchema = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`).get(tableName).sql;
+            
+            db.exec(`ALTER TABLE ${tableName} RENAME TO ${tableName}_old;`);
+            const newSchema = originalSchema.replace(new RegExp(`(\`?${columnName}\`?)\s+INTEGER`, 'i'), `$1 REAL`);
+            db.exec(newSchema);
+            db.exec(`INSERT INTO ${tableName} SELECT * FROM ${tableName}_old;`);
+            db.exec(`DROP TABLE ${tableName}_old;`);
+            console.log(`[Database Migration] Successfully migrated ${tableName}.${columnName} to REAL.`);
+        } catch(e) {
+            console.error(`[Database Migration] Failed to migrate ${tableName}:`, e.message);
         }
-        db.exec(`ALTER TABLE ${tableName} RENAME TO ${tableName}_old;`);
-        const originalSchema = tableSchemas[tableName];
-        const newSchema = originalSchema.replace(new RegExp(`(\`?${columnName}\`?)\s+INTEGER`, 'i'), `$1 REAL`);
-        db.exec(newSchema);
-        db.exec(`INSERT INTO ${tableName} SELECT * FROM ${tableName}_old;`);
-        db.exec(`DROP TABLE ${tableName}_old;`);
-        console.log(`[Database Migration] Successfully migrated ${tableName}.${columnName} to REAL.`);
     }
     console.log('[Database Migration] All balance columns migrated to REAL successfully.');
 });
 
 try {
     migrateBalancesToReal();
+    console.log('[Database] Connected to SQLite and ensured schema is up-to-date.');
 } catch (error) {
     console.error('[Database Migration] FAILED TO MIGRATE BALANCES TO REAL:', error);
     process.exit(1);
 }
 
-try {
-    const raffleColumns = db.pragma(`table_info(raffles)`).map(col => col.name);
-    if (!raffleColumns.includes('image_url')) {
-        console.log('[Database Migration] Adding image_url column to raffles table.');
-        db.exec('ALTER TABLE raffles ADD COLUMN image_url TEXT');
-    }
-} catch (err) {
-    if (!err.message.includes('no such table')) {
-        console.error('[Database Migration] Error applying additive migration:', err);
-    }
-}
-
-console.log('[Database] Connected to SQLite and ensured schema is up-to-date.');
 module.exports = db;
