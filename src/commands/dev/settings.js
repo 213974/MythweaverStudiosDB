@@ -20,7 +20,8 @@ module.exports = {
         const clanDashChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'dashboard_channel_id'").get(guildId)?.value;
         const leaderboardChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'leaderboard_channel_id'").get(guildId)?.value;
         const helpChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'help_dashboard_channel_id'").get(guildId)?.value;
-
+        const boosterRoleId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'booster_role_id'").get(guildId)?.value;
+        
         const embed = new EmbedBuilder()
             .setColor('#FFD700')
             .setTitle(` Bot Core Settings for ${interaction.guild.name} `)
@@ -31,9 +32,10 @@ module.exports = {
                 { name: 'Analytics Dashboard', value: analyticsChannelId ? `<#${analyticsChannelId}>` : '`Not Set`' },
                 { name: 'Clan Dashboard', value: clanDashChannelId ? `<#${clanDashChannelId}>` : '`Not Set`' },
                 { name: 'Solyx™ Leaderboard', value: leaderboardChannelId ? `<#${leaderboardChannelId}>` : '`Not Set`' },
-                { name: 'Help Dashboard', value: helpChannelId ? `<#${helpChannelId}>` : '`Not Set`' }
+                { name: 'Help Dashboard', value: helpChannelId ? `<#${helpChannelId}>` : '`Not Set`' },
+                { name: 'Booster Role', value: boosterRoleId ? `<@&${boosterRoleId}>` : '`Not Set`' }
             );
-
+            
         const selectMenu = new StringSelectMenuBuilder()
             .setCustomId('settings_menu')
             .setPlaceholder('Select a setting to configure...')
@@ -43,7 +45,8 @@ module.exports = {
                 { label: 'Set Analytics Channel', value: 'settings_set_analytics_channel', emoji: '📊' },
                 { label: 'Set Clan Dashboard Channel', value: 'settings_set_clan_dash', emoji: '⚔️' },
                 { label: 'Set Solyx™ Leaderboard Channel', value: 'settings_set_leaderboard_channel', emoji: '🏆' },
-                { label: 'Set Help Dashboard Channel', value: 'settings_set_help_channel', emoji: '❓' }
+                { label: 'Set Help Dashboard Channel', value: 'settings_set_help_channel', emoji: '❓' },
+                { label: 'Set Booster Role', value: 'settings_set_booster_role', emoji: '✨' }
             ]);
 
         const row = new ActionRowBuilder().addComponents(selectMenu);

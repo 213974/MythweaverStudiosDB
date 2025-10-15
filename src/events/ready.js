@@ -106,7 +106,6 @@ module.exports = {
             const startupEmbed = new EmbedBuilder()
                 .setColor('#2ECC71')
                 .setTitle('Bot Online & Ready')
-                .setDescription(`Restart Reason: *Event Admin Panel & Help Dashboard Testing.*`)
                 .setFields(
                     { name: 'Status', value: 'Online', inline: true },
                     { name: 'Startup Time', value: `${startupTime}s`, inline: true },

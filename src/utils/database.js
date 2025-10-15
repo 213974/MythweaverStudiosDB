@@ -19,10 +19,12 @@ CREATE TABLE IF NOT EXISTS clan_wallets ( clan_id TEXT PRIMARY KEY, guild_id TEX
 CREATE TABLE IF NOT EXISTS shop_items ( guild_id TEXT NOT NULL, role_id TEXT NOT NULL, price REAL NOT NULL, name TEXT NOT NULL, description TEXT, currency TEXT DEFAULT 'Solyx™', PRIMARY KEY (guild_id, role_id), FOREIGN KEY (guild_id) REFERENCES guilds(guild_id) ON DELETE CASCADE );
 CREATE TABLE IF NOT EXISTS raffles ( raffle_id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id TEXT NOT NULL, title TEXT NOT NULL, description TEXT, channel_id TEXT NOT NULL, message_id TEXT, ticket_cost INTEGER NOT NULL, max_tickets_user INTEGER, num_winners INTEGER NOT NULL DEFAULT 1, end_timestamp TEXT NOT NULL, status TEXT NOT NULL, winner_id TEXT );
 CREATE TABLE IF NOT EXISTS raffle_entries ( entry_id INTEGER PRIMARY KEY AUTOINCREMENT, raffle_id INTEGER NOT NULL, user_id TEXT NOT NULL, FOREIGN KEY (raffle_id) REFERENCES raffles(raffle_id), FOREIGN KEY (user_id) REFERENCES users(user_id) );
+CREATE TABLE IF NOT EXISTS manual_boosters ( guild_id TEXT NOT NULL, user_id TEXT NOT NULL, PRIMARY KEY (guild_id, user_id) );
+CREATE TABLE IF NOT EXISTS booster_perks ( guild_id TEXT NOT NULL, user_id TEXT NOT NULL, emoji TEXT NOT NULL, PRIMARY KEY (guild_id, user_id) );
 `;
 db.exec(schema);
 
-// --- THIS IS THE FIX: Safe Migration to REAL data type for balances ---
+// --- Safe Migration to REAL data type for balances ---
 const migrateBalancesToReal = db.transaction(() => {
     const walletInfo = db.pragma('table_info(wallets)');
     const balanceColumn = walletInfo.find(col => col.name === 'balance');

@@ -3,6 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBui
 const { createClanHelpEmbed } = require('../components/help/clanHelp');
 const { createUtilitiesHelpEmbed } = require('../components/help/utilitiesHelp');
 const { createSolyxHelpEmbed } = require('../components/help/solyxHelp');
+const { createSystemsHelpEmbed } = require('../components/help/systemsHelp');
 const config = require('../config');
 const db = require('../utils/database');
 
@@ -18,7 +19,9 @@ function createHelpDashboard() {
         .addOptions([
             { label: 'Clan Commands', description: 'Commands for clan creation and management.', value: 'help_clan', emoji: '🛡️' },
             { label: 'Utility Commands', description: 'General purpose and utility commands.', value: 'help_utilities', emoji: '⚙️' },
-            { label: 'The Solyx™ Economy', description: 'Learn about the server currency and how to use it.', value: 'help_solyx', emoji: '🪙' }
+            { label: 'The Solyx™ Economy', description: 'Learn about the server currency and how to use it.', value: 'help_solyx', emoji: '🪙' },
+            // --- THIS IS THE FIX ---
+            { label: 'Systems Guide', description: 'Explanation of automated systems like referrals and raffles.', value: 'help_systems', emoji: '⚙️' }
         ]);
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
@@ -33,7 +36,6 @@ module.exports = {
             sub.setName('dashboard')
             .setDescription('Posts the interactive help dashboard. (Admin Only)')
         )
-        
         .addSubcommand(sub =>
             sub.setName('get')
             .setDescription('Get help on a specific category.')
@@ -44,7 +46,8 @@ module.exports = {
                 .addChoices(
                     { name: 'Clan Commands', value: 'clan' },
                     { name: 'Utility Commands', value: 'utilities' },
-                    { name: 'Solyx™ Economy', value: 'solyx' }
+                    { name: 'Solyx™ Economy', value: 'solyx' },
+                    { name: 'Systems Guide', value: 'systems' }
                 )
             )
         ),
@@ -79,11 +82,13 @@ module.exports = {
                 case 'solyx':
                     embed = createSolyxHelpEmbed();
                     break;
+                case 'systems':
+                    embed = createSystemsHelpEmbed();
+                    break;
             }
 
             await interaction.reply({ embeds: [embed], flags: 64 });
         }
     },
-
     createHelpDashboard
 };

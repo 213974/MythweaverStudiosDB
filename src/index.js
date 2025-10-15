@@ -26,6 +26,7 @@ client.raffleUpdateQueue = new Set();
 client.activeEvents = new Map();
 client.eventCooldowns = new Collection();
 client.helpDashboardTimeout = null;
+client.boosterCooldowns = new Collection();
 
 loadEvents(client, config); // This loads event files like ready.js, messageCreate.js etc.
 
