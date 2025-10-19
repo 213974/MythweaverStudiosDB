@@ -7,8 +7,10 @@ const mottoModalHandler = require('./clan/mottoModalHandler');
 module.exports = async (interaction) => {
     const customId = interaction.customId;
 
-    // Route to the main dashboard logic (select menus, workflow starters)
-    if (customId.startsWith('dashboard_')) {
+    // --- THIS IS THE FIX ---
+    // The router now correctly identifies the select menu's custom ID ('clan_dashboard_menu')
+    // and routes it to the correct handler ('dashboardHandler').
+    if (customId === 'clan_dashboard_menu' || customId.startsWith('dashboard_')) {
         await dashboardHandler(interaction);
     }
     // Route to the handler for invitation button presses (accept/deny)
@@ -16,7 +18,7 @@ module.exports = async (interaction) => {
         await inviteResponseHandler(interaction);
     }
     // Route to the handler for the motto modal submission
-    else if (customId.startsWith('motto_modal')) { // Note: This was a typo in the plan, corrected to match the modal's ID
+    else if (customId.startsWith('motto_modal')) {
         await mottoModalHandler(interaction);
     }
 };

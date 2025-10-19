@@ -43,32 +43,6 @@ module.exports = {
         loadCommands(client);
         client.invites = new Map();
 
-        // Pre-load active events from database into memory
-        console.log('[Ready] Caching active events from database...');
-        const activeEventSettings = db.prepare("SELECT guild_id, key, value FROM settings WHERE key LIKE 'event_%'").all();
-        const eventsByGuild = {};
-        for (const setting of activeEventSettings) {
-            if (!eventsByGuild[setting.guild_id]) {
-                eventsByGuild[setting.guild_id] = {};
-            }
-            eventsByGuild[setting.guild_id][setting.key] = setting.value;
-        }
-        for (const guildId in eventsByGuild) {
-            const eventData = eventsByGuild[guildId];
-            if (eventData.event_type && eventData.event_end_timestamp) {
-                const endTimestamp = parseInt(eventData.event_end_timestamp, 10);
-                if (Date.now() / 1000 < endTimestamp) {
-                    client.activeEvents.set(guildId, {
-                        type: eventData.event_type,
-                        reward: parseFloat(eventData.event_reward),
-                        endTimestamp: endTimestamp,
-                        startedBy: eventData.event_started_by
-                    });
-                    console.log(`[Ready] Cached active event for guild ${guildId}.`);
-                }
-            }
-        }
-
         // Multi-Guild Initialization
         console.log(`[Ready] Initializing for ${client.guilds.cache.size} server(s)...`);
         for (const [guildId, guild] of client.guilds.cache) {
@@ -106,6 +80,7 @@ module.exports = {
             const startupEmbed = new EmbedBuilder()
                 .setColor('#2ECC71')
                 .setTitle('Bot Online & Ready')
+                .setDescription('Crashed - Automatically started back up')
                 .setFields(
                     { name: 'Status', value: 'Online', inline: true },
                     { name: 'Startup Time', value: `${startupTime}s`, inline: true },

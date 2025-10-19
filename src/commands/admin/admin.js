@@ -5,7 +5,6 @@ const { createEconomyDashboard } = require('../../components/adminDashboard/econ
 const { createClanDashboard } = require('../../components/adminDashboard/clanPanel');
 const { createShopDashboard } = require('../../components/adminDashboard/shopPanel');
 const { createRaffleDashboard } = require('../../components/adminDashboard/rafflePanel');
-const { createEventDashboard } = require('../../components/adminDashboard/eventPanel');
 const config = require('../../config');
 const db = require('../../utils/database');
 
@@ -50,9 +49,6 @@ module.exports = {
                 break;
             case 'raffles':
                 response = createRaffleDashboard();
-                break;
-            case 'events':
-                response = createEventDashboard(interaction.guild.id);
                 break;
             default:
                 response = createMainDashboard();

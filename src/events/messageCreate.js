@@ -1,17 +1,19 @@
 // src/events/messageCreate.js
-const { Events, MessageType } = require('discord.js');
+const { Events, MessageType, Collection } = require('discord.js');
 const config = require('../config');
 const db = require('../utils/database');
-const { updateAnalyticsDashboard } = require('../utils/scheduler');
-const { sendOrUpdateDashboard } = require('../utils/dashboardManager');
-const { sendOrUpdateLeaderboard } = require('../utils/leaderboardManager');
-const economyManager = require('../utils/economyManager');
 const { isEligibleForPerks, getBoosterPerk } = require('../utils/perksManager');
+const economyManager = require('../utils/economyManager');
+const userManager = require('../utils/userManager');
+const { getSettings } = require('../utils/settingsCache'); // <-- USE CENTRALIZED CACHE
 
 const PANDA_YAY_EMOJI = '<:PandaYay:1357806568535490812>';
 const MENTION_COOLDOWN_DURATION = 2500;
-const EVENT_COOLDOWN_SECONDS = 10;
 const BOOSTER_REACTION_COOLDOWN_SECONDS = 5;
+const SOLYX_PER_MESSAGE_COOLDOWN_SECONDS = 60; // 1 minute cooldown per user
+
+// Cooldowns for the Solyx per Message system
+const messageSolyxCooldowns = new Collection();
 
 module.exports = {
     name: Events.MessageCreate,
@@ -19,6 +21,23 @@ module.exports = {
         if (message.author.bot || !message.guild) return;
 
         const guildId = message.guild.id;
+
+        // --- REFACTORED: Permanent "Solyx per Message" System ---
+        const settings = getSettings(guildId); // Use the new cache utility
+        if (settings.get('system_solyx_text_enabled') === 'true') {
+            const now = Date.now();
+            const userCooldown = messageSolyxCooldowns.get(message.author.id);
+
+            if (!userCooldown || now > userCooldown) {
+                const rate = parseFloat(settings.get('system_solyx_text_rate') || '0.1');
+                if (rate > 0) {
+                    economyManager.addSolyx(message.author.id, guildId, rate, 'Message Activity');
+                    userManager.addSolyxFromSource(message.author.id, guildId, rate, 'message');
+                }
+                messageSolyxCooldowns.set(message.author.id, now + SOLYX_PER_MESSAGE_COOLDOWN_SECONDS * 1000);
+            }
+        }
+
 
         // --- Dev Owner Manual Whitelist Logic ---
         if (config.ownerIDs.includes(message.author.id) && message.mentions.has(client.user.id) && message.mentions.users.size === 2) {
@@ -48,25 +67,6 @@ module.exports = {
             }
         } catch (error) {
             console.error('[BoosterPerk] Error checking for booster perks:', error);
-        }
-
-        // --- Event "Solyx per Message" Logic ---
-        const activeEvent = client.activeEvents.get(guildId);
-        if (activeEvent && activeEvent.type === 'message') {
-            const now = Date.now();
-            const endTimestampMs = activeEvent.endTimestamp * 1000;
-
-            if (now > endTimestampMs) {
-                client.activeEvents.delete(guildId);
-            } else {
-                const cooldownKey = `${guildId}-${message.author.id}`;
-                const userCooldown = client.eventCooldowns.get(cooldownKey);
-                
-                if (!userCooldown || now > userCooldown) {
-                    economyManager.addEventBalance(message.author.id, guildId, activeEvent.reward);
-                    client.eventCooldowns.set(cooldownKey, now + EVENT_COOLDOWN_SECONDS * 1000);
-                }
-            }
         }
 
         // --- Persistent Help Dashboard Logic ---

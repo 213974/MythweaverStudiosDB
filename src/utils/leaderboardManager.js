@@ -61,28 +61,31 @@ async function sendOrUpdateLeaderboard(client, specificGuildId = null) {
         const channelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'leaderboard_channel_id'").get(guildId)?.value;
         if (!channelId) continue;
 
-        const channel = await guild.channels.fetch(channelId).catch(() => null);
-        if (!channel) continue;
-
-        let messageId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'leaderboard_message_id'").get(guildId)?.value;
-        
-        // --- THIS IS THE FIX ---
-        // 1. Fetch a larger pool of users from the database.
-        const topUsersFromDb = economyManager.getTopUsers(guildId, 50);
-        
-        // 2. Fetch all current members of the server.
-        const currentMembers = await guild.members.fetch();
-
-        // 3. Filter the database list to include only current members.
-        const filteredTopUsers = topUsersFromDb.filter(user => currentMembers.has(user.user_id));
-
-        // 4. Take the top 25 from the filtered list for display.
-        const finalTopUsers = filteredTopUsers.slice(0, 25);
-
-        const embed = createLeaderboardEmbed(guild, finalTopUsers);
-        const components = createLeaderboardComponents();
-
         try {
+            const channel = await guild.channels.fetch(channelId);
+            let messageId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'leaderboard_message_id'").get(guildId)?.value;
+            
+            // 1. Fetch the top users from the database.
+            const topUsersFromDb = economyManager.getTopUsers(guildId, 50);
+
+            // --- THIS IS THE FIX ---
+            // Before filtering, we ensure the top users from the DB are present in the guild's member cache.
+            // This prevents the cache from being stale and incorrectly filtering out active members.
+            if (topUsersFromDb.length > 0) {
+                await guild.members.fetch({ user: topUsersFromDb.map(u => u.user_id) }).catch(() => {
+                    console.warn(`[Leaderboard] Could not fetch all top members for guild ${guildId}. Some may be missing.`);
+                });
+            }
+
+            // 2. Filter the list by checking against the now-populated cache.
+            const filteredTopUsers = topUsersFromDb.filter(user => guild.members.cache.has(user.user_id));
+
+            // 3. Take the top 25 from the now-filtered list.
+            const finalTopUsers = filteredTopUsers.slice(0, 25);
+
+            const embed = createLeaderboardEmbed(guild, finalTopUsers);
+            const components = createLeaderboardComponents();
+
             let message;
             if (messageId) {
                 message = await channel.messages.fetch(messageId).catch(() => null);

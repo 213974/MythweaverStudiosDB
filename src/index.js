@@ -16,6 +16,7 @@ const client = new Client({
         GatewayIntentBits.DirectMessages,
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.GuildVoiceStates, // --- NEW INTENT ---
     ],
     partials: [Partials.Channel, Partials.Message, Partials.Reaction,], 
 });
@@ -24,10 +25,10 @@ client.lastPandaMentionResponse = 0;
 client.commands = new Collection(); // Initialize commands collection
 client.cooldowns = new Collection(); // For user-based cooldowns on interactions
 client.raffleUpdateQueue = new Set();
-client.activeEvents = new Map();
 client.eventCooldowns = new Collection();
 client.helpDashboardTimeout = null;
 client.boosterCooldowns = new Collection();
+client.activeVcSessions = new Collection();
 
 loadEvents(client, config); // This loads event files like ready.js, messageCreate.js etc.
 
@@ -44,7 +45,7 @@ client.login(token)
     .catch(error => {
         console.error("Failed to log in:", error);
         if (error.code === 'DisallowedIntents') {
-            console.error("Please ensure all Privileged Gateway Intents (especially Server Members Intent) are enabled for your bot in the Discord Developer Portal.");
+            console.error("Please ensure all Privileged Gateway Intents (especially Server Members and Voice States Intent) are enabled for your bot in the Discord Developer Portal.");
         }
     });
 

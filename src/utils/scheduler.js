@@ -102,15 +102,11 @@ function startScheduler(client) {
         checkEndedRaffles(client);
         updateAnalyticsDashboard(client);
         sendOrUpdateLeaderboard(client); // Initial run for all guilds
-        checkEndedEvents(client);
     }, 5000);
 
-    setInterval(() => checkEndedEvents(client), 5 * 60 * 1000); // Check every 5 mins
     setInterval(() => checkEndedRaffles(client), 60 * 1000);
     setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000); // Update every 5 mins
     setInterval(() => updateRaffleMessages(client), 3000);
-    // --- THIS IS THE FIX ---
-    // The interval is now set correctly to 5 minutes.
     setInterval(() => sendOrUpdateLeaderboard(client), 5 * 60 * 1000); // Update every 5 mins
 }
 

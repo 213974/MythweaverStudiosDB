@@ -11,7 +11,10 @@ async function sendTemporaryReply(message, content) {
 module.exports = {
     name: Events.MessageReactionAdd,
     async execute(reaction, user, client) {
-        if (user.bot) return;
+        // --- THIS IS THE DEFINITIVE FIX (Guard Clause) ---
+        // If the event fires before the client is fully ready, client.user will be null.
+        // This stops all execution and prevents the crash.
+        if (!client.user || user.bot) return;
         
         try {
             if (reaction.partial) await reaction.fetch();
@@ -21,9 +24,6 @@ module.exports = {
             return;
         }
 
-        // --- THIS IS THE FIX (Guard Clause) ---
-        // If for any reason the reaction event is malformed and lacks an emoji,
-        // stop all execution immediately to prevent a crash.
         if (!reaction.emoji) {
             console.warn('[ReactionAdd] Received a reaction event without an emoji object. Aborting.');
             return;
@@ -31,7 +31,6 @@ module.exports = {
 
         const { message } = reaction;
 
-        // --- THIS IS THE FIX (Restructured Logic) ---
         // Block 1: Check for REMOVAL condition first.
         const botReactions = message.reactions.cache.filter(r => r.users.cache.has(client.user.id));
         if (message.author.id === user.id && botReactions.some(r => (r.emoji.id || r.emoji.name) === (reaction.emoji.id || reaction.emoji.name))) {

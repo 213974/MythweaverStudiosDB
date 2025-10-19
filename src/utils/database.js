@@ -20,6 +20,26 @@ CREATE TABLE IF NOT EXISTS raffles ( raffle_id INTEGER PRIMARY KEY AUTOINCREMENT
 CREATE TABLE IF NOT EXISTS raffle_entries ( entry_id INTEGER PRIMARY KEY AUTOINCREMENT, raffle_id INTEGER NOT NULL, user_id TEXT NOT NULL, FOREIGN KEY (raffle_id) REFERENCES raffles(raffle_id), FOREIGN KEY (user_id) REFERENCES users(user_id) );
 CREATE TABLE IF NOT EXISTS manual_boosters ( guild_id TEXT NOT NULL, user_id TEXT NOT NULL, PRIMARY KEY (guild_id, user_id) );
 CREATE TABLE IF NOT EXISTS booster_perks ( guild_id TEXT NOT NULL, user_id TEXT NOT NULL, emoji TEXT NOT NULL, PRIMARY KEY (guild_id, user_id) );
+
+-- New Tables for Feature Expansion --
+CREATE TABLE IF NOT EXISTS daily_stats (
+    guild_id TEXT NOT NULL,
+    date TEXT NOT NULL,
+    total_solyx_acquired REAL NOT NULL DEFAULT 0,
+    PRIMARY KEY (guild_id, date),
+    FOREIGN KEY (guild_id) REFERENCES guilds(guild_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS user_stats (
+    user_id TEXT NOT NULL,
+    guild_id TEXT NOT NULL,
+    total_solyx_from_messages REAL NOT NULL DEFAULT 0,
+    total_solyx_from_vc REAL NOT NULL DEFAULT 0,
+    total_vc_time_ms INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, guild_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (guild_id) REFERENCES guilds(guild_id) ON DELETE CASCADE
+);
 `;
 db.exec(schema);
 

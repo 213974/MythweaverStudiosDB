@@ -12,9 +12,6 @@ module.exports = {
         // Ensure the user is in the database immediately upon joining.
         db.prepare('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)').run(member.id, member.user.username);
 
-        // On startup, fetch all invites and store them
-        // This logic is slightly inefficient on every join, but necessary for the invite tracking system.
-        // A more advanced system might use the ready event to populate the cache initially.
         try {
             const fetchedInvites = await member.guild.invites.fetch();
             const currentInvites = new Map();
@@ -35,13 +32,13 @@ module.exports = {
 
             const inviterId = usedInvite.inviter.id;
             const newMemberId = member.id;
-            const JOIN_BONUS = 20;
+            // --- ECONOMY RE-BALANCE: Bonus reduced by a factor of 10 ---
+            const JOIN_BONUS = 2;
 
-            db.prepare('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)').run(inviterId, usedInvite.inviter.username);
             db.prepare('UPDATE users SET referred_by = ? WHERE user_id = ?').run(inviterId, newMemberId);
-            db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ?').run(JOIN_BONUS, inviterId, member.guild.id);
-            db.prepare('INSERT INTO transactions (user_id, guild_id, amount, reason, timestamp) VALUES (?, ?, ?, ?, ?)')
-                .run(inviterId, member.guild.id, JOIN_BONUS, `Referral bonus for ${member.user.tag}`, new Date().toISOString());
+            
+            // --- REFACTOR: Use the centralized addSolyx function ---
+            economyManager.addSolyx(inviterId, member.guild.id, JOIN_BONUS, `Referral bonus for ${member.user.tag}`);
 
             console.log(`[guildMemberAdd] Awarded ${JOIN_BONUS} Solyx to ${usedInvite.inviter.tag} for referring ${member.user.tag}.`);
             

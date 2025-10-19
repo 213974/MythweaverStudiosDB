@@ -40,11 +40,11 @@ function createMainDashboard() {
                 emoji: '🎟️',
             },
             {
-                label: 'Manage Events',
-                description: 'Configure and run special server-wide events.',
-                value: 'admin_panel_events',
-                emoji: '🎉',
-            },
+                label: 'Manage Systems',
+                description: 'Toggle and configure core economy systems.',
+                value: 'admin_panel_systems',
+                emoji: '⚙️',
+            }
         ]);
 
     const row = new ActionRowBuilder().addComponents(selectMenu);

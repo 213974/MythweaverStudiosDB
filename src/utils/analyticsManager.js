@@ -1,6 +1,7 @@
 // src/utils/analyticsManager.js
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
 const db = require('./database');
+const { format, subDays } = require('date-fns');
 
 const GIFS = [
     'https://i.pinimg.com/originals/56/34/9f/56349f764173af321a640f6e1bac22fd.gif',
@@ -14,15 +15,22 @@ const GIFS = [
 
 function getAnalyticsData(guildId) {
     const solyxData = db.prepare('SELECT SUM(balance) as total FROM wallets WHERE guild_id = ?').get(guildId);
-    // --- THIS IS THE FIX ---
-    // A new query counts the number of users with a wallet to calculate the average.
     const walletCountData = db.prepare('SELECT COUNT(DISTINCT user_id) as count FROM wallets WHERE guild_id = ?').get(guildId);
     
+    // --- NEW: Fetch daily generation stats ---
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const yesterdayStr = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+
+    const todayStats = db.prepare('SELECT total_solyx_acquired FROM daily_stats WHERE guild_id = ? AND date = ?').get(guildId, todayStr);
+    const yesterdayStats = db.prepare('SELECT total_solyx_acquired FROM daily_stats WHERE guild_id = ? AND date = ?').get(guildId, yesterdayStr);
+
     const totalSolyx = solyxData.total || 0;
     const userCount = walletCountData.count || 0;
     const averageBalance = userCount > 0 ? Math.round(totalSolyx / userCount) : 0;
+    const dailySolyxAcquired = todayStats?.total_solyx_acquired || 0;
+    const yesterdaySolyxAcquired = yesterdayStats?.total_solyx_acquired || 0;
 
-    return { totalSolyx, averageBalance };
+    return { totalSolyx, averageBalance, dailySolyxAcquired, yesterdaySolyxAcquired };
 }
 
 function createAnalyticsEmbed(guildId) {
@@ -30,12 +38,31 @@ function createAnalyticsEmbed(guildId) {
     const randomGif = GIFS[Math.floor(Math.random() * GIFS.length)];
     const nextUpdateTimestamp = Math.floor((Date.now() + 5 * 60 * 1000) / 1000);
 
+    // --- NEW: Calculate trend for daily generation ---
+    let trendString = ' (vs yesterday)';
+    if (data.yesterdaySolyxAcquired > 0) {
+        const percentChange = ((data.dailySolyxAcquired - data.yesterdaySolyxAcquired) / data.yesterdaySolyxAcquired) * 100;
+        if (percentChange > 0) {
+            trendString = ` *(<:Green_Arrow_Up:1427763654522437652> +${percentChange.toFixed(0)}%)*`;
+        } else if (percentChange < 0) {
+            trendString = ` *(<:Red_Arrow_Down:1427763683196272670> ${percentChange.toFixed(0)}%)*`;
+        } else {
+            trendString = ' *(No change)*';
+        }
+    } else if (data.dailySolyxAcquired > 0) {
+        trendString = ' *(First day of data)*';
+    } else {
+        trendString = '';
+    }
+
     const embed = new EmbedBuilder()
         .setColor('#ff8100')
         .setTitle('<a:Orange_Flame:1427764664737202280> Server Analytics Dashboard <a:Orange_Flame:1427764664737202280>')
         .addFields(
-            { name: '💰 Total Solyx™ in Circulation', value: `> **${data.totalSolyx.toLocaleString()}** <a:Yellow_Gem:1427764380489224295>`, inline: true },
-            { name: '⚖️ Average User Balance', value: `> **${data.averageBalance.toLocaleString()}** <a:Yellow_Gem:1427764380489224295>`, inline: true }
+            { name: '💰 Total Solyx™ in Circulation', value: `> **${data.totalSolyx.toLocaleString()}** <a:Yellow_Gem:1427764380489224295>`, inline: false },
+            { name: '⚖️ Average User Balance', value: `> **${data.averageBalance.toLocaleString()}** <a:Yellow_Gem:1427764380489224295>`, inline: true },
+            // --- NEW: Display the daily metric ---
+            { name: '📈 Daily Solyx™ Acquired', value: `> **${data.dailySolyxAcquired.toLocaleString()}**${trendString}`, inline: true }
         )
         .setImage(randomGif)
         .setFooter({ text: 'This dashboard updates automatically.' })
