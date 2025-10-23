@@ -5,6 +5,7 @@ const { createEconomyDashboard } = require('../../components/adminDashboard/econ
 const { createClanDashboard } = require('../../components/adminDashboard/clanPanel');
 const { createShopDashboard } = require('../../components/adminDashboard/shopPanel');
 const { createRaffleDashboard } = require('../../components/adminDashboard/rafflePanel');
+const { createSystemsDashboard } = require('../../components/adminDashboard/systemsPanel');
 const config = require('../../config');
 const db = require('../../utils/database');
 
@@ -22,7 +23,7 @@ module.exports = {
                     { name: 'Clans', value: 'clans' },
                     { name: 'Shop', value: 'shop' },
                     { name: 'Raffles', value: 'raffles' },
-                    { name: 'Events', value: 'events' }
+                    { name: 'Systems', value: 'systems' }
                 )),
     async execute(interaction) {
         const adminRoleId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'admin_role_id'").get(interaction.guild.id)?.value;
@@ -33,6 +34,10 @@ module.exports = {
         if (!isOwner && !isAdmin) {
             return interaction.reply({ content: 'You do not have permission to use this command.', flags: 64 });
         }
+        
+        // Defer the reply immediately. This acknowledges the interaction within the 3-second
+        // window and gives us 15 minutes for follow-up actions (like button presses).
+        await interaction.deferReply({ flags: 64 });
 
         const section = interaction.options.getString('section');
         let response;
@@ -50,10 +55,14 @@ module.exports = {
             case 'raffles':
                 response = createRaffleDashboard();
                 break;
+            case 'systems':
+                response = createSystemsDashboard(interaction.guild.id);
+                break;
             default:
                 response = createMainDashboard();
         }
-
-        await interaction.reply({ ...response, flags: 64 });
+        
+        // Use editReply to send the dashboard content to the deferred reply.
+        await interaction.editReply({ ...response });
     },
 };

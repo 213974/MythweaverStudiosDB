@@ -9,16 +9,22 @@ const config = require('./src/config');
 const commands = [];
 const commandsPath = path.join(__dirname, 'src', 'commands');
 
-// This function correctly finds all main command files
+// Reverting to the original, proven file discovery logic.
 function findCommandFiles(dir) {
     let commandFiles = [];
     const files = fs.readdirSync(dir, { withFileTypes: true });
     for (const file of files) {
         const filePath = path.join(dir, file.name);
         if (file.isDirectory()) {
-            if (file.name === 'clan') commandFiles.push(path.join(filePath, 'clan.js'));
-            else commandFiles = commandFiles.concat(findCommandFiles(filePath));
+            // Special handling for the 'clan' command group directory.
+            if (file.name === 'clan') {
+                commandFiles.push(path.join(filePath, 'clan.js'));
+            } else {
+                // For other directories, recurse into them.
+                commandFiles = commandFiles.concat(findCommandFiles(filePath));
+            }
         } else if (file.name.endsWith('.js')) {
+            // Add top-level command files.
             commandFiles.push(filePath);
         }
     }
@@ -26,9 +32,14 @@ function findCommandFiles(dir) {
 }
 
 const commandFiles = findCommandFiles(commandsPath);
+
 for (const file of commandFiles) {
+    // We only load files that have a `data` property, which subcommand modules lack.
+    // This prevents the "missing property" warning for clan subcommands.
     const command = require(file);
-    if (command.data && command.execute) commands.push(command.data.toJSON());
+    if (command.data && command.execute) {
+        commands.push(command.data.toJSON());
+    }
 }
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -40,7 +51,6 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
         console.log(`Started refreshing ${commands.length} application (/) commands for ${config.guildIDs.length} server(s).`);
 
-        // Loop through each guild ID from the config and deploy commands
         for (const guildId of config.guildIDs) {
             try {
                 const data = await rest.put(

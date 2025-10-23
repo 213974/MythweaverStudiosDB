@@ -6,6 +6,9 @@ const raffleHandler = require('./adminPanel/raffleHandler');
 const systemsHandler = require('./adminPanel/systemsHandler');
 
 module.exports = async (interaction) => {
+    // The deferral responsibility is moved from the router to the individual handlers.
+    // The router's only job is to route. This prevents deferring an already-deferred modal interaction.
+
     const customId = interaction.customId;
     const value = interaction.isStringSelectMenu() ? interaction.values[0] : null;
 
@@ -18,15 +21,12 @@ module.exports = async (interaction) => {
     } else if (customId.startsWith('admin_raffle_') || value === 'admin_panel_raffles') {
         await raffleHandler(interaction);
     } else if (customId.startsWith('admin_system_') || value === 'admin_panel_systems') {
-        if (value === 'admin_panel_systems') {
-            const { createSystemsDashboard } = require('../../components/adminDashboard/systemsPanel');
-            const response = createSystemsDashboard(interaction.guild.id);
-            return interaction.reply({ ...response, flags: 64 });
-        }
         await systemsHandler(interaction);
     } else if (customId === 'admin_panel_select' || customId === 'admin_panel_back') {
+        // This is a component interaction, so it needs to be acknowledged.
+        await interaction.deferUpdate();
         const { createMainDashboard } = require('../../components/adminDashboard/mainPanel');
         const response = createMainDashboard();
-        await interaction.update({ ...response });
+        await interaction.editReply({ ...response });
     }
 };

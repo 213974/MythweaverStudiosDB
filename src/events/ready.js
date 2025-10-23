@@ -6,9 +6,10 @@ const { sendOrUpdateDashboard } = require('../utils/dashboardManager');
 const db = require('../utils/database');
 const config = require('../config');
 
+// This loader now EXACTLY matches the logic in `deploy-commands.js` for perfect synchronization.
 function loadCommands(client) {
     client.commands = new Collection();
-    const commandFoldersPath = path.join(__dirname, '..', 'commands');
+    const commandsPath = path.join(__dirname, '..', 'commands');
 
     function findCommandFiles(dir) {
         let commandFiles = [];
@@ -16,7 +17,11 @@ function loadCommands(client) {
         for (const file of files) {
             const filePath = path.join(dir, file.name);
             if (file.isDirectory()) {
-                commandFiles = commandFiles.concat(findCommandFiles(filePath));
+                if (file.name === 'clan') {
+                    commandFiles.push(path.join(filePath, 'clan.js'));
+                } else {
+                    commandFiles = commandFiles.concat(findCommandFiles(filePath));
+                }
             } else if (file.name.endsWith('.js')) {
                 commandFiles.push(filePath);
             }
@@ -24,14 +29,16 @@ function loadCommands(client) {
         return commandFiles;
     }
 
-    const commandFiles = findCommandFiles(commandFoldersPath);
+    const commandFiles = findCommandFiles(commandsPath);
     for (const file of commandFiles) {
         delete require.cache[require.resolve(file)];
         const command = require(file);
+        // Only load main command files into the client's collection.
         if (command.data && command.execute) {
             client.commands.set(command.data.name, command);
         }
     }
+    console.log(`[Ready] Successfully loaded ${client.commands.size} command(s).`);
 }
 
 module.exports = {
@@ -43,7 +50,6 @@ module.exports = {
         loadCommands(client);
         client.invites = new Map();
 
-        // Multi-Guild Initialization
         console.log(`[Ready] Initializing for ${client.guilds.cache.size} server(s)...`);
         for (const [guildId, guild] of client.guilds.cache) {
             try {
@@ -58,7 +64,6 @@ module.exports = {
             }
         }
 
-        // Enhanced Startup DM
         try {
             const TARGET_GUILD_ID = '1336309776509960193';
             const guild = await client.guilds.fetch(TARGET_GUILD_ID).catch(() => null);
@@ -80,7 +85,6 @@ module.exports = {
             const startupEmbed = new EmbedBuilder()
                 .setColor('#2ECC71')
                 .setTitle('Bot Online & Ready')
-                .setDescription('Crashed - Automatically started back up')
                 .setFields(
                     { name: 'Status', value: 'Online', inline: true },
                     { name: 'Startup Time', value: `${startupTime}s`, inline: true },
@@ -104,7 +108,6 @@ module.exports = {
             console.error(`[Ready] Failed to send enhanced startup DM:`, error);
         }
 
-        // Set Bot Presence
         client.user.setPresence({
             activities: [{
                 name: "Mythweaver Studios's Promise c:",

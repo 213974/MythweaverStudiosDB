@@ -40,6 +40,16 @@ CREATE TABLE IF NOT EXISTS user_stats (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (guild_id) REFERENCES guilds(guild_id) ON DELETE CASCADE
 );
+
+-- Table for tracking command usage for analytics --
+CREATE TABLE IF NOT EXISTS command_stats (
+    stat_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    guild_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    command_name TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    FOREIGN KEY (guild_id) REFERENCES guilds(guild_id) ON DELETE CASCADE
+);
 `;
 db.exec(schema);
 

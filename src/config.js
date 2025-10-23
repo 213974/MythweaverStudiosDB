@@ -10,6 +10,7 @@ module.exports = {
     // We now use an array to list all servers for command deployment.
     guildIDs: [
         '1336309776509960193', // Mythweaver Studios
+        '1374931668443598878', // Mythweaver Studios Staff Discord
         '1420183760737140738'  // Solo's Lab
     ]
 };

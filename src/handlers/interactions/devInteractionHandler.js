@@ -7,6 +7,8 @@ const { sendOrUpdateDashboard } = require('../../utils/dashboardManager');
 const { sendOrUpdateLeaderboard } = require('../../utils/leaderboardManager');
 const { updateAnalyticsDashboard } = require('../../utils/scheduler');
 const { createHelpDashboard } = require('../../commands/help');
+const { createPublicCommandListEmbed } = require('../../components/publicCommandList');
+const { createQuickActionsDashboard } = require('../../components/quickActions');
 
 module.exports = async (interaction) => {
     if (!config.ownerIDs.includes(interaction.user.id)) {
@@ -50,6 +52,15 @@ module.exports = async (interaction) => {
                 modal = new ModalBuilder().setCustomId('settings_modal_booster_role').setTitle('Set Booster Role');
                 modal.addComponents(roleInput);
                 break;
+            // --- NEW CASES ---
+            case 'settings_set_cmd_list_channel':
+                modal = new ModalBuilder().setCustomId('settings_modal_cmd_list_channel').setTitle('Set Public Command List Channel');
+                modal.addComponents(channelInput);
+                break;
+            case 'settings_set_quick_actions_channel':
+                modal = new ModalBuilder().setCustomId('settings_modal_quick_actions_channel').setTitle('Set Quick Actions Channel');
+                modal.addComponents(channelInput);
+                break;
         }
         if (modal) await interaction.showModal(modal);
     }
@@ -62,6 +73,15 @@ module.exports = async (interaction) => {
             const channelId = interaction.fields.getTextInputValue('channel_id_input').match(/\d{17,19}/)?.[0];
             const channel = channelId ? await interaction.guild.channels.fetch(channelId).catch(() => null) : null;
             if (!channel || channel.type !== ChannelType.GuildText) return interaction.editReply({ content: 'Invalid Text Channel ID.' });
+            
+            // Reusable function to post a dashboard and save IDs
+            const postDashboard = async (keyPrefix, content) => {
+                db.prepare(`INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, '${keyPrefix}_channel_id', ?)`).run(guildId, channel.id);
+                // Clear old message ID to force a new message post
+                db.prepare(`DELETE FROM settings WHERE guild_id = ? AND key = '${keyPrefix}_message_id'`).run(guildId);
+                const newMessage = await channel.send(content);
+                db.prepare(`INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, '${keyPrefix}_message_id', ?)`).run(guildId, newMessage.id);
+            };
 
             switch (customId) {
                 case 'settings_modal_analytics_channel':
@@ -83,12 +103,16 @@ module.exports = async (interaction) => {
                     await interaction.editReply({ content: `✅ **Solyx™ Leaderboard Channel** set to ${channel} for this server.` });
                     break;
                 case 'settings_modal_help_channel':
-                    db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'help_dashboard_channel_id', ?)").run(guildId, channel.id);
-                    db.prepare("DELETE FROM settings WHERE guild_id = ? AND key = 'help_dashboard_message_id'").run(guildId);
-                    const dashboard = createHelpDashboard();
-                    const newMessage = await channel.send(dashboard);
-                    db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'help_dashboard_message_id', ?)").run(guildId, newMessage.id);
+                    await postDashboard('help_dashboard', createHelpDashboard());
                     await interaction.editReply({ content: `✅ **Help Dashboard Channel** set to ${channel} for this server.` });
+                    break;
+                case 'settings_modal_cmd_list_channel':
+                    await postDashboard('public_cmd_list', { embeds: [createPublicCommandListEmbed()] });
+                    await interaction.editReply({ content: `✅ **Public Command List** has been posted in ${channel}.` });
+                    break;
+                case 'settings_modal_quick_actions_channel':
+                    await postDashboard('quick_actions', createQuickActionsDashboard());
+                    await interaction.editReply({ content: `✅ **Quick Actions Hub** has been posted in ${channel}.` });
                     break;
             }
         } else if (customId.endsWith('_role')) {

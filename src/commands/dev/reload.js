@@ -1,24 +1,26 @@
-// commands/admin/reload.js
-const { SlashCommandBuilder, Collection } = require('discord.js');
+// src/commands/dev/reload.js
+const { SlashCommandBuilder } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const config = require('../../config');
 
-// Re-implement the simplified command loader here
-function loadCommands(client) {
-    client.commands.clear();
-    const commandFolders = fs.readdirSync(path.join(__dirname, '..', '..', 'commands'));
-    for (const folder of commandFolders) {
-        const commandFiles = fs.readdirSync(path.join(__dirname, '..', '..', 'commands', folder)).filter(file => file.endsWith('.js'));
-        for (const file of commandFiles) {
-            const filePath = path.join(__dirname, '..', '..', 'commands', folder, file);
-            delete require.cache[require.resolve(filePath)];
-            const command = require(filePath);
-            if (command.data && command.execute) {
-                client.commands.set(command.data.name, command);
+// This function now also exactly matches the logic in deploy-commands.js.
+function findCommandFiles(dir) {
+    let commandFiles = [];
+    const files = fs.readdirSync(dir, { withFileTypes: true });
+    for (const file of files) {
+        const filePath = path.join(dir, file.name);
+        if (file.isDirectory()) {
+            if (file.name === 'clan') {
+                commandFiles.push(path.join(filePath, 'clan.js'));
+            } else {
+                commandFiles = commandFiles.concat(findCommandFiles(filePath));
             }
+        } else if (file.name.endsWith('.js')) {
+            commandFiles.push(filePath);
         }
     }
+    return commandFiles;
 }
 
 module.exports = {
@@ -33,11 +35,29 @@ module.exports = {
         await interaction.deferReply({ flags: 64 });
 
         try {
-            loadCommands(interaction.client);
-            await interaction.editReply({ content: 'Successfully reloaded all command logic.' });
+            console.log('[Reload] Clearing existing commands from client...');
+            interaction.client.commands.clear();
+            
+            const commandsPath = path.join(__dirname, '..', '..', 'commands');
+            const commandFiles = findCommandFiles(commandsPath);
+
+            console.log(`[Reload] Found ${commandFiles.length} command files to reload.`);
+
+            for (const file of commandFiles) {
+                delete require.cache[require.resolve(file)];
+                const command = require(file);
+
+                if (command.data && command.execute) {
+                    interaction.client.commands.set(command.data.name, command);
+                } else {
+                     console.warn(`[Reload] The command at ${file} is missing a required "data" or "execute" property.`);
+                }
+            }
+
+            await interaction.editReply({ content: `✅ Successfully reloaded ${interaction.client.commands.size} commands.` });
         } catch (error) {
             console.error('Error during /reload command:', error);
-            await interaction.editReply({ content: `Failed to reload commands: ${error.message}` });
+            await interaction.editReply({ content: `❌ Failed to reload commands: ${error.message}` });
         }
     },
 };

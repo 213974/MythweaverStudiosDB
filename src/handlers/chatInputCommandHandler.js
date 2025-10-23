@@ -1,5 +1,6 @@
 // handlers/chatInputCommandHandler.js
 const { Collection } = require('discord.js');
+const { trackCommandUsage } = require('../utils/analyticsManager');
 const COMMAND_COOLDOWN_SECONDS = 2.5;
 
 module.exports = async (interaction, client) => {
@@ -25,6 +26,11 @@ module.exports = async (interaction, client) => {
     cooldowns.set(interaction.user.id, now);
     client.cooldowns.set('commands', cooldowns);
     setTimeout(() => cooldowns.delete(interaction.user.id), COMMAND_COOLDOWN_SECONDS * 1000);
+    
+    // --- ANALYTICS: Track command usage ---
+    if (interaction.commandName === 'daily' || interaction.commandName === 'weekly') {
+        trackCommandUsage(interaction.guild.id, interaction.user.id, interaction.commandName);
+    }
 
     await command.execute(interaction);
 };

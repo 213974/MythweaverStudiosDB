@@ -14,26 +14,26 @@ module.exports = {
         }
 
         const guildId = interaction.guild.id;
-        const adminRoleId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'admin_role_id'").get(guildId)?.value;
-        const raffleRoleId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'raffle_creator_role_id'").get(guildId)?.value;
-        const analyticsChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'analytics_channel_id'").get(guildId)?.value;
-        const clanDashChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'dashboard_channel_id'").get(guildId)?.value;
-        const leaderboardChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'leaderboard_channel_id'").get(guildId)?.value;
-        const helpChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'help_dashboard_channel_id'").get(guildId)?.value;
-        const boosterRoleId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'booster_role_id'").get(guildId)?.value;
+        const settings = db.prepare("SELECT key, value FROM settings WHERE guild_id = ?").all(guildId);
+        const settingsMap = new Map(settings.map(s => [s.key, s.value]));
         
+        const formatChannel = (key) => settingsMap.has(key) ? `<#${settingsMap.get(key)}>` : '`Not Set`';
+        const formatRole = (key) => settingsMap.has(key) ? `<@&${settingsMap.get(key)}>` : '`Not Set`';
+
         const embed = new EmbedBuilder()
             .setColor('#FFD700')
             .setTitle(` Bot Core Settings for ${interaction.guild.name} `)
             .setDescription('Select a setting to manage from the dropdown menu. This interface is only available to the Bot Owner.')
             .addFields(
-                { name: 'Admin Role', value: adminRoleId ? `<@&${adminRoleId}>` : '`Not Set`' },
-                { name: 'Raffle Creator Role', value: raffleRoleId ? `<@&${raffleRoleId}>` : '`Not Set`' },
-                { name: 'Analytics Dashboard', value: analyticsChannelId ? `<#${analyticsChannelId}>` : '`Not Set`' },
-                { name: 'Clan Dashboard', value: clanDashChannelId ? `<#${clanDashChannelId}>` : '`Not Set`' },
-                { name: 'Solyx™ Leaderboard', value: leaderboardChannelId ? `<#${leaderboardChannelId}>` : '`Not Set`' },
-                { name: 'Help Dashboard', value: helpChannelId ? `<#${helpChannelId}>` : '`Not Set`' },
-                { name: 'Booster Role', value: boosterRoleId ? `<@&${boosterRoleId}>` : '`Not Set`' }
+                { name: 'Admin Role', value: formatRole('admin_role_id'), inline: true },
+                { name: 'Raffle Creator Role', value: formatRole('raffle_creator_role_id'), inline: true },
+                { name: 'Booster Role', value: formatRole('booster_role_id'), inline: true },
+                { name: 'Analytics Dashboard', value: formatChannel('analytics_channel_id'), inline: true },
+                { name: 'Clan Dashboard', value: formatChannel('dashboard_channel_id'), inline: true },
+                { name: 'Solyx™ Leaderboard', value: formatChannel('leaderboard_channel_id'), inline: true },
+                { name: 'Help Dashboard', value: formatChannel('help_dashboard_channel_id'), inline: true },
+                { name: 'Public Command List', value: formatChannel('public_cmd_list_channel_id'), inline: true },
+                { name: 'Quick Actions Hub', value: formatChannel('quick_actions_channel_id'), inline: true }
             );
             
         const selectMenu = new StringSelectMenuBuilder()
@@ -42,11 +42,13 @@ module.exports = {
             .addOptions([
                 { label: 'Set Admin Role', value: 'settings_set_admin_role', emoji: '👑' },
                 { label: 'Set Raffle Role', value: 'settings_set_raffle_role', emoji: '🎟️' },
+                { label: 'Set Booster Role', value: 'settings_set_booster_role', emoji: '✨' },
                 { label: 'Set Analytics Channel', value: 'settings_set_analytics_channel', emoji: '📊' },
                 { label: 'Set Clan Dashboard Channel', value: 'settings_set_clan_dash', emoji: '⚔️' },
                 { label: 'Set Solyx™ Leaderboard Channel', value: 'settings_set_leaderboard_channel', emoji: '🏆' },
                 { label: 'Set Help Dashboard Channel', value: 'settings_set_help_channel', emoji: '❓' },
-                { label: 'Set Booster Role', value: 'settings_set_booster_role', emoji: '✨' }
+                { label: 'Set Public Command List Channel', value: 'settings_set_cmd_list_channel', emoji: '📜' },
+                { label: 'Set Quick Actions Channel', value: 'settings_set_quick_actions_channel', emoji: '⚡' }
             ]);
 
         const row = new ActionRowBuilder().addComponents(selectMenu);

@@ -1,7 +1,7 @@
 // src/utils/analyticsManager.js
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
 const db = require('./database');
-const { format, subDays } = require('date-fns');
+const { format, startOfWeek, endOfWeek, eachDayOfInterval, getDay } = require('date-fns');
 
 const GIFS = [
     'https://i.pinimg.com/originals/56/34/9f/56349f764173af321a640f6e1bac22fd.gif',
@@ -13,24 +13,68 @@ const GIFS = [
     'https://i.pinimg.com/originals/a3/63/9b/a3639be246d40f97fddbcd888b1b1a60.gif'
 ];
 
+// --- Helper Functions ---
+
+/**
+ * Tracks the usage of a slash command for analytics purposes.
+ * @param {string} guildId The guild where the command was used.
+ * @param {string} userId The user who used the command.
+ * @param {string} commandName The name of the command used.
+ */
+function trackCommandUsage(guildId, userId, commandName) {
+    try {
+        db.prepare('INSERT INTO command_stats (guild_id, user_id, command_name, timestamp) VALUES (?, ?, ?, ?)')
+          .run(guildId, userId, commandName, new Date().toISOString());
+    } catch (error) {
+        console.error(`[Analytics] Failed to track command usage for /${commandName}:`, error);
+    }
+}
+
 function getAnalyticsData(guildId) {
+    // --- Total Economy Stats ---
     const solyxData = db.prepare('SELECT SUM(balance) as total FROM wallets WHERE guild_id = ?').get(guildId);
     const walletCountData = db.prepare('SELECT COUNT(DISTINCT user_id) as count FROM wallets WHERE guild_id = ?').get(guildId);
+
+    // --- Weekly Stats Calculation ---
+    const now = new Date();
+    // Setting weekStartsOn: 1 makes Monday the first day of the week.
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+    const weekStartISO = weekStart.toISOString();
+    const weekEndISO = weekEnd.toISOString();
+
+    // 1. Get weekly command usage counts
+    const dailyUsage = db.prepare("SELECT COUNT(*) as count FROM command_stats WHERE guild_id = ? AND command_name = 'daily' AND timestamp >= ? AND timestamp <= ?").get(guildId, weekStartISO, weekEndISO);
+    const weeklyUsage = db.prepare("SELECT COUNT(*) as count FROM command_stats WHERE guild_id = ? AND command_name = 'weekly' AND timestamp >= ? AND timestamp <= ?").get(guildId, weekStartISO, weekEndISO);
+
+    // 2. Get daily Solyx generation for the current week
+    const daysInWeekSoFar = eachDayOfInterval({ start: weekStart, end: now });
+    const dailySolyxAcquired = new Map();
+    // Use an array of day names with Monday at index 0
+    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    for (const day of daysInWeekSoFar) {
+        const dateStr = format(day, 'yyyy-MM-dd');
+        // date-fns getDay(): Sunday is 0, Monday is 1...
+        // We adjust so Monday is 0, Sunday is 6
+        const dayIndex = (getDay(day) + 6) % 7; 
+        const dayName = dayNames[dayIndex];
+        const stats = db.prepare('SELECT total_solyx_acquired FROM daily_stats WHERE guild_id = ? AND date = ?').get(guildId, dateStr);
+        dailySolyxAcquired.set(dayName, stats?.total_solyx_acquired || 0);
+    }
     
-    // --- NEW: Fetch daily generation stats ---
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
-    const yesterdayStr = format(subDays(new Date(), 1), 'yyyy-MM-dd');
-
-    const todayStats = db.prepare('SELECT total_solyx_acquired FROM daily_stats WHERE guild_id = ? AND date = ?').get(guildId, todayStr);
-    const yesterdayStats = db.prepare('SELECT total_solyx_acquired FROM daily_stats WHERE guild_id = ? AND date = ?').get(guildId, yesterdayStr);
-
-    const totalSolyx = solyxData.total || 0;
-    const userCount = walletCountData.count || 0;
+    // --- Data Assembly ---
+    const totalSolyx = solyxData?.total || 0;
+    const userCount = walletCountData?.count || 0;
     const averageBalance = userCount > 0 ? Math.round(totalSolyx / userCount) : 0;
-    const dailySolyxAcquired = todayStats?.total_solyx_acquired || 0;
-    const yesterdaySolyxAcquired = yesterdayStats?.total_solyx_acquired || 0;
-
-    return { totalSolyx, averageBalance, dailySolyxAcquired, yesterdaySolyxAcquired };
+    
+    return { 
+        totalSolyx, 
+        averageBalance, 
+        dailyCommandUsage: dailyUsage?.count || 0,
+        weeklyCommandUsage: weeklyUsage?.count || 0,
+        solyxAcquiredThisWeek: dailySolyxAcquired
+    };
 }
 
 function createAnalyticsEmbed(guildId) {
@@ -38,36 +82,37 @@ function createAnalyticsEmbed(guildId) {
     const randomGif = GIFS[Math.floor(Math.random() * GIFS.length)];
     const nextUpdateTimestamp = Math.floor((Date.now() + 5 * 60 * 1000) / 1000);
 
-    // --- NEW: Calculate trend for daily generation ---
-    let trendString = ' (vs yesterday)';
-    if (data.yesterdaySolyxAcquired > 0) {
-        const percentChange = ((data.dailySolyxAcquired - data.yesterdaySolyxAcquired) / data.yesterdaySolyxAcquired) * 100;
-        if (percentChange > 0) {
-            trendString = ` *(<:Green_Arrow_Up:1427763654522437652> +${percentChange.toFixed(0)}%)*`;
-        } else if (percentChange < 0) {
-            trendString = ` *(<:Red_Arrow_Down:1427763683196272670> ${percentChange.toFixed(0)}%)*`;
-        } else {
-            trendString = ' *(No change)*';
+    // --- Build Daily Solyx Acquired String ---
+    const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    let weeklySolyxString = weekDays.map(day => {
+        if (data.solyxAcquiredThisWeek.has(day)) {
+            return `**${day}:** ${data.solyxAcquiredThisWeek.get(day).toLocaleString()}`;
         }
-    } else if (data.dailySolyxAcquired > 0) {
-        trendString = ' *(First day of data)*';
-    } else {
-        trendString = '';
-    }
+        return `**${day}:** 0`; // Show 0 for days not yet occurred in the week
+    }).join('\n');
+
 
     const embed = new EmbedBuilder()
         .setColor('#ff8100')
         .setTitle('<a:Orange_Flame:1427764664737202280> Server Analytics Dashboard <a:Orange_Flame:1427764664737202280>')
         .addFields(
             { name: '💰 Total Solyx™ in Circulation', value: `> **${data.totalSolyx.toLocaleString()}** <a:Yellow_Gem:1427764380489224295>`, inline: false },
-            { name: '⚖️ Average User Balance', value: `> **${data.averageBalance.toLocaleString()}** <a:Yellow_Gem:1427764380489224295>`, inline: true },
-            // --- NEW: Display the daily metric ---
-            { name: '📈 Daily Solyx™ Acquired', value: `> **${data.dailySolyxAcquired.toLocaleString()}**${trendString}`, inline: true }
+            { name: '⚖️ Average User Balance', value: `> **${data.averageBalance.toLocaleString()}** <a:Yellow_Gem:1427764380489224295>`, inline: false },
+            { 
+                name: '📈 Weekly Command Usage', 
+                value: `**/daily:** ${data.dailyCommandUsage.toLocaleString()} uses\n**/weekly:** ${data.weeklyCommandUsage.toLocaleString()} uses`,
+                inline: true
+            },
+            {
+                name: '📊 Weekly Solyx™ Acquired',
+                value: weeklySolyxString,
+                inline: true
+            },
+            { name: 'Next Update', value: `<t:${nextUpdateTimestamp}:R>` }
         )
         .setImage(randomGif)
-        .setFooter({ text: 'This dashboard updates automatically.' })
-        .setTimestamp()
-        .addFields({ name: 'Next Update', value: `<t:${nextUpdateTimestamp}:R>` });
+        .setFooter({ text: 'Weekly stats reset on Monday.' })
+        .setTimestamp();
 
     const adminMenu = new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
@@ -86,4 +131,4 @@ function createAnalyticsEmbed(guildId) {
     return { embeds: [embed], components: [adminMenu] };
 }
 
-module.exports = { createAnalyticsEmbed };
+module.exports = { createAnalyticsEmbed, trackCommandUsage };

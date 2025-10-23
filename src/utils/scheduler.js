@@ -92,7 +92,9 @@ async function checkEndedEvents(client) {
         const guildId = event.guild_id;
         console.log(`[Scheduler] Cleaning up expired event for guild ${guildId}...`);
         db.prepare("DELETE FROM settings WHERE guild_id = ? AND key LIKE 'event_%'").run(guildId);
-        client.activeEvents.delete(guildId);
+        if (client.activeEvents) {
+            client.activeEvents.delete(guildId);
+        }
     }
 }
 

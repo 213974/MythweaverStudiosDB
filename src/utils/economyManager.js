@@ -2,9 +2,6 @@
 const db = require('./database');
 const { differenceInHours, differenceInCalendarDays, startOfWeek, getDay, parseISO, format } = require('date-fns');
 
-// --- ECONOMY RE-BALANCE: Rewards reduced by a factor of 10 ---
-const DAILY_REWARD = 1;
-const WEEKLY_REWARD = 2;
 const DEFAULT_CURRENCY = 'Solyx™';
 const DEFAULT_WALLET_CAPACITY = 100000;
 
@@ -22,26 +19,50 @@ function ensureClanWallet(clanId, guildId, currency = DEFAULT_CURRENCY) {
     db.prepare('INSERT OR IGNORE INTO clan_wallets (clan_id, guild_id, currency) VALUES (?, ?, ?)').run(clanId, guildId, currency);
 }
 
+/**
+ * Retrieves a specific economy setting from the database for a guild.
+ * @param {string} guildId The ID of the guild.
+ * @param {string} key The setting key (e.g., 'economy_daily_reward').
+ * @param {number} defaultValue The default value if the setting is not found.
+ * @returns {number}
+ */
+function getEconomySetting(guildId, key, defaultValue) {
+    const setting = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = ?").get(guildId, key);
+    return setting ? parseFloat(setting.value) : defaultValue;
+}
+
+
 // --- Main Exported Module ---
 module.exports = {
     DEFAULT_CURRENCY,
-    DAILY_REWARD,
-    WEEKLY_REWARD,
 
     /**
-     * The single point of truth for adding Solyx™ to a user's wallet.
-     * This function handles wallet updates, transaction logging, and analytics tracking.
+     * Retrieves the configured daily reward amount for a guild.
+     * @param {string} guildId The ID of the guild.
+     * @returns {number}
+     */
+    getDailyReward: (guildId) => getEconomySetting(guildId, 'economy_daily_reward', 1),
+
+    /**
+     * Retrieves the configured weekly reward amount for a guild.
+     * @param {string} guildId The ID of the guild.
+     * @returns {number}
+     */
+    getWeeklyReward: (guildId) => getEconomySetting(guildId, 'economy_weekly_reward', 2),
+
+    /**
+     * The single point of truth for any Solyx modification.
+     * Handles wallet updates, transaction logging, and positive gain analytics.
      * @param {string} userId The user's ID.
      * @param {string} guildId The guild's ID.
-     * @param {number} amount The amount of Solyx™ to add. Must be positive.
+     * @param {number} amount The amount of Solyx™ to add (can be negative).
      * @param {string} reason A description for the transaction log.
+     * @param {string} [moderatorId=null] The ID of the moderator performing the action, if applicable.
      * @returns {{success: boolean, newBalance: number}}
      */
-    addSolyx: (userId, guildId, amount, reason) => {
-        if (amount <= 0) return { success: false };
+    modifySolyx: (userId, guildId, amount, reason, moderatorId = null) => {
+        if (amount === 0) return { success: false };
         ensureWallet(userId, guildId);
-
-        const today = format(new Date(), 'yyyy-MM-dd');
 
         try {
             const result = db.transaction(() => {
@@ -49,10 +70,14 @@ module.exports = {
                 db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ? AND currency = ?').run(amount, userId, guildId, DEFAULT_CURRENCY);
                 
                 // Log the transaction
-                db.prepare('INSERT INTO transactions (user_id, guild_id, amount, reason, timestamp) VALUES (?, ?, ?, ?, ?)').run(userId, guildId, amount, reason, new Date().toISOString());
+                db.prepare('INSERT INTO transactions (user_id, guild_id, amount, reason, timestamp, moderator_id) VALUES (?, ?, ?, ?, ?, ?)')
+                  .run(userId, guildId, amount, reason, new Date().toISOString(), moderatorId);
 
-                // Update daily analytics stats
-                db.prepare('INSERT INTO daily_stats (guild_id, date, total_solyx_acquired) VALUES (?, ?, ?) ON CONFLICT(guild_id, date) DO UPDATE SET total_solyx_acquired = total_solyx_acquired + excluded.total_solyx_acquired').run(guildId, today, amount);
+                // If the amount is positive, update daily analytics stats
+                if (amount > 0) {
+                    const today = format(new Date(), 'yyyy-MM-dd');
+                    db.prepare('INSERT INTO daily_stats (guild_id, date, total_solyx_acquired) VALUES (?, ?, ?) ON CONFLICT(guild_id, date) DO UPDATE SET total_solyx_acquired = total_solyx_acquired + excluded.total_solyx_acquired').run(guildId, today, amount);
+                }
                 
                 const wallet = db.prepare('SELECT balance FROM wallets WHERE user_id = ? AND guild_id = ?').get(userId, guildId);
                 return wallet;
@@ -60,7 +85,7 @@ module.exports = {
             
             return { success: true, newBalance: result.balance };
         } catch (error) {
-            console.error(`[addSolyx] Failed to add ${amount} Solyx™ to ${userId} in ${guildId}:`, error);
+            console.error(`[modifySolyx] Failed to modify Solyx™ for ${userId} in ${guildId}:`, error);
             return { success: false };
         }
     },
@@ -139,8 +164,13 @@ module.exports = {
             return { success: false, message: 'You have already claimed your daily reward today.' };
         }
         
-        const addSolyxResult = module.exports.addSolyx(userId, guildId, DAILY_REWARD, 'Daily Claim');
-        if (!addSolyxResult.success) {
+        const dailyReward = module.exports.getDailyReward(guildId);
+        if (dailyReward === 0) {
+            return { success: false, message: 'Daily claims are currently not providing any Solyx™.' };
+        }
+        
+        const result = module.exports.modifySolyx(userId, guildId, dailyReward, 'Daily Claim');
+        if (!result.success) {
             return { success: false, message: 'A database error occurred while claiming.' };
         }
 
@@ -160,18 +190,19 @@ module.exports = {
                 weekly_claim_state = excluded.weekly_claim_state;
             `).run(userId, guildId, today.toISOString(), weeklyStateJson);
             
-            const userRecord = db.prepare('SELECT referred_by FROM users WHERE user_id = ?').get(userId);
-            if (userRecord && userRecord.referred_by) {
-                const inviterId = userRecord.referred_by;
-                // Passive bonus is now 10% of the re-balanced daily reward
-                const passiveBonus = DAILY_REWARD * 0.10;
-                if (passiveBonus > 0) {
-                    module.exports.addSolyx(inviterId, guildId, passiveBonus, `Passive bonus from user ${userId}`);
+            if (dailyReward > 0) {
+                const userRecord = db.prepare('SELECT referred_by FROM users WHERE user_id = ?').get(userId);
+                if (userRecord && userRecord.referred_by) {
+                    const inviterId = userRecord.referred_by;
+                    const passiveBonus = dailyReward * 0.10;
+                    if (passiveBonus > 0) {
+                        module.exports.modifySolyx(inviterId, guildId, passiveBonus, `Passive bonus from user ${userId}`);
+                    }
                 }
             }
         })();
 
-        return { success: true, reward: DAILY_REWARD };
+        return { success: true, reward: dailyReward };
     },
 
     canClaimWeekly: (userId, guildId) => {
@@ -191,13 +222,18 @@ module.exports = {
         const { canClaim } = module.exports.canClaimWeekly(userId, guildId);
         if (!canClaim) return { success: false, message: 'You have already claimed your weekly reward.' };
         
-        const addSolyxResult = module.exports.addSolyx(userId, guildId, WEEKLY_REWARD, 'Weekly Claim');
-        if (!addSolyxResult.success) {
+        const weeklyReward = module.exports.getWeeklyReward(guildId);
+        if (weeklyReward === 0) {
+            return { success: false, message: 'Weekly claims are currently not providing any Solyx™.' };
+        }
+
+        const result = module.exports.modifySolyx(userId, guildId, weeklyReward, 'Weekly Claim');
+        if (!result.success) {
             return { success: false, message: 'A database error occurred while claiming.' };
         }
 
         db.prepare('INSERT OR REPLACE INTO claims (user_id, guild_id, claim_type, last_claimed_at) VALUES (?, ?, ?, ?)').run(userId, guildId, 'weekly', new Date().toISOString());
-        return { success: true, reward: WEEKLY_REWARD };
+        return { success: true, reward: weeklyReward };
     },
 
     // --- Shop Management ---
@@ -222,7 +258,10 @@ module.exports = {
         if (!item) return { success: false, message: 'This item is not in the shop.' };
         const wallet = module.exports.getWallet(userId, guildId, item.currency);
         if (wallet.balance < item.price) return { success: false, message: `You do not have enough ${item.currency}.` };
-        db.prepare('UPDATE wallets SET balance = balance - ? WHERE user_id = ? AND guild_id = ? AND currency = ?').run(item.price, userId, guildId, item.currency);
+        
+        // Use the centralized modification function
+        module.exports.modifySolyx(userId, guildId, -item.price, `Purchase: ${item.name}`);
+
         return { success: true, price: item.price, currency: item.currency };
     },
 

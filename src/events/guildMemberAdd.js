@@ -3,13 +3,11 @@ const { Events, EmbedBuilder } = require('discord.js');
 const db = require('../utils/database');
 const economyManager = require('../utils/economyManager');
 
-// A simple in-memory cache to store invites before and after a join
 const invites = new Map();
 
 module.exports = {
     name: Events.GuildMemberAdd,
     async execute(member, client) {
-        // Ensure the user is in the database immediately upon joining.
         db.prepare('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)').run(member.id, member.user.username);
 
         try {
@@ -19,10 +17,8 @@ module.exports = {
                 currentInvites.set(invite.code, invite.uses);
             });
 
-            // Find the invite that was used
             const usedInvite = fetchedInvites.find(inv => inv.uses > (invites.get(member.guild.id)?.get(inv.code) || 0));
 
-            // Update the global cache
             invites.set(member.guild.id, currentInvites);
             
             if (!usedInvite || usedInvite.inviter.bot) {
@@ -32,13 +28,12 @@ module.exports = {
 
             const inviterId = usedInvite.inviter.id;
             const newMemberId = member.id;
-            // --- ECONOMY RE-BALANCE: Bonus reduced by a factor of 10 ---
-            const JOIN_BONUS = 2;
+            const JOIN_BONUS = 2; // Kept as a constant here as it's not a configurable system reward.
 
             db.prepare('UPDATE users SET referred_by = ? WHERE user_id = ?').run(inviterId, newMemberId);
             
-            // --- REFACTOR: Use the centralized addSolyx function ---
-            economyManager.addSolyx(inviterId, member.guild.id, JOIN_BONUS, `Referral bonus for ${member.user.tag}`);
+            // Changed from the old `addSolyx` to the new, correct `modifySolyx` function.
+            economyManager.modifySolyx(inviterId, member.guild.id, JOIN_BONUS, `Referral bonus for ${member.user.tag}`);
 
             console.log(`[guildMemberAdd] Awarded ${JOIN_BONUS} Solyx to ${usedInvite.inviter.tag} for referring ${member.user.tag}.`);
             

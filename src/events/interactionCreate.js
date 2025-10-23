@@ -6,6 +6,7 @@ const devInteractionHandler = require('../handlers/interactions/devInteractionHa
 const clanInteractionHandler = require('../handlers/interactions/clanInteractionHandler');
 const economyInteractionHandler = require('../handlers/interactions/economyInteractionHandler');
 const helpInteractionHandler = require('../handlers/interactions/helpInteractionHandler');
+const quickActionHandler = require('../handlers/interactions/quickActionHandler');
 
 const SELECT_MENU_COOLDOWN_SECONDS = 5;
 const BUTTON_COOLDOWN_SECONDS = 2.5;
@@ -35,7 +36,7 @@ module.exports = {
                 client.cooldowns.set('selectMenus', cooldowns);
             }
 
-            // --- THIS IS THE FIX: Re-introduced a dedicated cooldown for buttons ---
+            // --- Dedicated cooldown for buttons ---
             if (interaction.isButton()) {
                 const cooldowns = client.cooldowns.get('buttons') || new Collection();
                 const userTimestamp = cooldowns.get(interaction.user.id);
@@ -70,6 +71,10 @@ module.exports = {
             }
             if (customId.startsWith('help_')) {
                 await helpInteractionHandler(interaction);
+                return;
+            }
+            if (customId.startsWith('quick_action_')) {
+                await quickActionHandler(interaction);
                 return;
             }
 

@@ -31,25 +31,35 @@ module.exports = async (interaction) => {
         await interaction.deferReply({ flags: 64 });
         const action = interaction.customId.split('_')[3];
         const targetMember = await parseUser(interaction.guild, interaction.fields.getTextInputValue('user_input'));
-        const amount = parseInt(interaction.fields.getTextInputValue('amount_input').replace(/,/g, ''), 10);
+        const amountStr = interaction.fields.getTextInputValue('amount_input').replace(/,/g, '');
+        let amount = parseFloat(amountStr);
         const reason = interaction.fields.getTextInputValue('reason_input') || 'No reason provided.';
         
-        if (!targetMember || isNaN(amount) || amount < 0) {
+        if (!targetMember || isNaN(amount)) {
             return interaction.editReply({ content: 'Error: Invalid user or amount provided.' });
         }
-
-        const db = require('../../../utils/database');
-        economyManager.getWallet(targetMember.id, interaction.guild.id);
         
-        if (action === 'give') db.prepare(`UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ?`).run(amount, targetMember.id, interaction.guild.id);
-        else if (action === 'remove') db.prepare(`UPDATE wallets SET balance = balance - ? WHERE user_id = ? AND guild_id = ?`).run(amount, targetMember.id, interaction.guild.id);
-        else if (action === 'set') db.prepare(`UPDATE wallets SET balance = ? WHERE user_id = ? AND guild_id = ?`).run(amount, targetMember.id, interaction.guild.id);
+        let result;
+        if (action === 'give') {
+            if (amount < 0) amount = Math.abs(amount); // Ensure give is always positive
+            result = economyManager.modifySolyx(targetMember.id, interaction.guild.id, amount, reason, interaction.user.id);
+        } else if (action === 'remove') {
+            if (amount > 0) amount = -amount; // Ensure remove is always negative
+            result = economyManager.modifySolyx(targetMember.id, interaction.guild.id, amount, reason, interaction.user.id);
+        } else if (action === 'set') {
+            const currentWallet = economyManager.getWallet(targetMember.id, interaction.guild.id);
+            const modificationAmount = amount - currentWallet.balance; // Calculate the difference
+            result = economyManager.modifySolyx(targetMember.id, interaction.guild.id, modificationAmount, `Set balance to ${amount} (${reason})`, interaction.user.id);
+        }
 
-        const newWallet = economyManager.getWallet(targetMember.id, interaction.guild.id);
-        const embed = new EmbedBuilder().setColor('#3498DB').setTitle('⚖️ Economy Administration Log').setDescription(`Action by ${interaction.user}.`).addFields(
-            { name: 'Action', value: `\`${action}\``, inline: true }, { name: 'User', value: `${targetMember}`, inline: true }, { name: 'Amount', value: `**${amount.toLocaleString()}** Solyx™`, inline: true },
-            { name: 'New Balance', value: `${newWallet.balance.toLocaleString()} Solyx™` }, { name: 'Reason', value: reason }
-        ).setTimestamp();
-        await interaction.editReply({ embeds: [embed] });
+        if (result && result.success) {
+            const embed = new EmbedBuilder().setColor('#3498DB').setTitle('⚖️ Economy Administration Log').setDescription(`Action by ${interaction.user}.`).addFields(
+                { name: 'Action', value: `\`${action}\``, inline: true }, { name: 'User', value: `${targetMember}`, inline: true }, { name: 'Amount', value: `**${action === 'set' ? '' : amount.toLocaleString()}** Solyx™`, inline: true },
+                { name: 'New Balance', value: `${result.newBalance.toLocaleString()} Solyx™` }, { name: 'Reason', value: reason }
+            ).setTimestamp();
+            await interaction.editReply({ embeds: [embed] });
+        } else {
+            await interaction.editReply({ content: 'An error occurred while modifying the user\'s balance.' });
+        }
     }
 };

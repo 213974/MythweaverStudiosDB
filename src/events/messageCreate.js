@@ -5,14 +5,13 @@ const db = require('../utils/database');
 const { isEligibleForPerks, getBoosterPerk } = require('../utils/perksManager');
 const economyManager = require('../utils/economyManager');
 const userManager = require('../utils/userManager');
-const { getSettings } = require('../utils/settingsCache'); // <-- USE CENTRALIZED CACHE
+const { getSettings } = require('../utils/settingsCache');
 
 const PANDA_YAY_EMOJI = '<:PandaYay:1357806568535490812>';
 const MENTION_COOLDOWN_DURATION = 2500;
 const BOOSTER_REACTION_COOLDOWN_SECONDS = 5;
 const SOLYX_PER_MESSAGE_COOLDOWN_SECONDS = 60; // 1 minute cooldown per user
 
-// Cooldowns for the Solyx per Message system
 const messageSolyxCooldowns = new Collection();
 
 module.exports = {
@@ -22,8 +21,7 @@ module.exports = {
 
         const guildId = message.guild.id;
 
-        // --- REFACTORED: Permanent "Solyx per Message" System ---
-        const settings = getSettings(guildId); // Use the new cache utility
+        const settings = getSettings(guildId);
         if (settings.get('system_solyx_text_enabled') === 'true') {
             const now = Date.now();
             const userCooldown = messageSolyxCooldowns.get(message.author.id);
@@ -31,7 +29,8 @@ module.exports = {
             if (!userCooldown || now > userCooldown) {
                 const rate = parseFloat(settings.get('system_solyx_text_rate') || '0.1');
                 if (rate > 0) {
-                    economyManager.addSolyx(message.author.id, guildId, rate, 'Message Activity');
+                    // Changed from the old `addSolyx` to the new, correct `modifySolyx` function.
+                    economyManager.modifySolyx(message.author.id, guildId, rate, 'Message Activity');
                     userManager.addSolyxFromSource(message.author.id, guildId, rate, 'message');
                 }
                 messageSolyxCooldowns.set(message.author.id, now + SOLYX_PER_MESSAGE_COOLDOWN_SECONDS * 1000);
@@ -45,7 +44,7 @@ module.exports = {
             if (targetUser) {
                 db.prepare(`INSERT OR IGNORE INTO manual_boosters (guild_id, user_id) VALUES (?, ?)`).run(guildId, targetUser.id);
                 await message.react('✅').catch(err => console.error('[Whitelist] Failed to react to whitelist message:', err));
-                return; // Stop further processing for this command-like message
+                return;
             }
         }
 
