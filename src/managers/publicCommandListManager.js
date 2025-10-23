@@ -1,13 +1,8 @@
-// src/utils/publicCommandListManager.js
-const db = require('./database');
+// src/managers/publicCommandListManager.js
+const db = require('../utils/database');
 const { createPublicCommandListEmbed } = require('../components/publicCommandList');
-const { getRandomGif } = require('./dashboardHelpers');
+const { getRandomGif } = require('../helpers/dashboardHelpers');
 
-/**
- * Posts or updates the public command list dashboard in its configured channel.
- * @param {import('discord.js').Client} client The Discord client instance.
- * @param {string} [specificGuildId] Optional: The ID of a specific guild to update.
- */
 async function sendOrUpdateCommandList(client, specificGuildId = null) {
     const guildsToUpdate = specificGuildId ? [[specificGuildId, await client.guilds.fetch(specificGuildId).catch(() => null)]] : client.guilds.cache;
 
@@ -37,7 +32,7 @@ async function sendOrUpdateCommandList(client, specificGuildId = null) {
             }
         } catch (error) {
             console.error(`[CommandList] Failed to update command list for guild ${guildId}:`, error);
-            if (error.code === 10008) { // Unknown Message
+            if (error.code === 10008) {
                 db.prepare("DELETE FROM settings WHERE guild_id = ? AND key = 'public_cmd_list_message_id'").run(guildId);
             }
         }

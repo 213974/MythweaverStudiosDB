@@ -1,5 +1,5 @@
-﻿// src/utils/economyManager.js
-const db = require('./database');
+﻿// src/managers/economyManager.js
+const db = require('../utils/database');
 const { differenceInHours, differenceInCalendarDays, startOfWeek, getDay, parseISO, format } = require('date-fns');
 const { trackSuccessfulClaim } = require('./analyticsManager');
 
@@ -174,7 +174,6 @@ module.exports = {
             return { success: false, message: 'A database error occurred while claiming.' };
         }
 
-        // Tracker call for weekly claims.
         trackSuccessfulClaim(guildId, userId, 'weekly');
 
         db.prepare('INSERT OR REPLACE INTO claims (user_id, guild_id, claim_type, last_claimed_at) VALUES (?, ?, ?, ?)').run(userId, guildId, 'weekly', new Date().toISOString());

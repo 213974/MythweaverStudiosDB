@@ -1,18 +1,16 @@
-﻿// utils/dashboardManager.js
+﻿// src/managers/dashboardManager.js
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
-const db = require('./database');
-const { getRandomGif } = require('./dashboardHelpers');
-const { formatTimestamp } = require('./timestampFormatter');
+const db = require('../utils/database');
+const { getRandomGif } = require('../helpers/dashboardHelpers');
+const { formatTimestamp } = require('../helpers/timestampFormatter');
 
 function createDashboardEmbed() {
     const randomGif = getRandomGif();
     const nextUpdateTimestamp = Math.floor((Date.now() + 5 * 60 * 1000) / 1000);
 
-    // Added dynamic update text to the description.
     const description = "Welcome to the Clan Hall.\n\n" +
         "This is the central dashboard for all clan operations. Whether you are a seasoned leader or a new recruit, your journey begins here. Please select an action from the dropdown menu below.\n\n" +
-        "Note: Certain actions require appropriate clan permissions to use.\n\n" +
-        `*Updates ${formatTimestamp(nextUpdateTimestamp, 'R')}*`;
+        `*Updates ${formatTimestamp(nextUpdateTimestamp, 'R')}. Note: Certain actions require appropriate clan permissions to use.*`;
 
     return new EmbedBuilder()
         .setColor('#ff8100')

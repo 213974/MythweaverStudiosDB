@@ -1,6 +1,6 @@
-// src/utils/raffleManager.js
+// src/managers/raffleManager.js
 const { EmbedBuilder, ActionRowBuilder } = require('discord.js');
-const db = require('./database');
+const db = require('../utils/database');
 
 async function drawRaffleWinners(client, raffleId) {
     const raffle = db.prepare('SELECT * FROM raffles WHERE raffle_id = ?').get(raffleId);
@@ -24,25 +24,21 @@ async function drawRaffleWinners(client, raffleId) {
 
     db.prepare("UPDATE raffles SET status = 'ended', winner_id = ? WHERE raffle_id = ?").run(winners.join(','), raffle.raffle_id);
     
-    // Send a separate message to ping winners
     if (winners.length > 0) {
         await channel.send({ content: `Congratulations ${winners.map(id => `<@${id}>`).join(', ')}! You won the **${raffle.title}** raffle!` }).catch(e => console.error("Raffle winner ping failed:", e));
     }
     
-    // Attempt to edit the original raffle message with the results
     const originalMessage = await channel.messages.fetch(raffle.message_id).catch(() => null);
     if (originalMessage) {
         const endedEmbed = EmbedBuilder.from(originalMessage.embeds[0])
             .setColor('#808080')
             .setTitle(`🎉 ${raffle.title} 🎉`);
 
-        // Clear existing fields and add new result fields
         endedEmbed.setFields(
             { name: 'Winner(s)', value: winners.length > 0 ? winners.map(id => `<@${id}>`).join('\n') : 'No entries were submitted.' },
             { name: 'Total Participants', value: (new Set(entries.map(e => e.user_id))).size.toLocaleString() }
         );
 
-        // Disable all components on the message
         const disabledComponents = originalMessage.components.map(row => {
             const newRow = ActionRowBuilder.from(row);
             newRow.components.forEach(component => component.setDisabled(true));
@@ -51,7 +47,6 @@ async function drawRaffleWinners(client, raffleId) {
         
         await originalMessage.edit({ embeds: [endedEmbed], components: disabledComponents });
     } else {
-        // Fallback if the original message was deleted
         const winnerMentions = winners.map(id => `<@${id}>`).join(', ');
         const announcementDescription = winners.length > 0 
             ? `The raffle has concluded! Congratulations to our winner(s):\n\n${winnerMentions}`
