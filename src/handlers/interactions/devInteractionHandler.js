@@ -7,6 +7,7 @@ const { sendOrUpdateDashboard } = require('../../utils/dashboardManager');
 const { sendOrUpdateLeaderboard } = require('../../utils/leaderboardManager');
 const { updateAnalyticsDashboard } = require('../../utils/scheduler');
 const { createHelpDashboard } = require('../../commands/help');
+const { sendOrUpdateCommandList } = require('../../utils/publicCommandListManager');
 const { createPublicCommandListEmbed } = require('../../components/publicCommandList');
 const { createQuickActionsDashboard } = require('../../components/quickActions');
 
@@ -107,8 +108,10 @@ module.exports = async (interaction) => {
                     await interaction.editReply({ content: `✅ **Help Dashboard Channel** set to ${channel} for this server.` });
                     break;
                 case 'settings_modal_cmd_list_channel':
-                    await postDashboard('public_cmd_list', { embeds: [createPublicCommandListEmbed()] });
-                    await interaction.editReply({ content: `✅ **Public Command List** has been posted in ${channel}.` });
+                    db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'public_cmd_list_channel_id', ?)").run(guildId, channel.id);
+                    db.prepare("DELETE FROM settings WHERE guild_id = ? AND key = 'public_cmd_list_message_id'").run(guildId);
+                    await sendOrUpdateCommandList(interaction.client, guildId); // Use manager for initial post
+                    await interaction.editReply({ content: `✅ **Public Command List** posted in ${channel}.` });
                     break;
                 case 'settings_modal_quick_actions_channel':
                     await postDashboard('quick_actions', createQuickActionsDashboard());

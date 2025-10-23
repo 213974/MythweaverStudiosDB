@@ -3,9 +3,10 @@ const { EmbedBuilder } = require('discord.js');
 
 /**
  * Creates the embed for the public command list dashboard.
+ * @param {string} gifUrl A URL for the embed's image.
  * @returns {import('discord.js').EmbedBuilder}
  */
-function createPublicCommandListEmbed() {
+function createPublicCommandListEmbed(gifUrl) {
     return new EmbedBuilder()
         .setColor('#ffae00') // Gold color
         .setTitle('<:Golden_Shield:1427763714760769617> Bot Command List <:Golden_Shield:1427763714760769617>')
@@ -29,6 +30,7 @@ function createPublicCommandListEmbed() {
                 inline: false
             }
         )
+        .setImage(gifUrl)
         .setFooter({ text: 'Mythweaver Studios | Public Commands' })
         .setTimestamp();
 }

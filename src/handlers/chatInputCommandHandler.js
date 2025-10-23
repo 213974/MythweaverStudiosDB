@@ -1,6 +1,5 @@
 // handlers/chatInputCommandHandler.js
 const { Collection } = require('discord.js');
-const { trackCommandUsage } = require('../utils/analyticsManager');
 const COMMAND_COOLDOWN_SECONDS = 2.5;
 
 module.exports = async (interaction, client) => {
@@ -10,7 +9,6 @@ module.exports = async (interaction, client) => {
         return interaction.reply({ content: 'Error: Command not found.', flags: 64 });
     }
 
-    // --- User Cooldown Check for Slash Commands ---
     const cooldowns = client.cooldowns.get('commands') || new Collection();
     const now = Date.now();
     const userTimestamp = cooldowns.get(interaction.user.id);
@@ -27,10 +25,8 @@ module.exports = async (interaction, client) => {
     client.cooldowns.set('commands', cooldowns);
     setTimeout(() => cooldowns.delete(interaction.user.id), COMMAND_COOLDOWN_SECONDS * 1000);
     
-    // --- ANALYTICS: Track command usage ---
-    if (interaction.commandName === 'daily' || interaction.commandName === 'weekly') {
-        trackCommandUsage(interaction.guild.id, interaction.user.id, interaction.commandName);
-    }
-
+    // Analytics tracking is now correctly handled within the economyManager
+    // upon a SUCCESSFUL claim, so we remove it from here entirely.
+    
     await command.execute(interaction);
 };

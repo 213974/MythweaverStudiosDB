@@ -4,6 +4,8 @@ const db = require('./database');
 const { createAnalyticsEmbed } = require('./analyticsManager');
 const { drawRaffleWinners } = require('./raffleManager');
 const { sendOrUpdateLeaderboard } = require('./leaderboardManager');
+const { sendOrUpdateDashboard } = require('./dashboardManager');
+const { sendOrUpdateCommandList } = require('./publicCommandListManager');
 
 async function checkEndedRaffles(client) {
     const now = Math.floor(Date.now() / 1000);
@@ -25,18 +27,14 @@ async function updateAnalyticsDashboard(client, specificGuildId = null) {
     for (const [guildId, guild] of guilds) {
         const channelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'analytics_channel_id'").get(guildId)?.value;
         if (!channelId) continue;
-
         let messageId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'analytics_message_id'").get(guildId)?.value;
-
         try {
             const channel = await client.channels.fetch(channelId);
             const dashboardContent = createAnalyticsEmbed(guildId);
             let message;
-
             if (messageId) {
                 message = await channel.messages.fetch(messageId).catch(() => null);
             }
-
             if (message) {
                 await message.edit(dashboardContent);
             } else {
@@ -55,25 +53,19 @@ async function updateAnalyticsDashboard(client, specificGuildId = null) {
 
 async function updateRaffleMessages(client) {
     if (client.raffleUpdateQueue.size === 0) return;
-
     const rafflesToUpdate = new Set(client.raffleUpdateQueue);
     client.raffleUpdateQueue.clear();
-
     for (const raffleId of rafflesToUpdate) {
         try {
             const raffle = db.prepare('SELECT channel_id, message_id FROM raffles WHERE raffle_id = ?').get(raffleId);
             if (!raffle || !raffle.message_id) continue;
-
             const channel = await client.channels.fetch(raffle.channel_id).catch(() => null);
             if (!channel) continue;
-
             const message = await channel.messages.fetch(raffle.message_id).catch(() => null);
             if (!message || message.components.length === 0) continue;
-
             const entryCount = db.prepare('SELECT COUNT(DISTINCT user_id) as count FROM raffle_entries WHERE raffle_id = ?').get(raffleId).count;
             const updatedRow = ActionRowBuilder.from(message.components[0]);
             const participantsButton = updatedRow.components.find(c => c.customId === `raffle_entries_${raffleId}`);
-
             if (participantsButton && participantsButton.label !== `Participants: ${entryCount}`) {
                 participantsButton.setLabel(`Participants: ${entryCount}`);
                 await message.edit({ components: [updatedRow] });
@@ -101,15 +93,22 @@ async function checkEndedEvents(client) {
 function startScheduler(client) {
     console.log('[Scheduler] Starting background tasks...');
     setTimeout(() => {
-        checkEndedRaffles(client);
+        // Initial runs on startup
         updateAnalyticsDashboard(client);
-        sendOrUpdateLeaderboard(client); // Initial run for all guilds
+        sendOrUpdateLeaderboard(client);
+        sendOrUpdateDashboard(client); // Initial run for clan dashboard
+        sendOrUpdateCommandList(client); // Initial run for command list
     }, 5000);
 
-    setInterval(() => checkEndedRaffles(client), 60 * 1000);
-    setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000); // Update every 5 mins
-    setInterval(() => updateRaffleMessages(client), 3000);
-    setInterval(() => sendOrUpdateLeaderboard(client), 5 * 60 * 1000); // Update every 5 mins
+    // Set intervals
+    setInterval(() => checkEndedRaffles(client), 60 * 1000); // 1 min
+    setInterval(() => updateRaffleMessages(client), 3000); // 3 sec
+    setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000); // 5 mins
+    setInterval(() => sendOrUpdateLeaderboard(client), 5 * 60 * 1000); // 5 mins
+    
+    // --- DYNAMIC DASHBOARD INTERVALS ---
+    setInterval(() => sendOrUpdateDashboard(client), 5 * 60 * 1000); // 5 mins for Clan Dashboard
+    setInterval(() => sendOrUpdateCommandList(client), 60 * 60 * 1000); // 1 hour for Command List
 }
 
 module.exports = { startScheduler, updateAnalyticsDashboard };
