@@ -24,7 +24,6 @@ module.exports = {
         embed.addFields(dayFields);
 
         let row;
-        let isEphemeral = false;
 
         if (canClaim) {
             const claimButton = new ButtonBuilder()
@@ -41,13 +40,12 @@ module.exports = {
                 new ButtonBuilder().setCustomId('nav_view_shop').setLabel('View Shop').setStyle(ButtonStyle.Secondary).setEmoji('🛍️')
             ];
             row = new ActionRowBuilder().addComponents(navButtons);
-            isEphemeral = true;
         }
-
+        
         await interaction.reply({
             embeds: [embed],
             components: [row],
-            flags: isEphemeral ? 64 : 0
+            flags: 64
         });
-    },
+    }
 };
