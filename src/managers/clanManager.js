@@ -88,7 +88,7 @@ module.exports = {
 
             db.transaction(() => {
                 db.prepare('UPDATE clans SET owner_id = ? WHERE guild_id = ? AND clan_id = ?').run(newOwnerId, guildId, clanRoleId);
-                db.prepare('DELETE FROM clan_members WHERE guild_id = ? AND user_id = ?').run(guildId, newOwnerId);
+                db.prepare('DELETE FROM clan_members WHERE guild_id = ? AND user_id = ?').run(guildId, newOwnerId); // Remove new owner from any other position in any clan in this guild
                 db.prepare('INSERT INTO clan_members (guild_id, user_id, clan_id, authority) VALUES (?, ?, ?, ?)').run(guildId, newOwnerId, clanRoleId, 'Owner');
                 db.prepare('UPDATE clan_members SET authority = ? WHERE guild_id = ? AND clan_id = ? AND user_id = ?').run('Member', guildId, clanRoleId, oldOwnerId);
             })();

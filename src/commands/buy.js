@@ -1,6 +1,6 @@
 ﻿// commands/economy/buy.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const economyManager = require('../utils/economyManager');
+const economyManager = require('../managers/economyManager');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -20,16 +20,16 @@ module.exports = {
             return interaction.editReply({ content: 'You already own this role!' });
         }
 
-        const item = economyManager.getShopItem(roleToBuy.id);
+        const item = economyManager.getShopItem(roleToBuy.id, interaction.guild.id);
         if (!item) {
             return interaction.editReply({ content: 'This role is not available for purchase in the shop.' });
         }
 
-        const result = economyManager.purchaseItem(user.id, roleToBuy.id);
+        const result = economyManager.purchaseItem(user.id, interaction.guild.id, roleToBuy.id);
 
         if (result.success) {
             try {
-                await user.roles.add(roleToBuy.id);
+                await user.roles.add(roleToBuy);
                 const embed = new EmbedBuilder()
                     .setColor('#2ECC71')
                     .setTitle('Purchase Successful!')
@@ -37,8 +37,7 @@ module.exports = {
                 await interaction.editReply({ embeds: [embed] });
             } catch (error) {
                 console.error('Failed to add role after purchase:', error);
-                // Refund the user if role assignment fails
-                economyManager.updateBalance(user.id, result.price);
+                economyManager.modifySolyx(user.id, interaction.guild.id, result.price, 'Refund: Failed to add role');
                 await interaction.editReply({ content: 'Purchase failed! I could not assign the role. Your Solyx has been refunded.' });
             }
         } else {

@@ -8,9 +8,11 @@ function createDashboardEmbed() {
     const randomGif = getRandomGif();
     const nextUpdateTimestamp = Math.floor((Date.now() + 5 * 60 * 1000) / 1000);
 
+    // Added dynamic update text to the description.
     const description = "Welcome to the Clan Hall.\n\n" +
         "This is the central dashboard for all clan operations. Whether you are a seasoned leader or a new recruit, your journey begins here. Please select an action from the dropdown menu below.\n\n" +
-        `*Updates ${formatTimestamp(nextUpdateTimestamp, 'R')}. Note: Certain actions require appropriate clan permissions to use.*`;
+        "Note: Certain actions require appropriate clan permissions to use.\n\n" +
+        `*Updates ${formatTimestamp(nextUpdateTimestamp, 'R')}*`;
 
     return new EmbedBuilder()
         .setColor('#ff8100')

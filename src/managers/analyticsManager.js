@@ -4,6 +4,14 @@ const db = require('../utils/database');
 const { format, startOfWeek, endOfWeek, eachDayOfInterval, getDay } = require('date-fns');
 const { getRandomGif } = require('../helpers/dashboardHelpers');
 
+// --- Helper Functions ---
+
+/**
+ * Tracks a successful claim for analytics purposes.
+ * @param {string} guildId The guild where the claim occurred.
+ * @param {string} userId The user who made the claim.
+ * @param {'daily' | 'weekly'} claimType The type of claim.
+ */
 function trackSuccessfulClaim(guildId, userId, claimType) {
     try {
         db.prepare('INSERT INTO command_stats (guild_id, user_id, command_name, timestamp) VALUES (?, ?, ?, ?)')

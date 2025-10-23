@@ -1,15 +1,26 @@
-// src/helpers/dashboardHelpers.js
+// src/utils/dashboardHelpers.js
 
+/**
+ * A centralized array of GIFs for use in various dashboards.
+ */
 const GIFS = [
     'https://i.pinimg.com/originals/56/34/9f/56349f764173af321a640f6e1bac22fd.gif',
     'https://i.pinimg.com/originals/a6/10/8b/a6108b31b391378d30856edba57172a4.gif',
     'https://i.pinimg.com/originals/9d/3e/2f/9d3e2f3f2e46a9f4dd0a016415433af8.gif',
     'https://i.pinimg.com/originals/0f/43/10/0f4310bc3442432f7667605968cc9e80.gif',
     'https://i.pinimg.com/originals/92/97/74/929774b033a66c070f5da21ef21c0090.gif',
-    'https://i.pinimg.com/originals/d2/85/69/d285699262b0a27472b3fa8f7352c145.gif',
-    'https://i.pinimg.com/originals/a3/63/9b/a3639be246d40f97fddbcd888b1b1a60.gif'
+    'https://i.pinimg.com/originals/a3/63/9b/a3639be246d40f97fddbcd888b1b1a60.gif',
+    'https://i.pinimg.com/originals/30/08/db/3008dbaf2f61f56b04ae4cb0cf4cc29e.gif',
+    'https://i.pinimg.com/originals/f9/8e/c7/f98ec7527d99f04717fab0fc8d49d2b5.gif',
+    'https://i.pinimg.com/originals/43/d4/d7/43d4d7e5ba1cfa7959a1fab8d64f22ea.gif',
+    'https://i.pinimg.com/originals/eb/92/91/eb92919f672895886c3eed33f5173db2.gif',
+    'https://i.pinimg.com/originals/57/a9/77/57a9773c9882d66c4ab70373de13fb1c.gif'
 ];
 
+/**
+ * Selects a random GIF from the centralized array.
+ * @returns {string} A URL to a random GIF.
+ */
 function getRandomGif() {
     return GIFS[Math.floor(Math.random() * GIFS.length)];
 }
