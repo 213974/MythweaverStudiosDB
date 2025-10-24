@@ -15,22 +15,28 @@ const { endOfMonth } = require('date-fns');
 function createGuildhallDashboard(clanRole, taxStatus, taxQuota, latestDonatorMention, memberCount) {
     const { amount_contributed } = taxStatus;
     const progress = taxQuota > 0 ? Math.min((amount_contributed / taxQuota) * 100, 100) : 100;
+    const isQuotaMet = amount_contributed >= taxQuota;
+
     const progressBarLength = 10;
     const filledBlocks = Math.round(progress / 100 * progressBarLength);
     const emptyBlocks = progressBarLength - filledBlocks;
     const progressBar = '▰'.repeat(filledBlocks) + '▱'.repeat(emptyBlocks);
 
-    // Calculate the end of the current month for the countdown.
     const endOfMonthDate = endOfMonth(new Date());
     const nextResetTimestamp = Math.floor(endOfMonthDate.getTime() / 1000);
 
+    // --- Dynamic field name based on quota status ---
+    const quotaFieldName = isQuotaMet 
+        ? 'Monthly Quota Completed <a:Golden_Check:1427763589732634746>' 
+        : 'Monthly Quota';
+
     const embed = new EmbedBuilder()
-        .setColor(clanRole.color || '#ECF0F1')
+        .setColor(isQuotaMet ? '#2ECC71' : (clanRole.color || '#ECF0F1'))
         .setTitle(`<:Golden_Shield:1427763714760769617> ${clanRole.name} Guildhall <:Golden_Shield:1427763714760769617>`)
-        .setDescription('This is the central hub for your clan\'s activity.')
+        .setDescription('-# This is the central hub for your clan\'s activity.')
         .addFields(
             {
-                name: 'Monthly Quota',
+                name: quotaFieldName,
                 value: `\`${progressBar}\`\n> **${amount_contributed.toLocaleString()} / ${taxQuota.toLocaleString()}** <a:Solyx_Currency:1431059951664627712> Contributed`,
                 inline: false
             },

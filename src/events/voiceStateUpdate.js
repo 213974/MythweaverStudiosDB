@@ -1,15 +1,13 @@
 // src/events/voiceStateUpdate.js
-const { Events, Collection } = require('discord.js');
+const { Events } = require('discord.js');
 const db = require('../utils/database');
 const economyManager = require('../managers/economyManager');
 const userManager = require('../managers/userManager');
-
-const activeVcSessions = new Map();
+const { getSettings } = require('../utils/settingsCache');
 
 // Function to get settings from the database (could be cached in a real scenario)
 function getVcSystemSettings(guildId) {
-    const settingsRaw = db.prepare("SELECT key, value FROM settings WHERE guild_id = ? AND key LIKE 'system_solyx_vc_%'").all(guildId);
-    const settings = new Map(settingsRaw.map(s => [s.key, s.value]));
+    const settings = getSettings(guildId);
     return {
         enabled: settings.get('system_solyx_vc_enabled') === 'true',
         rate: parseFloat(settings.get('system_solyx_vc_rate') || '0.1'),
@@ -17,7 +15,7 @@ function getVcSystemSettings(guildId) {
     };
 }
 
-function startVcSession(member) {
+function startVcSession(member, client) {
     const { guild, id: userId } = member;
     const settings = getVcSystemSettings(guild.id);
 
@@ -26,13 +24,13 @@ function startVcSession(member) {
     }
 
     // Stop any existing session for this user to prevent duplicates
-    stopVcSession(member);
+    stopVcSession(member, client);
 
     const intervalId = setInterval(() => {
         // Re-fetch member and channel state inside the interval to ensure it's current
         const currentMember = guild.members.cache.get(userId);
         if (!currentMember || !currentMember.voice.channel) {
-            stopVcSession(member);
+            stopVcSession({ id: userId, guild }, client); // Pass a mock member object if the original is gone
             return;
         }
 
@@ -41,38 +39,39 @@ function startVcSession(member) {
         const isDeafened = currentMember.voice.serverDeaf;
 
         if (!isAlone && !isDeafened) {
-            economyManager.addSolyx(userId, guild.id, settings.rate, 'Voice Chat Activity');
+            // --- CORE FIX ---
+            // Changed the incorrect call from 'addSolyx' to the correct 'modifySolyx'
+            economyManager.modifySolyx(userId, guild.id, settings.rate, 'Voice Chat Activity');
             userManager.addSolyxFromSource(userId, guild.id, settings.rate, 'vc');
         }
 
     }, settings.interval);
 
-    activeVcSessions.set(userId, {
+    client.activeVcSessions.set(userId, {
         intervalId,
-        joinTime: Date.now(),
-        isDeafened: member.voice.serverDeaf, // Store initial deafen state
+        joinTime: Date.now()
     });
 
     console.log(`[VC] Started Solyx session for ${member.user.tag}.`);
 }
 
-function stopVcSession(member) {
+function stopVcSession(member, client) {
     const { guild, id: userId } = member;
-    const session = activeVcSessions.get(userId);
+    const session = client.activeVcSessions.get(userId);
 
     if (session) {
         clearInterval(session.intervalId);
         const sessionDuration = Date.now() - session.joinTime;
         userManager.incrementVcTime(userId, guild.id, sessionDuration);
-        activeVcSessions.delete(userId);
-        console.log(`[VC] Stopped Solyx session for ${member.user.tag}. Duration: ${Math.round(sessionDuration / 1000)}s`);
+        client.activeVcSessions.delete(userId);
+        console.log(`[VC] Stopped Solyx session for user ID ${userId}. Duration: ${Math.round(sessionDuration / 1000)}s`);
     }
 }
 
 
-function updateUserVcState(member) {
+function updateUserVcState(member, client) {
     const channel = member.voice.channel;
-    const session = activeVcSessions.get(member.id);
+    const session = client.activeVcSessions.get(member.id);
 
     // If user is in a channel
     if (channel) {
@@ -81,38 +80,35 @@ function updateUserVcState(member) {
         
         // Condition to START a session
         if (!session && !isAlone && !isDeafened) {
-            startVcSession(member);
+            startVcSession(member, client);
         }
         // Conditions to STOP an existing session
         else if (session && (isAlone || isDeafened)) {
-            stopVcSession(member);
+            stopVcSession(member, client);
         }
     } 
     // If user is not in a channel, ensure session is stopped
     else {
-        stopVcSession(member);
+        stopVcSession(member, client);
     }
 }
 
 module.exports = {
     name: Events.VoiceStateUpdate,
-    async execute(oldState, newState) {
+    async execute(oldState, newState, client) {
         const member = newState.member || oldState.member;
 
         // Ignore bots
         if (member.user.bot) return;
-
-        // When a user joins, leaves, or moves channels, we need to check the state
-        // of both the old and new channels.
         
         // Update state for the user who moved
-        updateUserVcState(member);
+        updateUserVcState(member, client);
 
         // If another user was left alone in the old channel, stop their session
         if (oldState.channel && oldState.channel.members.size === 1) {
             const lastMember = oldState.channel.members.first();
             if (lastMember) {
-                 updateUserVcState(lastMember);
+                 updateUserVcState(lastMember, client);
             }
         }
 
@@ -120,7 +116,7 @@ module.exports = {
         if (newState.channel && newState.channel.members.size === 2) {
             newState.channel.members.forEach(m => {
                 if (m.id !== member.id) {
-                     updateUserVcState(m);
+                     updateUserVcState(m, client);
                 }
             });
         }

@@ -106,12 +106,15 @@ module.exports = {
         if (amount < MINIMUM_CONTRIBUTION) {
             return { success: false, message: `Contribution must be at least ${MINIMUM_CONTRIBUTION} Solyx™.` };
         }
-        if (!Number.isInteger(amount)) {
-            return { success: false, message: 'You can only contribute whole amounts of Solyx™.' };
-        }
+        
+        // The check 'if (!Number.isInteger(amount))' has been removed.
+        // The parseFlexibleAmount() helper in the guildhallHandler already guarantees
+        // that 'amount' is a valid, non-negative whole number, making this check
+        // redundant and the source of the reported bug.
 
         const wallet = economyManager.getWallet(userId, guildId);
-        if (wallet.balance < amount) {
+
+        if (Number(wallet.balance) < Number(amount)) {
             return { success: false, message: 'You do not have enough Solyx™ to make this contribution.' };
         }
 

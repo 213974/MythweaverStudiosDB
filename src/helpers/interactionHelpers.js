@@ -1,4 +1,4 @@
-// src/utils/interactionHelpers.js
+// src/helpers/interactionHelpers.js
 
 /**
  * Robustly parses user input to find a guild member.
@@ -61,4 +61,33 @@ async function parseRole(guild, roleInput) {
     return foundRole || null;
 }
 
-module.exports = { parseUser, parseRole };
+/**
+ * Parses a string that may contain abbreviations like 'k' for thousands.
+ * Handles commas and decimal points correctly.
+ * @param {string} amountStr The string to parse.
+ * @returns {number|null} The parsed integer amount, or null if invalid.
+ */
+function parseFlexibleAmount(amountStr) {
+    if (!amountStr || typeof amountStr !== 'string') return null;
+
+    let cleanStr = amountStr.trim().toLowerCase().replace(/,/g, '');
+    let multiplier = 1;
+
+    if (cleanStr.endsWith('k')) {
+        multiplier = 1000;
+        cleanStr = cleanStr.slice(0, -1);
+    } else if (cleanStr.endsWith('m')) {
+        multiplier = 1000000;
+        cleanStr = cleanStr.slice(0, -1);
+    }
+
+    const num = parseFloat(cleanStr);
+    if (isNaN(num) || num < 0) {
+        return null;
+    }
+
+    return Math.floor(num * multiplier);
+}
+
+
+module.exports = { parseUser, parseRole, parseFlexibleAmount };

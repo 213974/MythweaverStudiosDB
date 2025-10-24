@@ -1,51 +1,53 @@
-// events/guildMemberUpdate.js
+// src/events/guildMemberUpdate.js
 const { Events } = require('discord.js');
 const clanManager = require('../managers/clanManager');
-const config = require('../config');
-const db = require('../utils/database'); // Import the database connection
 
 module.exports = {
     name: Events.GuildMemberUpdate,
-    async execute(oldMember, newMember, client /* config is passed by eventHandler */) {
-        const guild = newMember.guild;
-        if (guild.id !== config.guildID) return; // Only operate on configured guild
-
+    async execute(oldMember, newMember) {
+        const guildId = newMember.guild.id;
         const oldRoles = oldMember.roles.cache;
         const newRoles = newMember.roles.cache;
 
-        // Ensure user exists in the database
-        db.prepare('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)').run(newMember.id, newMember.user.username);
-
-        // Check if a clan role was ADDED
-        for (const [roleId, role] of newRoles) {
-            if (!oldRoles.has(roleId)) { // Role was added
-                const clanData = clanManager.getClanData(roleId);
-                if (clanData) { // This role is registered as a clan role
-                    const existingUserAffiliation = clanManager.findClanContainingUser(newMember.id);
-                    if (existingUserAffiliation) {
-                        // User is already in a clan, either this one or another. We don't need to do anything.
-                        continue;
-                    }
-
-                    // Add user to this clan as a 'Member'
-                    console.log(`[guildMemberUpdate] Role ${role.name} added to ${newMember.user.tag}. Auto-enrolling as Member in clan ${roleId}.`);
-                    clanManager.addUserToClan(roleId, newMember.id, 'Member');
+        // --- ROLE ADDED ---
+        // Find a role that exists in the new set but not the old one.
+        const addedRole = newRoles.find(role => !oldRoles.has(role.id));
+        if (addedRole) {
+            const isClanRole = clanManager.getClanData(guildId, addedRole.id);
+            if (isClanRole) {
+                const userClan = clanManager.findClanContainingUser(guildId, newMember.id);
+                // If this is a clan role AND the user isn't already in this clan's DB, add them.
+                if (!userClan || userClan.clanRoleId !== addedRole.id) {
+                    clanManager.addUserToClan(guildId, addedRole.id, newMember.id, 'Member');
+                    console.log(`[Role Sync] User ${newMember.user.tag} was given the '${addedRole.name}' role and has been auto-enrolled as a Member.`);
                 }
             }
         }
 
-        // Check if a clan role was REMOVED
-        for (const [roleId, role] of oldRoles) {
-            if (!newRoles.has(roleId)) { // Role was removed
-                const clanData = clanManager.getClanData(roleId);
-                if (clanData) { // This was a registered clan role
-                    if (clanData.clanOwnerUserID === newMember.id) {
-                        console.warn(`[guildMemberUpdate] Clan Owner ${newMember.id} for clan ${roleId} had their role removed manually. Clan ownership needs admin review.`);
-                        // Don't automatically remove owner from DB, needs admin action.
-                    } else {
-                        // Remove user from this clan's records
-                        clanManager.removeUserFromClan(roleId, newMember.id);
-                        console.log(`[guildMemberUpdate] Role ${role.name} removed from ${newMember.user.tag}. Removing from clan ${roleId} records.`);
+        // --- ROLE REMOVED ---
+        // Find a role that exists in the old set but not the new one.
+        const removedRole = oldRoles.find(role => !newRoles.has(role.id));
+        if (removedRole) {
+            const isClanRole = clanManager.getClanData(guildId, removedRole.id);
+            if (isClanRole) {
+                const userClan = clanManager.findClanContainingUser(guildId, newMember.id);
+                // Proceed only if the user was actually in this clan's DB.
+                if (userClan && userClan.clanRoleId === removedRole.id) {
+                    const memberDbRecord = db.prepare('SELECT authority FROM clan_members WHERE user_id = ? AND clan_id = ?').get(newMember.id, removedRole.id);
+                    const authority = memberDbRecord?.authority;
+
+                    if (authority === 'Member') {
+                        // If they were just a member, remove them from the database.
+                        clanManager.removeUserFromClan(guildId, removedRole.id, newMember.id);
+                        console.log(`[Role Sync] Member ${newMember.user.tag} had the '${removedRole.name}' role removed and has been unenrolled from the clan.`);
+                    } else if (authority === 'Officer' || authority === 'Vice Guild Master' || authority === 'Owner') {
+                        // If they are leadership, protect them by re-adding the role.
+                        try {
+                            await newMember.roles.add(removedRole, 'Leadership role protection: Re-applied removed clan role.');
+                            console.log(`[Role Sync] Leadership member ${newMember.user.tag} had the '${removedRole.name}' role removed. The role has been automatically re-applied.`);
+                        } catch (error) {
+                            console.error(`[Role Sync] FAILED to re-apply protected role '${removedRole.name}' to ${newMember.user.tag}:`, error);
+                        }
                     }
                 }
             }

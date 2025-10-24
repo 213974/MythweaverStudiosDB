@@ -38,7 +38,8 @@ module.exports = {
                     const today = format(new Date(), 'yyyy-MM-dd');
                     db.prepare('INSERT INTO daily_stats (guild_id, date, total_solyx_acquired) VALUES (?, ?, ?) ON CONFLICT(guild_id, date) DO UPDATE SET total_solyx_acquired = total_solyx_acquired + excluded.total_solyx_acquired').run(guildId, today, amount);
                 }
-                const wallet = db.prepare('SELECT balance FROM wallets WHERE user_id = ? AND guild_id = ?').get(userId, guildId);
+                // This ensures we always get the new balance of the Solyx™ wallet, not an ambiguous one.
+                const wallet = db.prepare('SELECT balance FROM wallets WHERE user_id = ? AND guild_id = ? AND currency = ?').get(userId, guildId, DEFAULT_CURRENCY);
                 return wallet;
             })();
             return { success: true, newBalance: result.balance };
@@ -52,11 +53,19 @@ module.exports = {
         ensureWallet(userId, guildId, currency);
         return db.prepare('SELECT * FROM wallets WHERE user_id = ? AND guild_id = ? AND currency = ?').get(userId, guildId, currency);
     },
+
+    /**
+     * This function now correctly and consistently retrieves the user's spendable Solyx™ balance.
+     * It no longer ambiguously sums balances, which was the source of the bug.
+     * @param {string} userId The user's ID.
+     * @param {string} guildId The guild's ID.
+     * @returns {number} The user's actual Solyx™ balance.
+     */
     getConsolidatedBalance: (userId, guildId) => {
-        ensureUser(userId); 
-        const result = db.prepare(`SELECT SUM(balance) as total FROM wallets WHERE user_id = ? AND guild_id = ?`).get(userId, guildId);
-        return result.total || 0;
+        const wallet = module.exports.getWallet(userId, guildId, DEFAULT_CURRENCY);
+        return wallet ? wallet.balance : 0;
     },
+
     getClanWallet: (clanId, guildId, currency = DEFAULT_CURRENCY) => {
         ensureClanWallet(clanId, guildId, currency);
         return db.prepare('SELECT * FROM clan_wallets WHERE clan_id = ? AND guild_id = ? AND currency = ?').get(clanId, guildId, currency);
@@ -209,22 +218,20 @@ module.exports = {
     },
     getTopUsers: (guildId, limit = 25) => {
         return db.prepare(`
-            SELECT user_id, SUM(balance) as balance 
+            SELECT user_id, balance 
             FROM wallets 
-            WHERE guild_id = ? 
-            GROUP BY user_id 
+            WHERE guild_id = ? AND currency = ?
             ORDER BY balance DESC 
             LIMIT ?
-        `).all(guildId, limit);
+        `).all(guildId, DEFAULT_CURRENCY, limit);
     },
     getUserRank: (userId, guildId) => {
         const allUsers = db.prepare(`
-            SELECT user_id, SUM(balance) as balance 
+            SELECT user_id, balance 
             FROM wallets 
-            WHERE guild_id = ? 
-            GROUP BY user_id 
+            WHERE guild_id = ? AND currency = ?
             ORDER BY balance DESC
-        `).all(guildId);
+        `).all(guildId, DEFAULT_CURRENCY);
         
         const rank = allUsers.findIndex(user => user.user_id === userId) + 1;
         
