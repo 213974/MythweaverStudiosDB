@@ -6,6 +6,9 @@ const { isEligibleForPerks, getBoosterPerk } = require('../managers/perksManager
 const economyManager = require('../managers/economyManager');
 const userManager = require('../managers/userManager');
 const { getSettings } = require('../utils/settingsCache');
+const { sendWelcomeMessage } = require('../managers/welcomeManager');
+const { sendOrUpdateQuickActions } = require('../managers/quickActionsManager');
+const { sendOrUpdateHelpDashboard } = require('../managers/helpDashboardManager');
 
 const PANDA_YAY_EMOJI = '<:PandaYay:1357806568535490812>';
 const MENTION_COOLDOWN_DURATION = 2500;
@@ -17,19 +20,46 @@ const messageSolyxCooldowns = new Collection();
 module.exports = {
     name: Events.MessageCreate,
     async execute(message, client) {
-        if (message.author.bot || !message.guild) return;
+        if (message.author.id === client.user.id) return; // Ignore messages from the bot itself
+        if (!message.guild) return;
 
         const guildId = message.guild.id;
 
+        const quickActionsChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'quick_actions_channel_id'").get(guildId)?.value;
+        if (message.channel.id === quickActionsChannelId) {
+            clearTimeout(client.quickActionsTimeout);
+            client.quickActionsTimeout = setTimeout(() => {
+                sendOrUpdateQuickActions(client, guildId);
+            }, 30000); // 30 seconds
+        }
+
+        const welcomeChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'welcome_channel_id'").get(guildId)?.value;
+        if (message.channel.id === welcomeChannelId && 
+            config.ownerIDs.includes(message.author.id) &&
+            message.mentions.has(client.user.id) && 
+            message.mentions.users.size === 1) {
+                console.log(`[Welcome] Owner ${message.author.tag} triggered a test welcome banner.`);
+                await sendWelcomeMessage(message.member);
+                return;
+        }
+
+        // --- Persistent Help Dashboard Logic ---
+        const helpChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'help_dashboard_channel_id'").get(guildId)?.value;
+        if (message.channel.id === helpChannelId) {
+            clearTimeout(client.helpDashboardTimeout);
+            client.helpDashboardTimeout = setTimeout(() => {
+                sendOrUpdateHelpDashboard(client, guildId);
+            }, 30000);
+        }
+
         const settings = getSettings(guildId);
-        if (settings.get('system_solyx_text_enabled') === 'true') {
+        if (settings.get('system_solyx_text_enabled') === 'true' && !message.author.bot) {
             const now = Date.now();
             const userCooldown = messageSolyxCooldowns.get(message.author.id);
 
             if (!userCooldown || now > userCooldown) {
                 const rate = parseFloat(settings.get('system_solyx_text_rate') || '0.1');
                 if (rate > 0) {
-                    // Changed from the old `addSolyx` to the new, correct `modifySolyx` function.
                     economyManager.modifySolyx(message.author.id, guildId, rate, 'Message Activity');
                     userManager.addSolyxFromSource(message.author.id, guildId, rate, 'message');
                 }
@@ -37,8 +67,8 @@ module.exports = {
             }
         }
 
+        if (message.author.bot) return; // All logic below this line is for users only
 
-        // --- Dev Owner Manual Whitelist Logic ---
         if (config.ownerIDs.includes(message.author.id) && message.mentions.has(client.user.id) && message.mentions.users.size === 2) {
             const targetUser = message.mentions.users.find(u => u.id !== client.user.id);
             if (targetUser) {
@@ -48,7 +78,6 @@ module.exports = {
             }
         }
 
-        // --- Booster Auto-Reaction Logic ---
         try {
             const member = message.member || await message.guild.members.fetch(message.author.id);
             const isEligible = await isEligibleForPerks(member);
@@ -68,29 +97,6 @@ module.exports = {
             console.error('[BoosterPerk] Error checking for booster perks:', error);
         }
 
-        // --- Persistent Help Dashboard Logic ---
-        const helpChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'help_dashboard_channel_id'").get(guildId)?.value;
-        if (message.channel.id === helpChannelId) {
-            clearTimeout(client.helpDashboardTimeout);
-            client.helpDashboardTimeout = setTimeout(async () => {
-                try {
-                    const messageId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'help_dashboard_message_id'").get(guildId)?.value;
-                    if (messageId) {
-                        const oldMessage = await message.channel.messages.fetch(messageId).catch(() => null);
-                        if (oldMessage) await oldMessage.delete().catch(() => {});
-                    }
-                    
-                    const { createHelpDashboard } = require('../commands/help');
-                    const dashboard = createHelpDashboard();
-                    const newMessage = await message.channel.send(dashboard);
-                    db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'help_dashboard_message_id', ?)").run(guildId, newMessage.id);
-                } catch (error) {
-                    console.error('[HelpDashboard] Failed to re-post help dashboard:', error);
-                }
-            }, 30000);
-        }
-
-        // --- Bot Mention Response ---
         const isReplyToBot = message.type === MessageType.Reply && message.mentions.repliedUser?.id === client.user.id;
         const isDirectMention = message.mentions.has(client.user.id) && !message.mentions.everyone && message.mentions.users.size === 1;
 

@@ -27,6 +27,7 @@ client.cooldowns = new Collection(); // For user-based cooldowns on interactions
 client.raffleUpdateQueue = new Set();
 client.eventCooldowns = new Collection();
 client.helpDashboardTimeout = null;
+client.quickActionsTimeout = null; 
 client.boosterCooldowns = new Collection();
 client.activeVcSessions = new Collection();
 

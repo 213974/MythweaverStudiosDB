@@ -1,32 +1,12 @@
 ﻿// src/commands/help.js
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { createClanHelpEmbed } = require('../components/help/clanHelp');
 const { createUtilitiesHelpEmbed } = require('../components/help/utilitiesHelp');
 const { createSolyxHelpEmbed } = require('../components/help/solyxHelp');
 const { createSystemsHelpEmbed } = require('../components/help/systemsHelp');
+const { createHelpDashboard } = require('../components/help/helpDashboard');
 const config = require('../config');
 const db = require('../utils/database');
-
-function createHelpDashboard() {
-    const embed = new EmbedBuilder()
-        .setColor('#4E6AF3')
-        .setTitle('Bot Command & Feature Guide')
-        .setDescription('Welcome! This dashboard is your central guide to the bot\'s features. Please select a category from the dropdown menu below to learn more. I will send the information privately in this channel.');
-
-    const selectMenu = new StringSelectMenuBuilder()
-        .setCustomId('help_category_select')
-        .setPlaceholder('Select a category...')
-        .addOptions([
-            { label: 'Clan Commands', description: 'Commands for clan creation and management.', value: 'help_clan', emoji: '🛡️' },
-            { label: 'Utility Commands', description: 'General purpose and utility commands.', value: 'help_utilities', emoji: '⚙️' },
-            { label: 'The Solyx™ Economy', description: 'Learn about the server currency and how to use it.', value: 'help_solyx', emoji: '🪙' },
-            // --- THIS IS THE FIX ---
-            { label: 'Systems Guide', description: 'Explanation of automated systems like referrals and raffles.', value: 'help_systems', emoji: '⚙️' }
-        ]);
-
-    const row = new ActionRowBuilder().addComponents(selectMenu);
-    return { embeds: [embed], components: [row] };
-}
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -90,5 +70,8 @@ module.exports = {
             await interaction.reply({ embeds: [embed], flags: 64 });
         }
     },
+    // The function is no longer defined here, but we still export it for convenience
+    // This allows other files to require it from the command if needed, though direct
+    // component access is now preferred.
     createHelpDashboard
 };

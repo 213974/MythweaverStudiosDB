@@ -6,11 +6,11 @@ const { parseRole } = require('../../helpers/interactionHelpers');
 const { sendOrUpdateDashboard } = require('../../managers/dashboardManager');
 const { sendOrUpdateLeaderboard } = require('../../managers/leaderboardManager');
 const { updateAnalyticsDashboard } = require('../../utils/scheduler');
-const { createHelpDashboard } = require('../../commands/help');
 const { sendOrUpdateCommandList } = require('../../managers/publicCommandListManager');
-const { createQuickActionsDashboard } = require('../../components/quickActions');
+const { sendOrUpdateQuickActions } = require('../../managers/quickActionsManager');
 const taxManager = require('../../managers/taxManager');
 const guildhallManager = require('../../managers/guildhallManager');
+const { sendOrUpdateHelpDashboard } = require('../../managers/helpDashboardManager');
 
 
 module.exports = async (interaction) => {
@@ -83,13 +83,6 @@ module.exports = async (interaction) => {
             const channelId = interaction.fields.getTextInputValue('channel_id_input').match(/\d{17,19}/)?.[0];
             const channel = channelId ? await interaction.guild.channels.fetch(channelId).catch(() => null) : null;
             if (!channel || channel.type !== ChannelType.GuildText) return interaction.editReply({ content: 'Invalid Text Channel ID.' });
-            
-            const postDashboard = async (keyPrefix, content) => {
-                db.prepare(`INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, '${keyPrefix}_channel_id', ?)`).run(guildId, channel.id);
-                db.prepare(`DELETE FROM settings WHERE guild_id = ? AND key = '${keyPrefix}_message_id'`).run(guildId);
-                const newMessage = await channel.send(content);
-                db.prepare(`INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, '${keyPrefix}_message_id', ?)`).run(guildId, newMessage.id);
-            };
 
             switch (customId) {
                  case 'settings_modal_analytics_channel':
@@ -111,8 +104,9 @@ module.exports = async (interaction) => {
                     await interaction.editReply({ content: `✅ **Solyx™ Leaderboard Channel** set to ${channel} for this server.` });
                     break;
                 case 'settings_modal_help_channel':
-                    await postDashboard('help_dashboard', createHelpDashboard());
-                    await interaction.editReply({ content: `✅ **Help Dashboard Channel** set to ${channel} for this server.` });
+                    db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'help_dashboard_channel_id', ?)").run(guildId, channel.id);
+                    await sendOrUpdateHelpDashboard(interaction.client, guildId);
+                    await interaction.editReply({ content: `✅ **Help Dashboard Channel** set to ${channel} for this server. The dashboard has been posted.` });
                     break;
                 case 'settings_modal_cmd_list_channel':
                     db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'public_cmd_list_channel_id', ?)").run(guildId, channel.id);
@@ -121,7 +115,8 @@ module.exports = async (interaction) => {
                     await interaction.editReply({ content: `✅ **Public Command List** posted in ${channel}.` });
                     break;
                 case 'settings_modal_quick_actions_channel':
-                    await postDashboard('quick_actions', createQuickActionsDashboard());
+                    db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'quick_actions_channel_id', ?)").run(guildId, channel.id);
+                    await sendOrUpdateQuickActions(interaction.client, guildId);
                     await interaction.editReply({ content: `✅ **Quick Actions Hub** has been posted in ${channel}.` });
                     break;
                 case 'settings_modal_welcome_channel':
@@ -132,21 +127,6 @@ module.exports = async (interaction) => {
         } else if (customId.endsWith('_role')) {
             const role = await parseRole(interaction.guild, interaction.fields.getTextInputValue('role_id_input'));
             if (!role) return interaction.editReply({ content: 'Invalid Role ID.' });
-
-            switch (customId) {
-                case 'settings_modal_admin_role':
-                    db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'admin_role_id', ?)").run(guildId, role.id);
-                    await interaction.editReply({ content: `✅ **Admin Role** set to ${role} for this server.` });
-                    break;
-                case 'settings_modal_raffle_role':
-                    db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'raffle_creator_role_id', ?)").run(guildId, role.id);
-                    await interaction.editReply({ content: `✅ **Raffle Creator Role** set to ${role} for this server.` });
-                    break;
-                case 'settings_modal_booster_role':
-                    db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'booster_role_id', ?)").run(guildId, role.id);
-                    await interaction.editReply({ content: `✅ **Booster Role** set to ${role} for this server.` });
-                    break;
-            }
         } else if (customId === 'settings_modal_guildhall_category') {
             const categoryInput = interaction.fields.getTextInputValue('category_id_input');
             const categoryId = categoryInput.match(/\d{17,19}/)?.[0];

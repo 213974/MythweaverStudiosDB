@@ -1,8 +1,8 @@
 // src/events/guildMemberAdd.js
-const { Events, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { Events, EmbedBuilder } = require('discord.js');
 const db = require('../utils/database');
-const economyManager = require('../utils/economyManager');
-const { createWelcomeBanner } = require('../../services/imageGenerator/welcomeBanner');
+const economyManager = require('../managers/economyManager');
+const { sendWelcomeMessage } = require('../managers/welcomeManager');
 
 const invites = new Map();
 
@@ -11,21 +11,10 @@ module.exports = {
     async execute(member, client) {
         const { guild, user } = member;
 
-        // --- 1. Send Welcome Banner ---
-        const welcomeChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'welcome_channel_id'").get(guild.id)?.value;
-        if (welcomeChannelId) {
-            const channel = await guild.channels.fetch(welcomeChannelId).catch(() => null);
-            if (channel) {
-                const bannerBuffer = await createWelcomeBanner(member.displayAvatarURL({ extension: 'png', size: 256 }), user.username);
-                if (bannerBuffer) {
-                    const attachment = new AttachmentBuilder(bannerBuffer, { name: 'welcome-banner.jpg' });
-                    await channel.send({ files: [attachment] }).catch(err => console.error('[Welcome] Failed to send welcome banner:', err));
-                }
-            }
-        }
+        // --- 1. Send Welcome Banner (now handled by a manager) ---
+        await sendWelcomeMessage(member);
 
         // --- 2. Process Referral ---
-        // --- Ensure username is always up-to-date in our database ---
         db.prepare(`
             INSERT INTO users (user_id, username, referred_by) 
             VALUES (?, ?, NULL) 
@@ -44,7 +33,7 @@ module.exports = {
 
             invites.set(guild.id, currentInvites);
             
-            if (!usedInvite || !usedInvite.inviter.bot) {
+            if (!usedInvite || usedInvite.inviter.bot) {
                 return;
             }
 
@@ -56,7 +45,6 @@ module.exports = {
             
             economyManager.modifySolyx(inviterId, guild.id, JOIN_BONUS, `Referral bonus for ${user.tag}`);
             
-            // --- Make console log clearer with user ID ---
             console.log(`[guildMemberAdd] Awarded ${JOIN_BONUS} Solyx to ${inviter.tag} (${inviter.id}) for referring ${user.tag}.`);
             
             if(inviter) {

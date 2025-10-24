@@ -2,10 +2,18 @@
 const sharp = require('sharp');
 const axios = require('axios');
 
+// --- Image & Layout Constants ---
 const BACKGROUND_IMAGE_URL = 'https://i.pinimg.com/1200x/7c/dd/a0/7cdda0f55609c37bd94b93f215d763ba.jpg';
-const AVATAR_SIZE = 256;
 const IMAGE_WIDTH = 1199;
 const IMAGE_HEIGHT = 672;
+
+// --- Avatar Constants ---
+const AVATAR_SIZE = 256;
+const AVATAR_TOP_Y = 58; // Vertical position from the top in pixels. Smaller number = higher up.
+
+// --- Text Constants (Pixel-based for predictable layout) ---
+const WELCOME_TEXT_Y = 445; // Vertical position from the top in pixels.
+const USERNAME_TEXT_Y = 515; // Vertical position from the top in pixels.
 
 /**
  * Creates a custom welcome banner image.
@@ -47,21 +55,21 @@ async function createWelcomeBanner(avatarUrl, username) {
                 <style>
                     .title { fill: white; font-size: 100px; font-weight: bold; font-family: sans-serif; }
                 </style>
-                <text x="50%" y="62%" text-anchor="middle" class="title" filter="url(#glow_white)">WELCOME</text>
+                <text x="50%" y="${WELCOME_TEXT_Y}" text-anchor="middle" class="title" filter="url(#glow_white)">WELCOME</text>
             </svg>
         `);
 
         const userTextSvg = Buffer.from(`
             <svg width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}">
                  <defs>
-                    <filter id="glow_pink">
-                        <feDropShadow dx="0" dy="0" stdDeviation="3.5" flood-color="#E53658"/>
+                    <filter id="glow_white_sub">
+                        <feDropShadow dx="0" dy="0" stdDeviation="3.5" flood-color="white"/>
                     </filter>
                 </defs>
                 <style>
-                    .subtitle { fill: #E53658; font-size: 48px; font-weight: bold; font-family: sans-serif; }
+                    .subtitle { fill: white; font-size: 48px; font-weight: bold; font-family: sans-serif; }
                 </style>
-                <text x="50%" y="74%" text-anchor="middle" class="subtitle" filter="url(#glow_pink)">${username.toUpperCase()}</text>
+                <text x="50%" y="${USERNAME_TEXT_Y}" text-anchor="middle" class="subtitle" filter="url(#glow_white_sub)">${username.toUpperCase()}</text>
             </svg>
         `);
 
@@ -70,7 +78,7 @@ async function createWelcomeBanner(avatarUrl, username) {
             .composite([
                 {
                     input: circularAvatar,
-                    top: Math.round((IMAGE_HEIGHT / 2) - (AVATAR_SIZE / 2) - 100),
+                    top: AVATAR_TOP_Y,
                     left: Math.round((IMAGE_WIDTH / 2) - (AVATAR_SIZE / 2)),
                 },
                 { input: welcomeTextSvg },
