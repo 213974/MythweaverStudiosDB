@@ -2,7 +2,7 @@
 const { Events, ActivityType, Collection, EmbedBuilder } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
-const { sendOrUpdateDashboard } = require('../utils/dashboardManager');
+const { sendOrUpdateDashboard } = require('../managers/dashboardManager');
 const db = require('../utils/database');
 const config = require('../config');
 

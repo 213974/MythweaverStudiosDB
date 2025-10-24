@@ -19,6 +19,13 @@ module.exports = {
         
         const formatChannel = (key) => settingsMap.has(key) ? `<#${settingsMap.get(key)}>` : '`Not Set`';
         const formatRole = (key) => settingsMap.has(key) ? `<@&${settingsMap.get(key)}>` : '`Not Set`';
+        const formatCategory = (key) => {
+            const categoryId = settingsMap.get(key);
+            if (!categoryId) return '`Not Set`';
+            const category = interaction.guild.channels.cache.get(categoryId);
+            return category ? `\`${category.name}\`` : '`Not Set`';
+        };
+
 
         const embed = new EmbedBuilder()
             .setColor('#FFD700')
@@ -33,7 +40,9 @@ module.exports = {
                 { name: 'Solyx™ Leaderboard', value: formatChannel('leaderboard_channel_id'), inline: true },
                 { name: 'Help Dashboard', value: formatChannel('help_dashboard_channel_id'), inline: true },
                 { name: 'Public Command List', value: formatChannel('public_cmd_list_channel_id'), inline: true },
-                { name: 'Quick Actions Hub', value: formatChannel('quick_actions_channel_id'), inline: true }
+                { name: 'Quick Actions Hub', value: formatChannel('quick_actions_channel_id'), inline: true },
+                { name: 'Guildhalls Category', value: formatCategory('system_guildhall_category_id'), inline: true },
+                { name: 'Welcome Channel', value: formatChannel('welcome_channel_id'), inline: true }
             );
             
         const selectMenu = new StringSelectMenuBuilder()
@@ -48,7 +57,9 @@ module.exports = {
                 { label: 'Set Solyx™ Leaderboard Channel', value: 'settings_set_leaderboard_channel', emoji: '🏆' },
                 { label: 'Set Help Dashboard Channel', value: 'settings_set_help_channel', emoji: '❓' },
                 { label: 'Set Public Command List Channel', value: 'settings_set_cmd_list_channel', emoji: '📜' },
-                { label: 'Set Quick Actions Channel', value: 'settings_set_quick_actions_channel', emoji: '⚡' }
+                { label: 'Set Quick Actions Channel', value: 'settings_set_quick_actions_channel', emoji: '⚡' },
+                { label: 'Set Guildhalls Category', value: 'settings_set_guildhall_category', emoji: '🏰' },
+                { label: 'Set Welcome Channel', value: 'settings_set_welcome_channel', emoji: '👋' }
             ]);
 
         const row = new ActionRowBuilder().addComponents(selectMenu);

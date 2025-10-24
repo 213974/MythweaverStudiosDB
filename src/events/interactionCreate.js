@@ -7,6 +7,7 @@ const clanInteractionHandler = require('../handlers/interactions/clanInteraction
 const economyInteractionHandler = require('../handlers/interactions/economyInteractionHandler');
 const helpInteractionHandler = require('../handlers/interactions/helpInteractionHandler');
 const quickActionHandler = require('../handlers/interactions/quickActionHandler');
+const guildhallHandler = require('../handlers/interactions/guildhallHandler');
 
 const SELECT_MENU_COOLDOWN_SECONDS = 5;
 const BUTTON_COOLDOWN_SECONDS = 2.5;
@@ -22,7 +23,6 @@ module.exports = {
 
             const now = Date.now();
 
-            // --- Dedicated cooldown for select menus ---
             if (interaction.isStringSelectMenu()) {
                 const cooldowns = client.cooldowns.get('selectMenus') || new Collection();
                 const userTimestamp = cooldowns.get(interaction.user.id);
@@ -36,7 +36,6 @@ module.exports = {
                 client.cooldowns.set('selectMenus', cooldowns);
             }
 
-            // --- Dedicated cooldown for buttons ---
             if (interaction.isButton()) {
                 const cooldowns = client.cooldowns.get('buttons') || new Collection();
                 const userTimestamp = cooldowns.get(interaction.user.id);
@@ -75,6 +74,10 @@ module.exports = {
             }
             if (customId.startsWith('quick_action_')) {
                 await quickActionHandler(interaction);
+                return;
+            }
+            if (customId.startsWith('guildhall_')) {
+                await guildhallHandler(interaction);
                 return;
             }
 

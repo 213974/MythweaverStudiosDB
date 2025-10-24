@@ -1,6 +1,6 @@
 // src/commands/clan/view.js
 const { EmbedBuilder } = require('discord.js');
-const clanManager = require('../../utils/clanManager');
+const clanManager = require('../../managers/clanManager');
 const db = require('../../utils/database');
 const config = require('../../config');
 

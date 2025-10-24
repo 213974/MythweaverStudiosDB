@@ -8,6 +8,15 @@ const MAX_VICE_GUILD_MASTERS = 4;
 module.exports = {
     MAX_MEMBERS, MAX_OFFICERS, MAX_VICE_GUILD_MASTERS,
 
+    /**
+     * Retrieves all registered clans in a guild.
+     * @param {string} guildId The guild ID.
+     * @returns {Array<object>} A list of clan records.
+     */
+    getAllClans: (guildId) => {
+        return db.prepare('SELECT clan_id, owner_id FROM clans WHERE guild_id = ?').all(guildId);
+    },
+
     getClanData: (guildId, clanRoleId) => {
         const clan = db.prepare('SELECT * FROM clans WHERE guild_id = ? AND clan_id = ?').get(guildId, clanRoleId);
         if (!clan) return null;

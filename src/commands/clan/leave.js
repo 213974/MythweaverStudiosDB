@@ -1,5 +1,5 @@
 // src/commands/clan/leave.js
-const clanManager = require('../../utils/clanManager');
+const clanManager = require('../../managers/clanManager');
 
 module.exports = {
     async execute(interaction, guildId, userClanData) {

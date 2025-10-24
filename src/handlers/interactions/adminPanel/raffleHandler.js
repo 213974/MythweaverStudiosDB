@@ -2,10 +2,10 @@
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { createRaffleDashboard } = require('../../../components/adminDashboard/rafflePanel');
 const chrono = require('chrono-node');
-const { formatTimestamp } = require('../../../utils/timestampFormatter');
+const { formatTimestamp } = require('../../../helpers/timestampFormatter');
 const db = require('../../../utils/database');
 const config = require('../../../config');
-const raffleManager = require('../../../utils/raffleManager');
+const raffleManager = require('../../../managers/raffleManager');
 
 module.exports = async (interaction) => {
     const guildId = interaction.guild.id;

@@ -1,5 +1,5 @@
 // src/handlers/interactions/clan/mottoModalHandler.js
-const clanManager = require('../../../utils/clanManager');
+const clanManager = require('../../../managers/clanManager');
 
 module.exports = async (interaction) => {
     // Corrected the ID check to match what's set in the dashboard handler

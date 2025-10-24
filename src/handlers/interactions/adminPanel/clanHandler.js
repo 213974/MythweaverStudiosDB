@@ -1,17 +1,16 @@
 // src/handlers/interactions/adminPanel/clanHandler.js
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, RoleSelectMenuBuilder, UserSelectMenuBuilder } = require('discord.js');
 const { createClanDashboard } = require('../../../components/adminDashboard/clanPanel');
-const clanManager = require('../../../utils/clanManager');
-const { parseUser, parseRole } = require('../../../utils/interactionHelpers');
+const clanManager = require('../../../managers/clanManager');
+const { parseUser, parseRole } = require('../../../helpers/interactionHelpers');
+const guildhallManager = require('../../../managers/guildhallManager');
 
 module.exports = async (interaction) => {
     const customId = interaction.customId;
 
-    // --- BUTTON CLICKS ---
     if (interaction.isButton()) {
         const action = customId.split('_')[2];
 
-        // --- Start of Create Clan Flow ---
         if (action === 'create') {
             const embed = new EmbedBuilder()
                 .setColor('#3498DB')
@@ -33,13 +32,11 @@ module.exports = async (interaction) => {
             return interaction.update({ embeds: [embed], components: [row1, row2] });
         }
         
-        // --- Navigation Buttons ---
         if (customId === 'admin_clan_nav') {
             const response = createClanDashboard();
             return interaction.update({ ...response });
         }
 
-        // --- Legacy Modal Buttons (Delete/Owner) ---
         let modal;
         if (action === 'delete') {
             modal = new ModalBuilder().setCustomId('admin_clan_modal_delete').setTitle('Delete a Clan');
@@ -54,7 +51,6 @@ module.exports = async (interaction) => {
         if (modal) return interaction.showModal(modal);
     }
 
-    // --- ROLE SELECT (Create Clan Step 2) ---
     if (interaction.isRoleSelectMenu() && customId === 'admin_clan_create_role_select') {
         const roleId = interaction.values[0];
         const role = await interaction.guild.roles.fetch(roleId);
@@ -65,7 +61,7 @@ module.exports = async (interaction) => {
             .setDescription(`**Clan Role:** ${role}\n\nPlease now select the user who will be the owner of this clan.`);
 
         const userSelect = new UserSelectMenuBuilder()
-            .setCustomId(`admin_clan_create_owner_select_${roleId}`) // Pass roleId in customId
+            .setCustomId(`admin_clan_create_owner_select_${roleId}`)
             .setPlaceholder('Select a user...');
         
         const cancel = new ButtonBuilder()
@@ -79,7 +75,6 @@ module.exports = async (interaction) => {
         return interaction.update({ embeds: [embed], components: [row1, row2] });
     }
 
-    // --- USER SELECT (Create Clan Final Step) ---
     if (interaction.isUserSelectMenu() && customId.startsWith('admin_clan_create_owner_select_')) {
         const roleId = customId.split('_')[5];
         const ownerId = interaction.values[0];
@@ -90,10 +85,12 @@ module.exports = async (interaction) => {
 
         let embed;
         if (result.success) {
+            // Trigger guildhall creation
+            await guildhallManager.updateGuildhallDashboard(interaction.client, interaction.guild.id, roleId);
             embed = new EmbedBuilder()
                 .setColor('#2ECC71')
                 .setTitle('✅ Clan Created Successfully')
-                .setDescription(`**Clan:** ${role}\n**Owner:** ${owner}`);
+                .setDescription(`**Clan:** ${role}\n**Owner:** ${owner}\n\nA guildhall channel has been created or updated for this clan.`);
         } else {
             embed = new EmbedBuilder()
                 .setColor('#E74C3C')
@@ -107,7 +104,6 @@ module.exports = async (interaction) => {
         return interaction.update({ embeds: [embed], components: [row] });
     }
 
-    // --- MODAL SUBMISSIONS (Legacy Delete/Owner) ---
     if (interaction.isModalSubmit()) {
         await interaction.deferReply({ flags: 64 });
         const action = customId.split('_')[3];
@@ -127,7 +123,6 @@ module.exports = async (interaction) => {
         }
     }
     
-    // Fallback for main select menu
     if (interaction.isStringSelectMenu() && customId === 'admin_panel_select') {
         const response = createClanDashboard();
         return interaction.reply({ ...response, flags: 64 });

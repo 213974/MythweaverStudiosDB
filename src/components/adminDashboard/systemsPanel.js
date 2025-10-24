@@ -1,6 +1,7 @@
 // src/components/adminDashboard/systemsPanel.js
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const db = require('../../utils/database');
+const taxManager = require('../../managers/taxManager');
 
 function createSystemsDashboard(guildId) {
     // Fetch current settings from the database
@@ -14,10 +15,11 @@ function createSystemsDashboard(guildId) {
     const vcRate = settingsMap.get('system_solyx_vc_rate') || '0.1';
     const vcInterval = settingsMap.get('system_solyx_vc_interval_minutes') || '5';
     
-    // --- Fetch economy reward settings ---
     const dailyReward = settingsMap.get('economy_daily_reward') || '1';
     const weeklyReward = settingsMap.get('economy_weekly_reward') || '2';
-
+    
+    // Fetch tax quota
+    const taxQuota = taxManager.getTaxQuota(guildId);
 
     const embed = new EmbedBuilder()
         .setColor('#1ABC9C')
@@ -38,6 +40,11 @@ function createSystemsDashboard(guildId) {
                 name: '💰 Claim Rewards',
                 value: `**Daily:** ${dailyReward} Solyx™\n**Weekly:** ${weeklyReward} Solyx™`,
                 inline: true
+            },
+            {
+                name: '🛡️ Clan Tax System',
+                value: `**Monthly Quota:** ${taxQuota.toLocaleString()} Solyx™`,
+                inline: false
             }
         );
 
@@ -63,6 +70,11 @@ function createSystemsDashboard(guildId) {
             .setLabel('Configure Rewards')
             .setStyle(ButtonStyle.Primary)
             .setEmoji('💰'),
+        new ButtonBuilder()
+            .setCustomId('admin_system_configure_tax')
+            .setLabel('Set Tax Quota')
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('🛡️'),
         new ButtonBuilder()
             .setCustomId('admin_panel_back')
             .setLabel('Back to Main')

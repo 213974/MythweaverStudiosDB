@@ -2,7 +2,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
-const clanManager = require('../../utils/clanManager');
+const clanManager = require('../../managers/clanManager');
 
 // Load subcommand logic files from the current directory
 const subcommands = new Map();

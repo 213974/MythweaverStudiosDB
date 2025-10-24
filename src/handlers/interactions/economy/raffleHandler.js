@@ -1,6 +1,6 @@
 // src/handlers/interactions/economy/raffleHandler.js
 const { EmbedBuilder } = require('discord.js');
-const economyManager = require('../../../utils/economyManager');
+const economyManager = require('../../../managers/economyManager');
 const db = require('../../../utils/database');
 
 module.exports = async (interaction) => {

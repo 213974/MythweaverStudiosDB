@@ -1,6 +1,6 @@
 // src/handlers/interactions/economy/navigationHandler.js
 const { EmbedBuilder } = require('discord.js');
-const economyManager = require('../../../utils/economyManager');
+const economyManager = require('../../../managers/economyManager');
 
 module.exports = async (interaction) => {
     const customId = interaction.customId;

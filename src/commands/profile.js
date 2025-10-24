@@ -1,7 +1,7 @@
 // src/commands/profile.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const economyManager = require('../utils/economyManager');
-const userManager = require('../utils/userManager');
+const economyManager = require('../managers/economyManager');
+const userManager = require('../managers/userManager');
 const moment = require('moment');
 require('moment-duration-format');
 

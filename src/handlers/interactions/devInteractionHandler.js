@@ -2,14 +2,16 @@
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ChannelType } = require('discord.js');
 const config = require('../../config');
 const db = require('../../utils/database');
-const { parseRole } = require('../../utils/interactionHelpers');
-const { sendOrUpdateDashboard } = require('../../utils/dashboardManager');
-const { sendOrUpdateLeaderboard } = require('../../utils/leaderboardManager');
+const { parseRole } = require('../../helpers/interactionHelpers');
+const { sendOrUpdateDashboard } = require('../../managers/dashboardManager');
+const { sendOrUpdateLeaderboard } = require('../../managers/leaderboardManager');
 const { updateAnalyticsDashboard } = require('../../utils/scheduler');
 const { createHelpDashboard } = require('../../commands/help');
-const { sendOrUpdateCommandList } = require('../../utils/publicCommandListManager');
-const { createPublicCommandListEmbed } = require('../../components/publicCommandList');
+const { sendOrUpdateCommandList } = require('../../managers/publicCommandListManager');
 const { createQuickActionsDashboard } = require('../../components/quickActions');
+const taxManager = require('../../managers/taxManager');
+const guildhallManager = require('../../managers/guildhallManager');
+
 
 module.exports = async (interaction) => {
     if (!config.ownerIDs.includes(interaction.user.id)) {
@@ -53,7 +55,6 @@ module.exports = async (interaction) => {
                 modal = new ModalBuilder().setCustomId('settings_modal_booster_role').setTitle('Set Booster Role');
                 modal.addComponents(roleInput);
                 break;
-            // --- NEW CASES ---
             case 'settings_set_cmd_list_channel':
                 modal = new ModalBuilder().setCustomId('settings_modal_cmd_list_channel').setTitle('Set Public Command List Channel');
                 modal.addComponents(channelInput);
@@ -62,6 +63,14 @@ module.exports = async (interaction) => {
                 modal = new ModalBuilder().setCustomId('settings_modal_quick_actions_channel').setTitle('Set Quick Actions Channel');
                 modal.addComponents(channelInput);
                 break;
+            case 'settings_set_guildhall_category':
+                modal = new ModalBuilder().setCustomId('settings_modal_guildhall_category').setTitle('Set Guildhalls Category');
+                modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('category_id_input').setLabel("Category ID or Name").setStyle(TextInputStyle.Short).setRequired(true)));
+                break;
+            case 'settings_set_welcome_channel':
+                 modal = new ModalBuilder().setCustomId('settings_modal_welcome_channel').setTitle('Set Welcome Channel');
+                 modal.addComponents(channelInput);
+                 break;
         }
         if (modal) await interaction.showModal(modal);
     }
@@ -75,17 +84,15 @@ module.exports = async (interaction) => {
             const channel = channelId ? await interaction.guild.channels.fetch(channelId).catch(() => null) : null;
             if (!channel || channel.type !== ChannelType.GuildText) return interaction.editReply({ content: 'Invalid Text Channel ID.' });
             
-            // Reusable function to post a dashboard and save IDs
             const postDashboard = async (keyPrefix, content) => {
                 db.prepare(`INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, '${keyPrefix}_channel_id', ?)`).run(guildId, channel.id);
-                // Clear old message ID to force a new message post
                 db.prepare(`DELETE FROM settings WHERE guild_id = ? AND key = '${keyPrefix}_message_id'`).run(guildId);
                 const newMessage = await channel.send(content);
                 db.prepare(`INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, '${keyPrefix}_message_id', ?)`).run(guildId, newMessage.id);
             };
 
             switch (customId) {
-                case 'settings_modal_analytics_channel':
+                 case 'settings_modal_analytics_channel':
                     db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'analytics_channel_id', ?)").run(guildId, channel.id);
                     db.prepare("DELETE FROM settings WHERE guild_id = ? AND key = 'analytics_message_id'").run(guildId);
                     await updateAnalyticsDashboard(interaction.client, guildId);
@@ -110,12 +117,16 @@ module.exports = async (interaction) => {
                 case 'settings_modal_cmd_list_channel':
                     db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'public_cmd_list_channel_id', ?)").run(guildId, channel.id);
                     db.prepare("DELETE FROM settings WHERE guild_id = ? AND key = 'public_cmd_list_message_id'").run(guildId);
-                    await sendOrUpdateCommandList(interaction.client, guildId); // Use manager for initial post
+                    await sendOrUpdateCommandList(interaction.client, guildId);
                     await interaction.editReply({ content: `✅ **Public Command List** posted in ${channel}.` });
                     break;
                 case 'settings_modal_quick_actions_channel':
                     await postDashboard('quick_actions', createQuickActionsDashboard());
                     await interaction.editReply({ content: `✅ **Quick Actions Hub** has been posted in ${channel}.` });
+                    break;
+                case 'settings_modal_welcome_channel':
+                    db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'welcome_channel_id', ?)").run(guildId, channel.id);
+                    await interaction.editReply({ content: `✅ **Welcome Channel** set to ${channel} for this server.` });
                     break;
             }
         } else if (customId.endsWith('_role')) {
@@ -136,6 +147,25 @@ module.exports = async (interaction) => {
                     await interaction.editReply({ content: `✅ **Booster Role** set to ${role} for this server.` });
                     break;
             }
+        } else if (customId === 'settings_modal_guildhall_category') {
+            const categoryInput = interaction.fields.getTextInputValue('category_id_input');
+            const categoryId = categoryInput.match(/\d{17,19}/)?.[0];
+            let category;
+
+            if (categoryId) {
+                category = await interaction.guild.channels.fetch(categoryId).catch(() => null);
+            } else {
+                category = interaction.guild.channels.cache.find(c => c.name.toLowerCase() === categoryInput.toLowerCase() && c.type === ChannelType.GuildCategory);
+            }
+            
+            if (!category || category.type !== ChannelType.GuildCategory) {
+                return interaction.editReply({ content: 'Invalid Category ID or Name.' });
+            }
+
+            taxManager.setGuildhallCategoryId(guildId, category.id);
+            await guildhallManager.syncAllGuildhalls(interaction.client, guildId);
+
+            await interaction.editReply({ content: `✅ **Guildhalls Category** set to **${category.name}**. All guildhall channels have been synchronized.` });
         }
     }
 };

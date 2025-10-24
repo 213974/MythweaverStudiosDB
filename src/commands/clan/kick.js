@@ -1,6 +1,6 @@
 // src/commands/clan/kick.js
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
-const clanManager = require('../../utils/clanManager');
+const clanManager = require('../../managers/clanManager');
 const db = require('../../utils/database');
 
 module.exports = {

@@ -1,7 +1,7 @@
 ﻿// commands/economy/weekly.js
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const economyManager = require('../utils/economyManager');
-const { formatTimestamp } = require('../utils/timestampFormatter');
+const economyManager = require('../managers/economyManager');
+const { formatTimestamp } = require('../helpers/timestampFormatter');
 
 module.exports = {
     data: new SlashCommandBuilder()

@@ -1,6 +1,6 @@
 // src/handlers/interactions/clan/dashboardHandler.js
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, UserSelectMenuBuilder, StringSelectMenuBuilder } = require('discord.js');
-const clanManager = require('../../../utils/clanManager');
+const clanManager = require('../../../managers/clanManager');
 const { subcommands: clanSubcommands } = require('../../../commands/clan/clan');
 
 module.exports = async (interaction) => {

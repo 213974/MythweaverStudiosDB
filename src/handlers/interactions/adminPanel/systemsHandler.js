@@ -3,6 +3,8 @@ const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = req
 const db = require('../../../utils/database');
 const { createSystemsDashboard } = require('../../../components/adminDashboard/systemsPanel');
 const { invalidateCache } = require('../../../utils/settingsCache');
+const taxManager = require('../../../managers/taxManager');
+const guildhallManager = require('../../../managers/guildhallManager');
 
 module.exports = async (interaction) => {
     const { customId, guildId } = interaction;
@@ -14,10 +16,7 @@ module.exports = async (interaction) => {
     }
 
     if (interaction.isButton()) {
-        // The deferUpdate() is removed from here. Each branch below will now handle its own acknowledgment.
-
         if (customId === 'admin_system_toggle_text' || customId === 'admin_system_toggle_vc') {
-            // These buttons update the message, so they need to be deferred.
             await interaction.deferUpdate();
             
             if (customId === 'admin_system_toggle_text') {
@@ -31,12 +30,10 @@ module.exports = async (interaction) => {
                 db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'system_solyx_vc_enabled', ?)").run(guildId, newSetting);
                 invalidateCache(guildId);
             }
-            // After toggling, refresh the dashboard.
             const updatedDashboard = createSystemsDashboard(guildId);
             await interaction.editReply(updatedDashboard);
 
-        } else if (customId === 'admin_system_configure_rates' || customId === 'admin_system_configure_rewards') {
-            // These buttons open a modal. `showModal()` is its own acknowledgment, so we DO NOT defer.
+        } else if (customId === 'admin_system_configure_rates' || customId === 'admin_system_configure_rewards' || customId === 'admin_system_configure_tax') {
             let modal;
             if (customId === 'admin_system_configure_rates') {
                 const settings = db.prepare("SELECT key, value FROM settings WHERE guild_id = ? AND key LIKE 'system_solyx_%'").all(guildId);
@@ -47,13 +44,19 @@ module.exports = async (interaction) => {
                     new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('vc_rate').setLabel("Solyx per Interval in VC").setStyle(TextInputStyle.Short).setValue(settingsMap.get('system_solyx_vc_rate') || '0.1').setRequired(true)),
                     new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('vc_interval').setLabel("VC Interval (Minutes)").setStyle(TextInputStyle.Short).setValue(settingsMap.get('system_solyx_vc_interval_minutes') || '5').setRequired(true))
                 );
-            } else { // configure_rewards
+            } else if (customId === 'admin_system_configure_rewards') {
                 const settings = db.prepare("SELECT key, value FROM settings WHERE guild_id = ? AND key LIKE 'economy_%_reward'").all(guildId);
                 const settingsMap = new Map(settings.map(s => [s.key, s.value]));
                 modal = new ModalBuilder().setCustomId('admin_system_modal_configure_rewards').setTitle('Configure Claim Rewards');
                 modal.addComponents(
                     new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('daily_reward').setLabel("Daily Reward Amount").setStyle(TextInputStyle.Short).setValue(settingsMap.get('economy_daily_reward') || '1').setRequired(true)),
                     new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('weekly_reward').setLabel("Weekly Reward Amount").setStyle(TextInputStyle.Short).setValue(settingsMap.get('economy_weekly_reward') || '2').setRequired(true))
+                );
+            } else { // configure_tax
+                const currentQuota = taxManager.getTaxQuota(guildId);
+                modal = new ModalBuilder().setCustomId('admin_system_modal_configure_tax').setTitle('Configure Clan Tax Quota');
+                modal.addComponents(
+                    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('tax_quota').setLabel("Monthly Solyx™ Tax Quota").setStyle(TextInputStyle.Short).setValue(currentQuota.toString()).setRequired(true))
                 );
             }
             return interaction.showModal(modal);
@@ -91,6 +94,16 @@ module.exports = async (interaction) => {
                 db.prepare("INSERT OR REPLACE INTO settings (guild_id, key, value) VALUES (?, 'economy_weekly_reward', ?)").run(guildId, weeklyReward.toString());
             })();
             invalidateCache(guildId);
+        }
+
+        if (customId === 'admin_system_modal_configure_tax') {
+            const newQuota = parseInt(interaction.fields.getTextInputValue('tax_quota'), 10);
+            if (isNaN(newQuota) || newQuota < 0) {
+                return interaction.editReply({ content: 'Error: Tax quota must be a valid, non-negative number.' });
+            }
+            taxManager.setTaxQuota(guildId, newQuota);
+            // After setting, resync all dashboards to show the new value
+            await guildhallManager.syncAllGuildhalls(interaction.client, guildId);
         }
         
         const updatedDashboard = createSystemsDashboard(guildId);

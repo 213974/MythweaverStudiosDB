@@ -1,7 +1,7 @@
 // src/commands/clan/invite.js
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
-const clanManager = require('../../utils/clanManager');
-const { formatTimestamp } = require('../../utils/timestampFormatter');
+const clanManager = require('../../managers/clanManager');
+const { formatTimestamp } = require('../../helpers/timestampFormatter');
 
 module.exports = {
     async execute(interaction, guildId, userClanData, permissions) {

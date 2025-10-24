@@ -1,8 +1,8 @@
 // src/events/voiceStateUpdate.js
 const { Events, Collection } = require('discord.js');
 const db = require('../utils/database');
-const economyManager = require('../utils/economyManager');
-const userManager = require('../utils/userManager');
+const economyManager = require('../managers/economyManager');
+const userManager = require('../managers/userManager');
 
 const activeVcSessions = new Map();
 

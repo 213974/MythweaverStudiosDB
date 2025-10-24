@@ -1,7 +1,7 @@
 // src/handlers/interactions/economy/claimHandler.js
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const economyManager = require('../../../utils/economyManager');
-const { formatTimestamp } = require('../../../utils/timestampFormatter');
+const economyManager = require('../../../managers/economyManager');
+const { formatTimestamp } = require('../../../helpers/timestampFormatter');
 
 module.exports = async (interaction) => {
     const customId = interaction.customId;

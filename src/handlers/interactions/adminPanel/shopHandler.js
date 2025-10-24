@@ -1,8 +1,8 @@
 // src/handlers/interactions/adminPanel/shopHandler.js
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 const { createShopDashboard } = require('../../../components/adminDashboard/shopPanel');
-const economyManager = require('../../../utils/economyManager');
-const { parseRole } = require('../../../utils/interactionHelpers');
+const economyManager = require('../../../managers/economyManager');
+const { parseRole } = require('../../../helpers/interactionHelpers');
 
 module.exports = async (interaction) => {
     // --- NAVIGATION ---

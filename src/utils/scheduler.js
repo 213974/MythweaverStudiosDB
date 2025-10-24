@@ -1,11 +1,14 @@
 // src/utils/scheduler.js
 const { ActionRowBuilder } = require('discord.js');
 const db = require('./database');
-const { createAnalyticsEmbed } = require('./analyticsManager');
-const { drawRaffleWinners } = require('./raffleManager');
-const { sendOrUpdateLeaderboard } = require('./leaderboardManager');
-const { sendOrUpdateDashboard } = require('./dashboardManager');
-const { sendOrUpdateCommandList } = require('./publicCommandListManager');
+const { createAnalyticsEmbed } = require('../managers/analyticsManager');
+const { drawRaffleWinners } = require('../managers/raffleManager');
+const { sendOrUpdateLeaderboard } = require('../managers/leaderboardManager');
+const { sendOrUpdateDashboard } = require('../managers/dashboardManager');
+const { sendOrUpdateCommandList } = require('../managers/publicCommandListManager');
+const taxManager = require('../managers/taxManager');
+const guildhallManager = require('../managers/guildhallManager');
+const { parseISO } = require('date-fns');
 
 async function checkEndedRaffles(client) {
     const now = Math.floor(Date.now() / 1000);
@@ -76,19 +79,34 @@ async function updateRaffleMessages(client) {
     }
 }
 
-async function checkEndedEvents(client) {
-    const now = Math.floor(Date.now() / 1000);
-    const expiredEvents = db.prepare("SELECT guild_id FROM settings WHERE key = 'event_end_timestamp' AND value <= ?").all(now);
+/**
+ * Checks all clans in all guilds for expired tax periods and resets them on the 1st of the month.
+ * @param {import('discord.js').Client} client The Discord client instance.
+ */
+async function checkAndResetTaxPeriods(client) {
+    const now = new Date();
+    // Only proceed if it's the first day of the month.
+    if (now.getDate() !== 1) {
+        return;
+    }
 
-    for (const event of expiredEvents) {
-        const guildId = event.guild_id;
-        console.log(`[Scheduler] Cleaning up expired event for guild ${guildId}...`);
-        db.prepare("DELETE FROM settings WHERE guild_id = ? AND key LIKE 'event_%'").run(guildId);
-        if (client.activeEvents) {
-            client.activeEvents.delete(guildId);
+    const guilds = client.guilds.cache;
+    for (const [guildId] of guilds) {
+        const allClans = taxManager.getAllClans(guildId);
+        for (const clan of allClans) {
+            const taxStatus = taxManager.getTaxStatus(guildId, clan.clan_id);
+            const lastReset = parseISO(taxStatus.last_reset_timestamp);
+
+            // Check if the last reset was in a previous month to prevent multiple resets on the same day.
+            if (lastReset.getMonth() !== now.getMonth() || lastReset.getFullYear() !== now.getFullYear()) {
+                taxManager.resetTaxPeriod(guildId, clan.clan_id);
+                // Trigger a dashboard update after resetting
+                await guildhallManager.updateGuildhallDashboard(client, guildId, clan.clan_id);
+            }
         }
     }
 }
+
 
 function startScheduler(client) {
     console.log('[Scheduler] Starting background tasks...');
@@ -96,8 +114,13 @@ function startScheduler(client) {
         // Initial runs on startup
         updateAnalyticsDashboard(client);
         sendOrUpdateLeaderboard(client);
-        sendOrUpdateDashboard(client); // Initial run for clan dashboard
-        sendOrUpdateCommandList(client); // Initial run for command list
+        sendOrUpdateDashboard(client);
+        sendOrUpdateCommandList(client);
+
+        for (const [guildId] of client.guilds.cache) {
+            guildhallManager.syncAllGuildhalls(client, guildId);
+        }
+
     }, 5000);
 
     // Set intervals
@@ -105,10 +128,11 @@ function startScheduler(client) {
     setInterval(() => updateRaffleMessages(client), 3000); // 3 sec
     setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000); // 5 mins
     setInterval(() => sendOrUpdateLeaderboard(client), 5 * 60 * 1000); // 5 mins
-    
-    // --- DYNAMIC DASHBOARD INTERVALS ---
     setInterval(() => sendOrUpdateDashboard(client), 5 * 60 * 1000); // 5 mins for Clan Dashboard
     setInterval(() => sendOrUpdateCommandList(client), 60 * 60 * 1000); // 1 hour for Command List
+    
+    // Check for tax resets once every hour
+    setInterval(() => checkAndResetTaxPeriods(client), 60 * 60 * 1000); // 1 hour
 }
 
 module.exports = { startScheduler, updateAnalyticsDashboard };

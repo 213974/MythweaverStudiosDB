@@ -1,6 +1,6 @@
 // src/handlers/interactions/clan/inviteResponseHandler.js
 const { EmbedBuilder, ActionRowBuilder } = require('discord.js');
-const clanManager = require('../../../utils/clanManager');
+const clanManager = require('../../../managers/clanManager');
 
 module.exports = async (interaction) => {
     const parts = interaction.customId.split('_');

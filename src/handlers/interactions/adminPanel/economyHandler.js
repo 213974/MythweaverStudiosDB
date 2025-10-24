@@ -1,8 +1,8 @@
 // src/handlers/interactions/adminPanel/economyHandler.js
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
 const { createEconomyDashboard } = require('../../../components/adminDashboard/economyPanel');
-const economyManager = require('../../../utils/economyManager');
-const { parseUser } = require('../../../utils/interactionHelpers');
+const economyManager = require('../../../managers/economyManager');
+const { parseUser } = require('../../../helpers/interactionHelpers');
 
 module.exports = async (interaction) => {
     if (interaction.isStringSelectMenu()) {

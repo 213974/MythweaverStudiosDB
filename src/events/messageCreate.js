@@ -2,9 +2,9 @@
 const { Events, MessageType, Collection } = require('discord.js');
 const config = require('../config');
 const db = require('../utils/database');
-const { isEligibleForPerks, getBoosterPerk } = require('../utils/perksManager');
-const economyManager = require('../utils/economyManager');
-const userManager = require('../utils/userManager');
+const { isEligibleForPerks, getBoosterPerk } = require('../managers/perksManager');
+const economyManager = require('../managers/economyManager');
+const userManager = require('../managers/userManager');
 const { getSettings } = require('../utils/settingsCache');
 
 const PANDA_YAY_EMOJI = '<:PandaYay:1357806568535490812>';
