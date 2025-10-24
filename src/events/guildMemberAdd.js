@@ -1,7 +1,7 @@
 // src/events/guildMemberAdd.js
 const { Events, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const db = require('../utils/database');
-const economyManager = require('../managers/economyManager');
+const economyManager = require('../utils/economyManager');
 const { createWelcomeBanner } = require('../../services/imageGenerator/welcomeBanner');
 
 const invites = new Map();
@@ -25,7 +25,13 @@ module.exports = {
         }
 
         // --- 2. Process Referral ---
-        db.prepare('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)').run(member.id, user.username);
+        // --- Ensure username is always up-to-date in our database ---
+        db.prepare(`
+            INSERT INTO users (user_id, username, referred_by) 
+            VALUES (?, ?, NULL) 
+            ON CONFLICT(user_id) DO UPDATE SET username = excluded.username
+        `).run(member.id, user.username);
+
 
         try {
             const fetchedInvites = await guild.invites.fetch();
@@ -38,21 +44,21 @@ module.exports = {
 
             invites.set(guild.id, currentInvites);
             
-            if (!usedInvite || usedInvite.inviter.bot) {
-                console.log(`[guildMemberAdd] User ${user.tag} joined, but the invite could not be determined or was from a bot.`);
+            if (!usedInvite || !usedInvite.inviter.bot) {
                 return;
             }
 
             const inviterId = usedInvite.inviter.id;
+            const inviter = usedInvite.inviter;
             const JOIN_BONUS = 2;
 
             db.prepare('UPDATE users SET referred_by = ? WHERE user_id = ?').run(inviterId, member.id);
             
             economyManager.modifySolyx(inviterId, guild.id, JOIN_BONUS, `Referral bonus for ${user.tag}`);
-
-            console.log(`[guildMemberAdd] Awarded ${JOIN_BONUS} Solyx to ${usedInvite.inviter.tag} for referring ${user.tag}.`);
             
-            const inviter = await client.users.fetch(inviterId).catch(() => null);
+            // --- Make console log clearer with user ID ---
+            console.log(`[guildMemberAdd] Awarded ${JOIN_BONUS} Solyx to ${inviter.tag} (${inviter.id}) for referring ${user.tag}.`);
+            
             if(inviter) {
                 const embed = new EmbedBuilder()
                     .setColor('#2ECC71')

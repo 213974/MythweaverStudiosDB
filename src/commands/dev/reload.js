@@ -4,7 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const config = require('../../config');
 
-// This function now also exactly matches the logic in deploy-commands.js.
+// --- Helper Functions ---
+
 function findCommandFiles(dir) {
     let commandFiles = [];
     const files = fs.readdirSync(dir, { withFileTypes: true });
@@ -23,41 +24,70 @@ function findCommandFiles(dir) {
     return commandFiles;
 }
 
+function findServiceFiles(dir) {
+    let serviceFiles = [];
+    const items = fs.readdirSync(dir, { withFileTypes: true });
+    for (const item of items) {
+        const fullPath = path.join(dir, item.name);
+        if (item.isDirectory()) {
+            serviceFiles = serviceFiles.concat(findServiceFiles(fullPath));
+        } else if (item.name.endsWith('.js')) {
+            serviceFiles.push(fullPath);
+        }
+    }
+    return serviceFiles;
+}
+
+// --- Command Definition ---
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('reload')
-        .setDescription('Reloads the logic of all commands.'),
+        .setDescription('Reloads parts of the bot\'s code without a full restart.')
+        .addSubcommand(sub =>
+            sub.setName('commands')
+            .setDescription('Reloads all slash command files.')
+        )
+        .addSubcommand(sub =>
+            sub.setName('services')
+            .setDescription('Reloads all service files (e.g., image generator).')
+        ),
     async execute(interaction) {
         if (!config.ownerIDs.includes(interaction.user.id)) {
             return interaction.reply({ content: 'You do not have permission to use this command.', flags: 64 });
         }
 
         await interaction.deferReply({ flags: 64 });
+        const subcommand = interaction.options.getSubcommand();
 
         try {
-            console.log('[Reload] Clearing existing commands from client...');
-            interaction.client.commands.clear();
-            
-            const commandsPath = path.join(__dirname, '..', '..', 'commands');
-            const commandFiles = findCommandFiles(commandsPath);
-
-            console.log(`[Reload] Found ${commandFiles.length} command files to reload.`);
-
-            for (const file of commandFiles) {
-                delete require.cache[require.resolve(file)];
-                const command = require(file);
-
-                if (command.data && command.execute) {
-                    interaction.client.commands.set(command.data.name, command);
-                } else {
-                     console.warn(`[Reload] The command at ${file} is missing a required "data" or "execute" property.`);
+            if (subcommand === 'commands') {
+                interaction.client.commands.clear();
+                const commandsPath = path.join(__dirname, '..', '..', 'commands');
+                const commandFiles = findCommandFiles(commandsPath);
+                let count = 0;
+                for (const file of commandFiles) {
+                    delete require.cache[require.resolve(file)];
+                    const command = require(file);
+                    if (command.data && command.execute) {
+                        interaction.client.commands.set(command.data.name, command);
+                        count++;
+                    }
                 }
+                await interaction.editReply({ content: `✅ Successfully reloaded **${count}** commands.` });
+            } else if (subcommand === 'services') {
+                const servicesPath = path.join(__dirname, '..', '..', '..', 'services');
+                const serviceFiles = findServiceFiles(servicesPath);
+                let count = 0;
+                for (const file of serviceFiles) {
+                    delete require.cache[require.resolve(file)];
+                    count++;
+                }
+                await interaction.editReply({ content: `✅ Successfully reloaded **${count}** services.` });
             }
-
-            await interaction.editReply({ content: `✅ Successfully reloaded ${interaction.client.commands.size} commands.` });
         } catch (error) {
-            console.error('Error during /reload command:', error);
-            await interaction.editReply({ content: `❌ Failed to reload commands: ${error.message}` });
+            console.error(`Error during /reload ${subcommand}:`, error);
+            await interaction.editReply({ content: `❌ Failed to reload ${subcommand}: ${error.message}` });
         }
     },
 };

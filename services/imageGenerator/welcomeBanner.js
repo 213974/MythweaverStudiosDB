@@ -36,23 +36,32 @@ async function createWelcomeBanner(avatarUrl, username) {
             .png()
             .toBuffer();
 
-        // --- 3. Create text overlays as SVG ---
-        // This method provides more control over text styling.
+        // --- 3. Create text overlays with neon glow effect ---
         const welcomeTextSvg = Buffer.from(`
             <svg width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}">
+                <defs>
+                    <filter id="glow_white">
+                        <feDropShadow dx="0" dy="0" stdDeviation="4.5" flood-color="white"/>
+                    </filter>
+                </defs>
                 <style>
-                    .title { fill: #A9B2B7; font-size: 100px; font-weight: bold; font-family: sans-serif; }
+                    .title { fill: white; font-size: 100px; font-weight: bold; font-family: sans-serif; }
                 </style>
-                <text x="50%" y="55%" text-anchor="middle" class="title">WELCOME</text>
+                <text x="50%" y="62%" text-anchor="middle" class="title" filter="url(#glow_white)">WELCOME</text>
             </svg>
         `);
 
         const userTextSvg = Buffer.from(`
             <svg width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}">
-                 <style>
+                 <defs>
+                    <filter id="glow_pink">
+                        <feDropShadow dx="0" dy="0" stdDeviation="3.5" flood-color="#E53658"/>
+                    </filter>
+                </defs>
+                <style>
                     .subtitle { fill: #E53658; font-size: 48px; font-weight: bold; font-family: sans-serif; }
                 </style>
-                <text x="50%" y="65%" text-anchor="middle" class="subtitle">${username.toUpperCase()}</text>
+                <text x="50%" y="74%" text-anchor="middle" class="subtitle" filter="url(#glow_pink)">${username.toUpperCase()}</text>
             </svg>
         `);
 
@@ -61,7 +70,7 @@ async function createWelcomeBanner(avatarUrl, username) {
             .composite([
                 {
                     input: circularAvatar,
-                    top: Math.round((IMAGE_HEIGHT / 2) - (AVATAR_SIZE / 2) - 100), // Position avatar
+                    top: Math.round((IMAGE_HEIGHT / 2) - (AVATAR_SIZE / 2) - 100),
                     left: Math.round((IMAGE_WIDTH / 2) - (AVATAR_SIZE / 2)),
                 },
                 { input: welcomeTextSvg },
