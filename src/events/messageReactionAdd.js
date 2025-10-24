@@ -33,7 +33,7 @@ module.exports = {
         if (message.author.id === user.id && botReactions.some(r => (r.emoji.id || r.emoji.name) === (reaction.emoji.id || reaction.emoji.name))) {
             db.prepare(`DELETE FROM booster_perks WHERE guild_id = ? AND user_id = ?`).run(message.guild.id, user.id);
             await sendTemporaryReply(message, `-# ${user}, your booster auto-reaction emoji has been removed.`);
-            return; // --- ADDED --- Stop further execution after removal.
+            return; // Stop further execution after removal.
         }
         
         // Block 2: Only if it's not a removal, check for SET/UPDATE condition.
@@ -49,7 +49,7 @@ module.exports = {
                 // Auto-import external emoji
                 if (reaction.emoji.id && !message.guild.emojis.cache.has(reaction.emoji.id)) {
                     try {
-                        // --- CORRECTED --- Use guild.emojis.create, not client.application
+                        // Use guild.emojis.create, not client.application
                         const newEmoji = await message.guild.emojis.create({
                             attachment: reaction.emoji.url,
                             name: reaction.emoji.name.substring(0, 32)
@@ -66,7 +66,6 @@ module.exports = {
                 db.prepare(`INSERT OR REPLACE INTO booster_perks (guild_id, user_id, emoji) VALUES (?, ?, ?)`).run(message.guild.id, user.id, emojiIdentifier);
                 await sendTemporaryReply(message, `-# ${user}, your booster auto-reaction emoji has been set to: ${finalEmoji}`);
             } else {
-                // --- THIS IS THE NEW LOGIC ---
                 // If the user is the message author but is not eligible, provide feedback.
                 await sendTemporaryReply(message, `-# ${user}, you are not eligible to set a booster auto-reaction perk on this server.`);
             }

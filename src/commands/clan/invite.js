@@ -54,7 +54,7 @@ module.exports = {
             flags: 0 // Make it public
         };
 
-        // --- CORE FIX: Use editReply if called from dashboard, otherwise use reply ---
+        // --- Use editReply if called from dashboard, otherwise use reply ---
         const reply = await (interaction.replied || interaction.deferred ? interaction.editReply(replyOptions) : interaction.reply(replyOptions));
 
         const collector = reply.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60000 });

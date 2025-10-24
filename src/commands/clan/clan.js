@@ -26,7 +26,6 @@ module.exports = {
         .addSubcommand(sub => sub.setName('motto').setDescription("Sets or removes your clan's motto.").addStringOption(opt => opt.setName('motto').setDescription('The motto for your clan.')))
         .addSubcommand(sub => sub.setName('color').setDescription("Changes your clan's role color.").addStringOption(opt => opt.setName('hexcolor').setDescription('The new hex color code (e.g., #RRGGBB).').setRequired(true))),
     
-    // --- NEW EXPORT ---
     // Make the subcommands map available to other handlers.
     subcommands,
 

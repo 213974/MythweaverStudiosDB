@@ -25,7 +25,7 @@ module.exports = {
 
         const targetUserClan = clanManager.findClanContainingUser(guildId, targetUserToKick.id);
         if (!targetUserClan || targetUserClan.clanRoleId !== userClanData.clanRoleId) {
-            // --- FIX: Use username property for plain text ---
+            // --- Use username property for plain text ---
             return replyOrEdit({ content: `${targetUserToKick.username} is not in your clan.`, flags: 64 });
         }
         
@@ -42,7 +42,7 @@ module.exports = {
         const confirmationEmbed = new EmbedBuilder()
             .setColor('#F1C40F')
             .setTitle('⚠️ Kick Confirmation')
-            // --- FIX: Pass the user object directly to setDesciption, which correctly formats it as a mention ---
+            // --- Pass the user object directly to setDesciption, which correctly formats it as a mention ---
             .setDescription(`Are you sure you want to kick ${targetUserToKick} from **${clanDiscordRole.name}**?`)
             .addFields({ name: 'Reason', value: reason });
 
@@ -72,7 +72,7 @@ module.exports = {
                     const successEmbed = new EmbedBuilder()
                         .setColor('#E74C3C')
                         .setTitle('🛡️ Clan Member Kicked 🛡️')
-                        // --- FIX: Pass the user object directly to setDesciption ---
+                        // --- Pass the user object directly to setDesciption ---
                         .setDescription(`${targetUserToKick} has been kicked from **${clanDiscordRole.name}**.`)
                         .addFields({ name: 'Kicked By', value: `${interaction.user}` }, { name: 'Reason', value: reason });
                     await i.editReply({ embeds: [successEmbed], components: [] });

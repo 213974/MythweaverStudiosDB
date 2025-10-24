@@ -7,7 +7,6 @@ const mottoModalHandler = require('./clan/mottoModalHandler');
 module.exports = async (interaction) => {
     const customId = interaction.customId;
 
-    // --- THIS IS THE FIX ---
     // The router now correctly identifies the select menu's custom ID ('clan_dashboard_menu')
     // and routes it to the correct handler ('dashboardHandler').
     if (customId === 'clan_dashboard_menu' || customId.startsWith('dashboard_')) {

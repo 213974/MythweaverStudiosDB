@@ -4,7 +4,7 @@ const clanManager = require('../../managers/clanManager');
 
 module.exports = {
     async execute(interaction, guildId, userClanData, permissions) {
-        // --- CORE FIX: Use editReply if a reply already exists, otherwise reply normally ---
+        // --- Use editReply if a reply already exists, otherwise reply normally ---
         const replyOrEdit = async (options) => {
             if (interaction.replied || interaction.deferred) {
                 return interaction.editReply(options);

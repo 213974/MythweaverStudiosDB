@@ -109,7 +109,7 @@ module.exports = {
         const isReplyToBot = message.type === MessageType.Reply && message.mentions.repliedUser?.id === client.user.id;
         const emojiMatch = message.content.match(EMOJI_REGEX);
         
-        // --- NEW: Self-Mention to Set Perk ---
+        // --- Self-Mention to Set Perk ---
         const isSelfMention = message.mentions.has(message.author.id) && !message.mentions.everyone && message.mentions.users.size === 1;
         if (isSelfMention && emojiMatch && !isReplyToBot) {
             try {
