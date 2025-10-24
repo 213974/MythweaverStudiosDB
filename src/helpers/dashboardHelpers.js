@@ -16,6 +16,8 @@ const GIFS = [
     'https://i.pinimg.com/originals/57/a9/77/57a9773c9882d66c4ab70373de13fb1c.gif',
     'https://i.pinimg.com/originals/db/91/99/db9199a6ad9c6c1cffe1658f0f159db5.gif',
     'https://i.pinimg.com/originals/ae/b2/14/aeb2149471de2abc2be9d58b1c62b38f.gif',
+    'https://i.pinimg.com/originals/fe/a5/3a/fea53ac58aebd04b59de22c9bf9ca8ae.gif',
+    'https://i.pinimg.com/originals/ad/93/2d/ad932df681ef1671fbb801e558d0e320.gif'
 
 ];
 
