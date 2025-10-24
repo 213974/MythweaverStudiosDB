@@ -85,7 +85,7 @@ module.exports = {
             const startupEmbed = new EmbedBuilder()
                 .setColor('#2ECC71')
                 .setTitle('Bot Online & Ready')
-                .setDescription('*Guild Expansion Development*')
+                // .setDescription('*Guild Expansion Development*')
                 .setFields(
                     { name: 'Status', value: 'Online', inline: true },
                     { name: 'Startup Time', value: `${startupTime}s`, inline: true },

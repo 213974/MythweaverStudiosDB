@@ -10,10 +10,13 @@ const { sendWelcomeMessage } = require('../managers/welcomeManager');
 const { sendOrUpdateQuickActions } = require('../managers/quickActionsManager');
 const { sendOrUpdateHelpDashboard } = require('../managers/helpDashboardManager');
 
+// --- Constants ---
 const PANDA_YAY_EMOJI = '<:PandaYay:1357806568535490812>';
 const MENTION_COOLDOWN_DURATION = 2500;
 const BOOSTER_REACTION_COOLDOWN_SECONDS = 5;
 const SOLYX_PER_MESSAGE_COOLDOWN_SECONDS = 60; // 1 minute cooldown per user
+// Regex to find a custom emoji or a standard Unicode emoji in a string.
+const EMOJI_REGEX = /(<a?:\w+:\d{17,19}>|[\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}])/u;
 
 const messageSolyxCooldowns = new Collection();
 
@@ -36,6 +39,7 @@ module.exports = {
         // --- All logic below this point should ignore bots. ---
         if (message.author.bot) return;
 
+        // --- Owner-only welcome message test ---
         const welcomeChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'welcome_channel_id'").get(guildId)?.value;
         if (message.channel.id === welcomeChannelId && 
             config.ownerIDs.includes(message.author.id) &&
@@ -46,6 +50,7 @@ module.exports = {
                 return;
         }
 
+        // --- Help dashboard auto-repost logic ---
         const helpChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'help_dashboard_channel_id'").get(guildId)?.value;
         if (message.channel.id === helpChannelId) {
             clearTimeout(client.helpDashboardTimeout);
@@ -54,6 +59,7 @@ module.exports = {
             }, 30000);
         }
 
+        // --- Solyx per Message System ---
         const settings = getSettings(guildId);
         if (settings.get('system_solyx_text_enabled') === 'true') {
             const now = Date.now();
@@ -69,6 +75,7 @@ module.exports = {
             }
         }
 
+        // --- Owner-only Manual Booster Whitelist ---
         if (config.ownerIDs.includes(message.author.id) && message.mentions.has(client.user.id) && message.mentions.users.size === 2) {
             const targetUser = message.mentions.users.find(u => u.id !== client.user.id);
             if (targetUser) {
@@ -78,6 +85,7 @@ module.exports = {
             }
         }
 
+        // --- Booster Auto-Reaction on Message Send ---
         try {
             const member = message.member || await message.guild.members.fetch(message.author.id);
             const isEligible = await isEligibleForPerks(member);
@@ -96,11 +104,52 @@ module.exports = {
         } catch (error) {
             console.error('[BoosterPerk] Error checking for booster perks:', error);
         }
-
+        
+        // --- Mention Handlers ---
         const isReplyToBot = message.type === MessageType.Reply && message.mentions.repliedUser?.id === client.user.id;
-        const isDirectMention = message.mentions.has(client.user.id) && !message.mentions.everyone && message.mentions.users.size === 1;
+        const emojiMatch = message.content.match(EMOJI_REGEX);
+        
+        // --- NEW: Self-Mention to Set Perk ---
+        const isSelfMention = message.mentions.has(message.author.id) && !message.mentions.everyone && message.mentions.users.size === 1;
+        if (isSelfMention && emojiMatch && !isReplyToBot) {
+            try {
+                const member = message.member || await message.guild.members.fetch(message.author.id);
+                if (await isEligibleForPerks(member)) {
+                    const emojiString = emojiMatch[0];
+                    const customEmojiMatch = emojiString.match(/<a?:\w+:(\d{17,19})>/);
+                    const emojiIdentifier = customEmojiMatch ? customEmojiMatch[1] : emojiString;
 
+                    db.prepare(`INSERT OR REPLACE INTO booster_perks (guild_id, user_id, emoji) VALUES (?, ?, ?)`).run(guildId, message.author.id, emojiIdentifier);
+                    await message.react('✅');
+                    return; // Perk was set, do not proceed to other mention handlers.
+                }
+            } catch (error) {
+                console.error('[BoosterPerkSet] Failed to set perk via self-mention:', error);
+            }
+        }
+
+        // --- Bot Mention Handler ---
+        const isDirectMention = message.mentions.has(client.user.id) && !message.mentions.everyone && message.mentions.users.size === 1;
         if (isDirectMention && !isReplyToBot) {
+            // --- Text-based Booster Perk Setting (mentioning the bot) ---
+            if (emojiMatch) {
+                try {
+                    const member = message.member || await message.guild.members.fetch(message.author.id);
+                    if (await isEligibleForPerks(member)) {
+                        const emojiString = emojiMatch[0];
+                        const customEmojiMatch = emojiString.match(/<a?:\w+:(\d{17,19})>/);
+                        const emojiIdentifier = customEmojiMatch ? customEmojiMatch[1] : emojiString;
+
+                        db.prepare(`INSERT OR REPLACE INTO booster_perks (guild_id, user_id, emoji) VALUES (?, ?, ?)`).run(guildId, message.author.id, emojiIdentifier);
+                        await message.react('✅');
+                        return; // Perk was set, do not proceed to Panda response.
+                    }
+                } catch (error) {
+                    console.error('[BoosterPerkSet] Failed to set perk via bot-mention:', error);
+                }
+            }
+
+            // --- Fallback: Generic Panda Response ---
             const now = Date.now();
             if (now - (client.lastPandaMentionResponse || 0) > MENTION_COOLDOWN_DURATION) {
                 try {
