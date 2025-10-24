@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS settings ( guild_id TEXT NOT NULL, key TEXT NOT NULL,
 CREATE TABLE IF NOT EXISTS wallets ( user_id TEXT NOT NULL, guild_id TEXT NOT NULL, currency TEXT NOT NULL, balance REAL NOT NULL DEFAULT 10, capacity INTEGER NOT NULL DEFAULT 100000, PRIMARY KEY (user_id, guild_id, currency), FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE, FOREIGN KEY (guild_id) REFERENCES guilds(guild_id) ON DELETE CASCADE );
 CREATE TABLE IF NOT EXISTS claims ( user_id TEXT NOT NULL, guild_id TEXT NOT NULL, claim_type TEXT NOT NULL, last_claimed_at TEXT NOT NULL, streak INTEGER NOT NULL DEFAULT 0, weekly_claim_state TEXT, PRIMARY KEY (user_id, guild_id, claim_type), FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE, FOREIGN KEY (guild_id) REFERENCES guilds(guild_id) ON DELETE CASCADE );
 CREATE TABLE IF NOT EXISTS transactions ( transaction_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, guild_id TEXT NOT NULL, amount REAL NOT NULL, reason TEXT NOT NULL, timestamp TEXT NOT NULL, moderator_id TEXT );
-CREATE TABLE IF NOT EXISTS clans ( guild_id TEXT NOT NULL, clan_id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, motto TEXT, FOREIGN KEY (owner_id) REFERENCES users(user_id), FOREIGN KEY (guild_id) REFERENCES guilds(guild_id) ON DELETE CASCADE );
+CREATE TABLE IF NOT EXISTS clans ( guild_id TEXT NOT NULL, clan_id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, motto TEXT, guildhall_channel_id TEXT, FOREIGN KEY (owner_id) REFERENCES users(user_id), FOREIGN KEY (guild_id) REFERENCES guilds(guild_id) ON DELETE CASCADE );
 CREATE TABLE IF NOT EXISTS clan_members ( user_id TEXT NOT NULL, clan_id TEXT NOT NULL, guild_id TEXT NOT NULL, authority TEXT NOT NULL, PRIMARY KEY (user_id, clan_id), FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE, FOREIGN KEY (clan_id) REFERENCES clans(clan_id) ON DELETE CASCADE );
 CREATE TABLE IF NOT EXISTS clan_wallets ( clan_id TEXT PRIMARY KEY, guild_id TEXT NOT NULL, currency TEXT NOT NULL DEFAULT 'Solyx™', balance REAL NOT NULL DEFAULT 0, FOREIGN KEY (clan_id) REFERENCES clans(clan_id) ON DELETE CASCADE );
 CREATE TABLE IF NOT EXISTS shop_items ( guild_id TEXT NOT NULL, role_id TEXT NOT NULL, price REAL NOT NULL, name TEXT NOT NULL, description TEXT, currency TEXT DEFAULT 'Solyx™', PRIMARY KEY (guild_id, role_id), FOREIGN KEY (guild_id) REFERENCES guilds(guild_id) ON DELETE CASCADE );
@@ -113,11 +113,32 @@ const migrateBalancesToReal = db.transaction(() => {
     console.log('[Database Migration] All balance columns migrated to REAL successfully.');
 });
 
+// --- Safe Migration for Guildhall Channel ID ---
+const addGuildhallChannelIdColumn = () => {
+    try {
+        const columns = db.pragma('table_info(clans)');
+        const columnExists = columns.some(col => col.name === 'guildhall_channel_id');
+
+        if (!columnExists) {
+            db.exec('ALTER TABLE clans ADD COLUMN guildhall_channel_id TEXT');
+            console.log('[Database Migration] Successfully added guildhall_channel_id column to clans table.');
+        }
+    } catch (error) {
+        // This can happen if the 'clans' table doesn't exist yet on first run.
+        // The main schema execution will create it correctly, so we can ignore this error.
+        if (!error.message.includes('no such table: clans')) {
+            console.error('[Database Migration] Failed to add guildhall_channel_id column:', error);
+        }
+    }
+};
+
+
 try {
     migrateBalancesToReal();
+    addGuildhallChannelIdColumn();
     console.log('[Database] Connected to SQLite and ensured schema is up-to-date.');
 } catch (error) {
-    console.error('[Database Migration] FAILED TO MIGRATE BALANCES TO REAL:', error);
+    console.error('[Database Migration] A critical error occurred during database migration:', error);
     process.exit(1);
 }
 

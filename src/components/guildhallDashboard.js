@@ -27,10 +27,10 @@ function createGuildhallDashboard(clanRole, taxStatus, taxQuota, latestDonatorMe
     const embed = new EmbedBuilder()
         .setColor(clanRole.color || '#ECF0F1')
         .setTitle(`<:Golden_Shield:1427763714760769617> ${clanRole.name} Guildhall <:Golden_Shield:1427763714760769617>`)
-        .setDescription('This is the central hub for your clan\'s monthly tax contributions.')
+        .setDescription('This is the central hub for your clan\'s activity.')
         .addFields(
             {
-                name: 'Monthly Tax Quota',
+                name: 'Monthly Quota',
                 value: `\`${progressBar}\`\n> **${amount_contributed.toLocaleString()} / ${taxQuota.toLocaleString()}** <a:Solyx_Currency:1431059951664627712> Contributed`,
                 inline: false
             },
@@ -45,12 +45,12 @@ function createGuildhallDashboard(clanRole, taxStatus, taxQuota, latestDonatorMe
                 inline: true
             },
             {
-                name: '<a:Yellow_Gem:1427764380489224295> Latest Contribution',
+                name: '<a:Yellow_Flame:1427764327708102798> Latest Contribution',
                 value: latestDonatorMention || '`None`',
                 inline: true
             }
         )
-        .setFooter({ text: 'Use the button below to contribute your Solyx™.' });
+        .setFooter({ text: 'Use the button below to contribute to your guild.' });
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()

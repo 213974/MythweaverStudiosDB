@@ -111,9 +111,31 @@ module.exports = async (interaction) => {
         if (!clanRole) return interaction.editReply({ content: 'Error: Invalid Clan Role provided.' });
 
         if (action === 'delete') {
+            // 1. Get the clan's data, including the channel ID, *before* deleting it.
+            const clanData = clanManager.getClanData(interaction.guild.id, clanRole.id);
+            const channelIdToDelete = clanData?.guildhallChannelId;
+
+            // 2. Delete the clan from the database.
             const result = clanManager.deleteClan(interaction.guild.id, clanRole.id);
-            if (result.success) await interaction.editReply({ content: `Successfully deleted clan **${clanRole.name}**.` });
-            else await interaction.editReply({ content: `Failed to delete clan: ${result.message}` });
+
+            if (result.success) {
+                let replyMessage = `Successfully deleted clan **${clanRole.name}**.`;
+
+                // 3. If a channel ID existed, attempt to delete the channel from Discord.
+                if (channelIdToDelete) {
+                    try {
+                        const channel = await interaction.guild.channels.fetch(channelIdToDelete);
+                        await channel.delete(`Clan ${clanRole.name} was deleted.`);
+                        replyMessage += ` Its guildhall channel has also been deleted.`;
+                    } catch (error) {
+                        // This catch block prevents a crash if the channel was already deleted.
+                        console.warn(`[ClanDelete] Could not delete guildhall channel ${channelIdToDelete} (it may have already been removed).`);
+                    }
+                }
+                await interaction.editReply({ content: replyMessage });
+            } else {
+                await interaction.editReply({ content: `Failed to delete clan: ${result.message}` });
+            }
         } else if (action === 'owner') {
             const newOwner = await parseUser(interaction.guild, interaction.fields.getTextInputValue('owner_input'));
             if (!newOwner) return interaction.editReply({ content: 'Error: Invalid New Owner provided.' });

@@ -28,6 +28,7 @@ module.exports = {
         return {
             clanOwnerUserID: clan.owner_id,
             motto: clan.motto,
+            guildhallChannelId: clan.guildhall_channel_id,
             members,
             officers,
             viceGuildMasters
@@ -113,12 +114,25 @@ module.exports = {
         return { success: result.changes > 0 };
     },
 
-        getClanOwnedByUser: (guildId, userId) => {
+    getClanOwnedByUser: (guildId, userId) => {
         return db.prepare('SELECT clan_id FROM clans WHERE guild_id = ? AND owner_id = ?').get(guildId, userId);
     },
 
     setClanMotto: (guildId, clanRoleId, motto) => {
         const result = db.prepare('UPDATE clans SET motto = ? WHERE guild_id = ? AND clan_id = ?').run(motto, guildId, clanRoleId);
+        return { success: result.changes > 0 };
+    },
+
+    /**
+     * Updates a clan's record with its dedicated guildhall channel ID.
+     * @param {string} guildId The ID of the guild.
+     * @param {string} clanId The ID of the clan role.
+     * @param {string} channelId The ID of the guildhall text channel.
+     * @returns {{success: boolean}}
+     */
+    setClanGuildhallChannelId: (guildId, clanId, channelId) => {
+        const result = db.prepare('UPDATE clans SET guildhall_channel_id = ? WHERE guild_id = ? AND clan_id = ?')
+            .run(channelId, guildId, clanId);
         return { success: result.changes > 0 };
     },
 

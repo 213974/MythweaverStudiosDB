@@ -128,7 +128,7 @@ function startScheduler(client) {
     setInterval(() => updateRaffleMessages(client), 3000); // 3 sec
     setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000); // 5 mins
     setInterval(() => sendOrUpdateLeaderboard(client), 5 * 60 * 1000); // 5 mins
-    setInterval(() => sendOrUpdateDashboard(client), 5 * 60 * 1000); // 5 mins for Clan Dashboard
+    setInterval(() => sendOrUpdateDashboard(client), 60 * 60 * 1000); // 1 hour for Clan Dashboard
     setInterval(() => sendOrUpdateCommandList(client), 60 * 60 * 1000); // 1 hour for Command List
     
     // Check for tax resets once every hour

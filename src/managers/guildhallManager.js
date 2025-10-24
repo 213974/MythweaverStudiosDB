@@ -1,6 +1,5 @@
 // src/managers/guildhallManager.js
 const { ChannelType, PermissionFlagsBits } = require('discord.js');
-const db = require('../utils/database');
 const taxManager = require('./taxManager');
 const clanManager = require('./clanManager');
 const { createGuildhallDashboard } = require('../components/guildhallDashboard');
@@ -8,53 +7,54 @@ const { createGuildhallDashboard } = require('../components/guildhallDashboard')
 // --- Helper Functions ---
 
 /**
- * Creates or finds a guildhall channel for a specific clan.
+ * Creates or finds a guildhall channel for a specific clan using a robust, ID-based system.
  * @param {import('discord.js').Guild} guild The guild object.
  * @param {import('discord.js').Role} clanRole The clan's role object.
  * @param {string} categoryId The ID of the parent category.
+ * @param {string|null} channelIdFromDb The channel ID stored in the database for this clan.
  * @returns {Promise<import('discord.js').TextChannel|null>}
  */
-async function createOrFindGuildhallChannel(guild, clanRole, categoryId) {
-    const channelName = `${clanRole.name}-guildhall`.toLowerCase().replace(/\s+/g, '-');
-    
-    let channel = guild.channels.cache.find(c => c.name === channelName && c.parentId === categoryId);
-
-    if (!channel) {
+async function createOrFindGuildhallChannel(guild, clanRole, categoryId, channelIdFromDb) {
+    // --- 1. Attempt to fetch the channel using the stored ID ---
+    if (channelIdFromDb) {
         try {
-            channel = await guild.channels.create({
-                name: channelName,
-                type: ChannelType.GuildText,
-                parent: categoryId,
-                permissionOverwrites: [
-                    {
-                        id: guild.id, // @everyone
-                        deny: [PermissionFlagsBits.ViewChannel],
-                    },
-                    {
-                        id: clanRole.id,
-                        allow: [PermissionFlagsBits.ViewChannel],
-                    },
-                    {
-                        id: guild.client.user.id,
-                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.ManageMessages],
-                    }
-                ],
-                reason: `Guildhall for the ${clanRole.name} clan.`,
-            });
-            console.log(`[GuildhallManager] Created channel #${channel.name} for clan ${clanRole.name}.`);
+            const channel = await guild.channels.fetch(channelIdFromDb);
+            // Ensure permissions are up-to-date even for existing channels
+            await channel.permissionOverwrites.edit(clanRole.id, { ViewChannel: true })
+                .catch(e => console.error(`[GuildhallManager] Failed to update perms for ${channel.name}:`, e));
+            return channel;
         } catch (error) {
-            console.error(`[GuildhallManager] Failed to create channel for ${clanRole.name}:`, error);
-            return null;
+            // The channel was not found (likely deleted), so we proceed to create a new one.
+            console.warn(`[GuildhallManager] Could not find stored guildhall channel ${channelIdFromDb} for clan ${clanRole.name}. It will be recreated.`);
         }
     }
-    
-    // Ensure permissions are up-to-date even for existing channels
-    await channel.permissionOverwrites.edit(clanRole.id, {
-        ViewChannel: true
-    }).catch(e => console.error(`[GuildhallManager] Failed to update perms for ${channelName}:`, e));
 
+    // --- 2. If no ID exists or the channel was deleted, create a new one ---
+    const channelName = clanRole.name.toLowerCase().replace(/\s+/g, '-');
 
-    return channel;
+    try {
+        const newChannel = await guild.channels.create({
+            name: channelName,
+            type: ChannelType.GuildText,
+            parent: categoryId,
+            permissionOverwrites: [
+                { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
+                { id: clanRole.id, allow: [PermissionFlagsBits.ViewChannel] },
+                { id: guild.client.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.ManageMessages] }
+            ],
+            reason: `Guildhall channel for the ${clanRole.name} clan.`,
+        });
+
+        // --- 3. CRUCIAL: Save the new channel's ID to the database ---
+        clanManager.setClanGuildhallChannelId(guild.id, clanRole.id, newChannel.id);
+        console.log(`[GuildhallManager] Created channel #${newChannel.name} for clan ${clanRole.name} and saved its ID.`);
+        
+        return newChannel;
+
+    } catch (error) {
+        console.error(`[GuildhallManager] Failed to create channel for ${clanRole.name}:`, error);
+        return null;
+    }
 }
 
 
@@ -80,15 +80,15 @@ module.exports = {
         const categoryId = taxManager.getGuildhallCategoryId(guildId);
         if (!categoryId) return; // Cannot proceed without a configured category
 
-        const channel = await createOrFindGuildhallChannel(guild, clanRole, categoryId);
-        if (!channel) return;
-
-        // Fetch all data needed for the dashboard
+        // Fetch all data needed for the dashboard, including the channel ID
         const clanData = clanManager.getClanData(guildId, clanId);
         if (!clanData) {
             console.warn(`[GuildhallManager] Could not get clan data for ${clanId}. Aborting dashboard update.`);
             return;
         }
+
+        const channel = await createOrFindGuildhallChannel(guild, clanRole, categoryId, clanData.guildhallChannelId);
+        if (!channel) return;
 
         const taxStatus = taxManager.getTaxStatus(guildId, clanId);
         const taxQuota = taxManager.getTaxQuota(guildId);
@@ -137,7 +137,6 @@ module.exports = {
         const categoryChannel = await guild.channels.fetch(categoryId).catch(() => null);
         if (!categoryChannel) {
             console.warn(`[GuildhallManager] Sync failed for guild ${guildId}: Configured category ${categoryId} not found.`);
-            // In a real-world scenario, you might want to clear this setting from the DB.
             return;
         }
 

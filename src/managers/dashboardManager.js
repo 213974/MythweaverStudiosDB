@@ -6,8 +6,8 @@ const { formatTimestamp } = require('../helpers/timestampFormatter');
 
 function createDashboardEmbed() {
     const randomGif = getRandomGif();
-    // The timestamp is now generated every time the embed is created, ensuring it's always current.
-    const nextUpdateTimestamp = Math.floor((Date.now() + 5 * 60 * 1000) / 1000);
+    // The timestamp calculation is now set to 60 minutes (1 hour).
+    const nextUpdateTimestamp = Math.floor((Date.now() + 60 * 60 * 1000) / 1000);
 
     const description = "Welcome to the Clan Hall.\n\n" +
         "This is the central dashboard for all clan operations. Whether you are a seasoned leader or a new recruit, your journey begins here. Please select an action from the dropdown menu below.\n\n" +

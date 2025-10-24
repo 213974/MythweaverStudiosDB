@@ -20,18 +20,21 @@ const messageSolyxCooldowns = new Collection();
 module.exports = {
     name: Events.MessageCreate,
     async execute(message, client) {
-        if (message.author.id === client.user.id) return; // Ignore messages from the bot itself
         if (!message.guild) return;
 
         const guildId = message.guild.id;
 
+        // --- This block now runs for ALL messages, including the bot's own. ---
         const quickActionsChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'quick_actions_channel_id'").get(guildId)?.value;
-        if (message.channel.id === quickActionsChannelId) {
+        if (message.channel.id === quickActionsChannelId && message.author.id !== client.user.id) { // Only trigger on non-bot messages to prevent loops
             clearTimeout(client.quickActionsTimeout);
             client.quickActionsTimeout = setTimeout(() => {
                 sendOrUpdateQuickActions(client, guildId);
             }, 30000); // 30 seconds
         }
+
+        // --- All logic below this point should ignore bots. ---
+        if (message.author.bot) return;
 
         const welcomeChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'welcome_channel_id'").get(guildId)?.value;
         if (message.channel.id === welcomeChannelId && 
@@ -43,7 +46,6 @@ module.exports = {
                 return;
         }
 
-        // --- Persistent Help Dashboard Logic ---
         const helpChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'help_dashboard_channel_id'").get(guildId)?.value;
         if (message.channel.id === helpChannelId) {
             clearTimeout(client.helpDashboardTimeout);
@@ -53,7 +55,7 @@ module.exports = {
         }
 
         const settings = getSettings(guildId);
-        if (settings.get('system_solyx_text_enabled') === 'true' && !message.author.bot) {
+        if (settings.get('system_solyx_text_enabled') === 'true') {
             const now = Date.now();
             const userCooldown = messageSolyxCooldowns.get(message.author.id);
 
@@ -66,8 +68,6 @@ module.exports = {
                 messageSolyxCooldowns.set(message.author.id, now + SOLYX_PER_MESSAGE_COOLDOWN_SECONDS * 1000);
             }
         }
-
-        if (message.author.bot) return; // All logic below this line is for users only
 
         if (config.ownerIDs.includes(message.author.id) && message.mentions.has(client.user.id) && message.mentions.users.size === 2) {
             const targetUser = message.mentions.users.find(u => u.id !== client.user.id);
