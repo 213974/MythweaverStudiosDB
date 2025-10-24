@@ -39,7 +39,6 @@ function startVcSession(member, client) {
         const isDeafened = currentMember.voice.serverDeaf;
 
         if (!isAlone && !isDeafened) {
-            // --- CORE FIX ---
             // Changed the incorrect call from 'addSolyx' to the correct 'modifySolyx'
             economyManager.modifySolyx(userId, guild.id, settings.rate, 'Voice Chat Activity');
             userManager.addSolyxFromSource(userId, guild.id, settings.rate, 'vc');

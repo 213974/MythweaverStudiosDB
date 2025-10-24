@@ -33,7 +33,7 @@ module.exports = {
                 // Apply the penalty
                 db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ?').run(LEAVE_PENALTY, inviterId, guildId);
                 
-                // --- FIX: Add guild_id to the transaction log ---
+                // --- Add guild_id to the transaction log ---
                 db.prepare('INSERT INTO transactions (user_id, guild_id, amount, reason, timestamp) VALUES (?, ?, ?, ?, ?)')
                     .run(inviterId, guildId, LEAVE_PENALTY, `Penalty for referred user ${member.user.tag} leaving`, new Date().toISOString());
             })();

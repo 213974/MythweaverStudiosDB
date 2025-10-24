@@ -19,7 +19,6 @@ module.exports = {
         try {
             const clanDiscordRole = await interaction.guild.roles.fetch(userClanData.clanRoleId);
             
-            // --- THIS IS THE CORRECTED LINE ---
             // Using the modern .edit() method to avoid the deprecation warning.
             await clanDiscordRole.edit({ color: hexColorInput });
 
