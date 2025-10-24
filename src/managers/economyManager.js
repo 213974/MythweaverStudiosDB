@@ -1,7 +1,6 @@
 ﻿// src/managers/economyManager.js
 const db = require('../utils/database');
 const { differenceInHours, differenceInCalendarDays, startOfWeek, getDay, parseISO, format } = require('date-fns');
-const { trackSuccessfulClaim } = require('./analyticsManager');
 
 const DEFAULT_CURRENCY = 'Solyx™';
 const DEFAULT_WALLET_CAPACITY = 100000;
@@ -34,11 +33,12 @@ module.exports = {
                 db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ? AND currency = ?').run(amount, userId, guildId, DEFAULT_CURRENCY);
                 db.prepare('INSERT INTO transactions (user_id, guild_id, amount, reason, timestamp, moderator_id) VALUES (?, ?, ?, ?, ?, ?)')
                   .run(userId, guildId, amount, reason, new Date().toISOString(), moderatorId);
-                if (amount > 0) {
+                
+                if (amount > 0 && !moderatorId) {
                     const today = format(new Date(), 'yyyy-MM-dd');
                     db.prepare('INSERT INTO daily_stats (guild_id, date, total_solyx_acquired) VALUES (?, ?, ?) ON CONFLICT(guild_id, date) DO UPDATE SET total_solyx_acquired = total_solyx_acquired + excluded.total_solyx_acquired').run(guildId, today, amount);
                 }
-                // This ensures we always get the new balance of the Solyx™ wallet, not an ambiguous one.
+                
                 const wallet = db.prepare('SELECT balance FROM wallets WHERE user_id = ? AND guild_id = ? AND currency = ?').get(userId, guildId, DEFAULT_CURRENCY);
                 return wallet;
             })();
@@ -53,14 +53,7 @@ module.exports = {
         ensureWallet(userId, guildId, currency);
         return db.prepare('SELECT * FROM wallets WHERE user_id = ? AND guild_id = ? AND currency = ?').get(userId, guildId, currency);
     },
-
-    /**
-     * This function now correctly and consistently retrieves the user's spendable Solyx™ balance.
-     * It no longer ambiguously sums balances, which was the source of the bug.
-     * @param {string} userId The user's ID.
-     * @param {string} guildId The guild's ID.
-     * @returns {number} The user's actual Solyx™ balance.
-     */
+    
     getConsolidatedBalance: (userId, guildId) => {
         const wallet = module.exports.getWallet(userId, guildId, DEFAULT_CURRENCY);
         return wallet ? wallet.balance : 0;
@@ -127,6 +120,8 @@ module.exports = {
             return { success: false, message: 'A database error occurred while claiming.' };
         }
         
+        // --- analyticsManager is now required here, at the point of use. ---
+        const { trackSuccessfulClaim } = require('./analyticsManager');
         trackSuccessfulClaim(guildId, userId, 'daily');
 
         const today = new Date();
@@ -183,7 +178,8 @@ module.exports = {
             return { success: false, message: 'A database error occurred while claiming.' };
         }
 
-        // Tracker call for weekly claims.
+        // --- analyticsManager is now required here, at the point of use. ---
+        const { trackSuccessfulClaim } = require('./analyticsManager');
         trackSuccessfulClaim(guildId, userId, 'weekly');
 
         db.prepare('INSERT OR REPLACE INTO claims (user_id, guild_id, claim_type, last_claimed_at) VALUES (?, ?, ?, ?)').run(userId, guildId, 'weekly', new Date().toISOString());

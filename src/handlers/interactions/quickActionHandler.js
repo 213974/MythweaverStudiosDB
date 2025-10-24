@@ -13,6 +13,9 @@ module.exports = async (interaction) => {
         case 'qa_weekly':
             commandName = 'weekly';
             break;
+        case 'qa_profile':
+            commandName = 'profile';
+            break;
         default:
             return interaction.reply({ content: 'Invalid selection.', flags: 64 });
     }
@@ -23,14 +26,9 @@ module.exports = async (interaction) => {
     }
 
     try {
-        // We no longer defer or update the original interaction.
-        // We pass the raw, unacknowledged interaction from the dropdown menu
-        // directly to the command file. The command file itself will then be
-        // responsible for the one and only reply. This is a much cleaner flow.
         await command.execute(interaction);
     } catch (error) {
         console.error(`[QuickActionHandler] Error executing /${commandName}:`, error);
-        // If the command execution fails, we might still need to respond to the interaction.
         if (!interaction.replied && !interaction.deferred) {
             await interaction.reply({ content: `An error occurred while running the \`/${commandName}\` command.`, flags: 64 });
         } else {

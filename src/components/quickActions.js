@@ -29,6 +29,12 @@ function createQuickActionsDashboard() {
                 description: 'Claim your weekly Solyx™ reward.',
                 value: 'qa_weekly',
                 emoji: '💎'
+            },
+            {
+                label: 'View My Profile',
+                description: 'Check your server level, stats, and balance.',
+                value: 'qa_profile',
+                emoji: '📜'
             }
         ]);
 

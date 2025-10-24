@@ -3,6 +3,7 @@ const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('dis
 const db = require('../utils/database');
 const { format, startOfWeek, endOfWeek, eachDayOfInterval, getDay } = require('date-fns');
 const { getRandomGif } = require('../helpers/dashboardHelpers');
+const { DEFAULT_CURRENCY } = require('./economyManager');
 
 // --- Helper Functions ---
 
@@ -22,7 +23,8 @@ function trackSuccessfulClaim(guildId, userId, claimType) {
 }
 
 function getAnalyticsData(guildId) {
-    const solyxData = db.prepare('SELECT SUM(balance) as total FROM wallets WHERE guild_id = ?').get(guildId);
+    // --- The query now specifically sums the balance for the default currency ('Solyx™') ---
+    const solyxData = db.prepare('SELECT SUM(balance) as total FROM wallets WHERE guild_id = ? AND currency = ?').get(guildId, DEFAULT_CURRENCY);
     const walletCountData = db.prepare('SELECT COUNT(DISTINCT user_id) as count FROM wallets WHERE guild_id = ?').get(guildId);
 
     const now = new Date();
@@ -91,7 +93,7 @@ function createAnalyticsEmbed(guildId) {
             { name: 'Next Update', value: `<t:${nextUpdateTimestamp}:R>` }
         )
         .setImage(randomGif)
-        .setFooter({ text: 'This dashboard updates automatically. Weekly stats reset on Monday.' })
+        .setFooter({ text: 'Weekly stats reset on Monday.' })
         .setTimestamp();
 
     const adminMenu = new ActionRowBuilder().addComponents(
