@@ -1,7 +1,7 @@
 // src/handlers/interactions/adminPanel/shopHandler.js
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 const { createShopDashboard } = require('../../../components/adminDashboard/shopPanel');
-const economyManager = require('../../../managers/economyManager');
+const shopManager = require('../../../managers/economy/shopManager');
 const { parseRole } = require('../../../helpers/interactionHelpers');
 
 module.exports = async (interaction) => {
@@ -52,17 +52,17 @@ module.exports = async (interaction) => {
             const price = parseInt(interaction.fields.getTextInputValue('price_input'), 10);
             const description = interaction.fields.getTextInputValue('desc_input') || null;
             if (isNaN(price) || price < 0) return interaction.editReply({ content: 'Error: Price must be a positive number.' });
-            const result = economyManager.addShopItem(role.id, interaction.guild.id, price, role.name, description);
+            const result = shopManager.addShopItem(role.id, interaction.guild.id, price, role.name, description);
             if (result.success) await interaction.editReply({ content: `Successfully added **${role.name}** to the shop for ${price.toLocaleString()} Solyx™.` });
             else await interaction.editReply({ content: `Failed to add item: ${result.message}` });
         } else if (action === 'remove') {
-            const result = economyManager.removeShopItem(role.id, interaction.guild.id);
+            const result = shopManager.removeShopItem(role.id, interaction.guild.id);
             if (result.success) await interaction.editReply({ content: `Successfully removed **${role.name}** from the shop.` });
             else await interaction.editReply({ content: `Failed to remove item. It may not be in the shop.` });
         } else if (action === 'update') {
             const price = parseInt(interaction.fields.getTextInputValue('price_input'), 10);
             if (isNaN(price) || price < 0) return interaction.editReply({ content: 'Error: Price must be a positive number.' });
-            const result = economyManager.updateShopItem(role.id, interaction.guild.id, price);
+            const result = shopManager.updateShopItem(role.id, interaction.guild.id, price);
             if (result.success) await interaction.editReply({ content: `Successfully updated the price of **${role.name}** to ${price.toLocaleString()} Solyx™.` });
             else await interaction.editReply({ content: `Failed to update item. It may not be in the shop.` });
         }

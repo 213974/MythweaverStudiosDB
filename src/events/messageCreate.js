@@ -3,7 +3,7 @@ const { Events, MessageType, Collection } = require('discord.js');
 const config = require('../config');
 const db = require('../utils/database');
 const { isEligibleForPerks, getBoosterPerk } = require('../managers/perksManager');
-const economyManager = require('../managers/economyManager');
+const walletManager = require('../managers/economy/walletManager');
 const userManager = require('../managers/userManager');
 const { getSettings } = require('../utils/settingsCache');
 const { sendWelcomeMessage } = require('../managers/welcomeManager');
@@ -68,7 +68,7 @@ module.exports = {
             if (!userCooldown || now > userCooldown) {
                 const rate = parseFloat(settings.get('system_solyx_text_rate') || '0.1');
                 if (rate > 0) {
-                    economyManager.modifySolyx(message.author.id, guildId, rate, 'Message Activity');
+                    walletManager.modifySolyx(message.author.id, guildId, rate, 'Message Activity');
                     userManager.addSolyxFromSource(message.author.id, guildId, rate, 'message');
                 }
                 messageSolyxCooldowns.set(message.author.id, now + SOLYX_PER_MESSAGE_COOLDOWN_SECONDS * 1000);

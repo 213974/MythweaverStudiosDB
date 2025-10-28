@@ -1,7 +1,7 @@
 // src/events/guildMemberAdd.js
 const { Events, EmbedBuilder } = require('discord.js');
 const db = require('../utils/database');
-const economyManager = require('../managers/economyManager');
+const walletManager = require('../managers/economy/walletManager');
 const { sendWelcomeMessage } = require('../managers/welcomeManager');
 
 const invites = new Map();
@@ -43,7 +43,7 @@ module.exports = {
 
             db.prepare('UPDATE users SET referred_by = ? WHERE user_id = ?').run(inviterId, member.id);
             
-            economyManager.modifySolyx(inviterId, guild.id, JOIN_BONUS, `Referral bonus for ${user.tag}`);
+            walletManager.modifySolyx(inviterId, guild.id, JOIN_BONUS, `Referral bonus for ${user.tag}`);
             
             console.log(`[guildMemberAdd] Awarded ${JOIN_BONUS} Solyx to ${inviter.tag} (${inviter.id}) for referring ${user.tag}.`);
             

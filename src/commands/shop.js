@@ -1,13 +1,13 @@
-﻿// commands/economy/shop.js
+﻿// src/commands/shop.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const economyManager = require('../managers/economyManager');
+const shopManager = require('../managers/economy/shopManager');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('shop')
         .setDescription('Displays the items available for purchase.'),
     async execute(interaction) {
-        const items = economyManager.getShopItems(interaction.guild.id);
+        const items = shopManager.getShopItems(interaction.guild.id);
         const embed = new EmbedBuilder().setColor('#3498DB').setTitle('Role Shop').setDescription('Here are the roles available for purchase with Solyx. Use `/buy <role>` to purchase an item.');
 
         if (items.length === 0) {

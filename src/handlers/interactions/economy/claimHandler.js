@@ -1,6 +1,7 @@
 // src/handlers/interactions/economy/claimHandler.js
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const economyManager = require('../../../managers/economyManager');
+const claimManager = require('../../../managers/economy/claimManager');
+const walletManager = require('../../../managers/economy/walletManager');
 const { formatTimestamp } = require('../../../helpers/timestampFormatter');
 
 module.exports = async (interaction) => {
@@ -11,12 +12,15 @@ module.exports = async (interaction) => {
     if (customId.startsWith('claim_daily_')) {
         if (user.id !== customId.split('_')[2]) return interaction.reply({ content: 'This is not for you!', flags: 64 });
         
-        const result = economyManager.claimDaily(user.id, guildId);
+        // --- Get balance BEFORE the transaction ---
+        const oldBalance = walletManager.getConsolidatedBalance(user.id, guildId);
+        const result = claimManager.claimDaily(user.id, guildId);
+
         if (result.success) {
-            const { weekly_claim_state, nextClaim } = economyManager.getDailyStatus(user.id, guildId);
+            const { weekly_claim_state, nextClaim } = claimManager.getDailyStatus(user.id, guildId);
+            const dailyRewardAmount = claimManager.getDailyReward(guildId);
             
-            // --- Fetch dynamic reward amount for the embed text ---
-            const dailyRewardAmount = economyManager.getDailyReward(guildId);
+            // --- Disable the original buttons and embed ---
             const updatedEmbed = new EmbedBuilder()
                 .setColor('#E74C3C')
                 .setAuthor({ name: `${user.displayName} | Daily Claim`, iconURL: user.displayAvatarURL() })
@@ -37,12 +41,19 @@ module.exports = async (interaction) => {
                 .setEmoji('🪙')
                 .setDisabled(true);
             
-            // A button click on an ephemeral message must be acknowledged with a new message or a defer.
-            // Using editReply on the original message is the most intuitive user experience.
             await interaction.update({ embeds: [updatedEmbed], components: [new ActionRowBuilder().addComponents(disabledButton)] });
             
-            // Send the success confirmation as a follow-up.
-            await interaction.followUp({ content: `✅ **${result.reward.toLocaleString()}** Solyx™ has been added to your wallet.`, flags: 64 });
+            // --- Send a new embed as a follow-up with balance details ---
+            const confirmationEmbed = new EmbedBuilder()
+                .setColor('#2ECC71')
+                .setTitle('Daily Reward Claimed!')
+                .setDescription(`You have received **${result.reward.toLocaleString()}** Solyx™!`)
+                .addFields(
+                    { name: 'Old Balance', value: `${oldBalance.toLocaleString()} Solyx™`, inline: true },
+                    { name: 'New Balance', value: `${result.newBalance.toLocaleString()} Solyx™`, inline: true }
+                );
+
+            await interaction.followUp({ embeds: [confirmationEmbed], flags: 64 });
         } else {
             await interaction.reply({ content: result.message, flags: 64 });
         }
@@ -51,22 +62,27 @@ module.exports = async (interaction) => {
     if (customId.startsWith('claim_weekly_')) {
         if (user.id !== customId.split('_')[2]) return interaction.reply({ content: 'This is not for you!', flags: 64 });
 
-        const result = economyManager.claimWeekly(user.id, guildId);
-        const newEmbed = new EmbedBuilder();
-        const navButtons = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('nav_view_bank').setLabel('View Wallet').setStyle(ButtonStyle.Primary).setEmoji('🏦'), 
-            new ButtonBuilder().setCustomId('nav_view_shop').setLabel('View Shop').setStyle(ButtonStyle.Secondary).setEmoji('🛍️')
-        );
-        
+        // --- Get balance BEFORE the transaction ---
+        const oldBalance = walletManager.getConsolidatedBalance(user.id, guildId);
+        const result = claimManager.claimWeekly(user.id, guildId);
+
         if (result.success) {
-            newEmbed.setColor('#2ECC71')
+            // --- Update embed to show old and new balance ---
+            const newEmbed = new EmbedBuilder()
+                .setColor('#2ECC71')
                 .setTitle('Weekly Reward Claimed!')
-                .setDescription(`**${result.reward.toLocaleString()}** Solyx™ has been added to your wallet.`);
+                .setDescription(`You have received **${result.reward.toLocaleString()}** Solyx™!`)
+                .addFields(
+                    { name: 'Old Balance', value: `${oldBalance.toLocaleString()} Solyx™`, inline: true },
+                    { name: 'New Balance', value: `${result.newBalance.toLocaleString()} Solyx™`, inline: true }
+                );
+            await interaction.update({ embeds: [newEmbed], components: [] });
         } else {
-            newEmbed.setColor('#E74C3C')
+            const newEmbed = new EmbedBuilder()
+                .setColor('#E74C3C')
                 .setTitle('Claim Failed')
                 .setDescription(result.message);
+            await interaction.update({ embeds: [newEmbed], components: [] });
         }
-        await interaction.update({ embeds: [newEmbed], components: [navButtons] });
     }
 };

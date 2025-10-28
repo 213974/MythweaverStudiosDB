@@ -1,14 +1,12 @@
 // src/handlers/interactions/adminPanel/economyHandler.js
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
 const { createEconomyDashboard } = require('../../../components/adminDashboard/economyPanel');
-const economyManager = require('../../../managers/economyManager');
+const walletManager = require('../../../managers/economy/walletManager');
 const { parseUser } = require('../../../helpers/interactionHelpers');
 
 module.exports = async (interaction) => {
     if (interaction.isStringSelectMenu()) {
         const response = createEconomyDashboard();
-        // If this interaction comes from the main selection menu, reply ephemerally.
-        // Otherwise, update the existing admin panel message.
         if (interaction.customId === 'admin_panel_select') {
             return interaction.reply({ ...response, flags: 64 });
         } else {
@@ -39,23 +37,27 @@ module.exports = async (interaction) => {
             return interaction.editReply({ content: 'Error: Invalid user or amount provided.' });
         }
         
+        // --- Get balance BEFORE the transaction ---
+        const oldBalance = walletManager.getConsolidatedBalance(targetMember.id, interaction.guild.id);
+        
         let result;
         if (action === 'give') {
-            if (amount < 0) amount = Math.abs(amount); // Ensure give is always positive
-            result = economyManager.modifySolyx(targetMember.id, interaction.guild.id, amount, reason, interaction.user.id);
+            if (amount < 0) amount = Math.abs(amount);
+            result = walletManager.modifySolyx(targetMember.id, interaction.guild.id, amount, reason, interaction.user.id);
         } else if (action === 'remove') {
-            if (amount > 0) amount = -amount; // Ensure remove is always negative
-            result = economyManager.modifySolyx(targetMember.id, interaction.guild.id, amount, reason, interaction.user.id);
+            if (amount > 0) amount = -amount;
+            result = walletManager.modifySolyx(targetMember.id, interaction.guild.id, amount, reason, interaction.user.id);
         } else if (action === 'set') {
-            const currentWallet = economyManager.getWallet(targetMember.id, interaction.guild.id);
-            const modificationAmount = amount - currentWallet.balance; // Calculate the difference
-            result = economyManager.modifySolyx(targetMember.id, interaction.guild.id, modificationAmount, `Set balance to ${amount} (${reason})`, interaction.user.id);
+            const modificationAmount = amount - oldBalance;
+            result = walletManager.modifySolyx(targetMember.id, interaction.guild.id, modificationAmount, `Set balance to ${amount} (${reason})`, interaction.user.id);
         }
 
         if (result && result.success) {
+            // --- Update embed to show old and new balance ---
             const embed = new EmbedBuilder().setColor('#3498DB').setTitle('⚖️ Economy Administration Log').setDescription(`Action by ${interaction.user}.`).addFields(
-                { name: 'Action', value: `\`${action}\``, inline: true }, { name: 'User', value: `${targetMember}`, inline: true }, { name: 'Amount', value: `**${action === 'set' ? '' : amount.toLocaleString()}** Solyx™`, inline: true },
-                { name: 'New Balance', value: `${result.newBalance.toLocaleString()} Solyx™` }, { name: 'Reason', value: reason }
+                { name: 'Action', value: `\`${action}\``, inline: true }, { name: 'User', value: `${targetMember}`, inline: true }, { name: 'Amount', value: `**${Math.abs(amount).toLocaleString()}** Solyx™`, inline: true },
+                { name: 'Old Balance', value: `${oldBalance.toLocaleString()} Solyx™`, inline: true }, { name: 'New Balance', value: `${result.newBalance.toLocaleString()} Solyx™`, inline: true },
+                { name: 'Reason', value: reason }
             ).setTimestamp();
             await interaction.editReply({ embeds: [embed] });
         } else {

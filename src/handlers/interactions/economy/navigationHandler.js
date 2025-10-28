@@ -1,6 +1,6 @@
 // src/handlers/interactions/economy/navigationHandler.js
 const { EmbedBuilder } = require('discord.js');
-const economyManager = require('../../../managers/economyManager');
+const walletManager = require('../../../managers/economy/walletManager');
 
 module.exports = async (interaction) => {
     const customId = interaction.customId;
@@ -10,7 +10,7 @@ module.exports = async (interaction) => {
     if (customId === 'nav_view_bank') {
         // Changed from getWallet() to getConsolidatedBalance() for consistency
         // with the main /wallet command, ensuring the total balance is shown.
-        const totalBalance = economyManager.getConsolidatedBalance(user.id, guildId);
+        const totalBalance = walletManager.getConsolidatedBalance(user.id, guildId);
 
         const embed = new EmbedBuilder()
             .setColor('#3498DB')

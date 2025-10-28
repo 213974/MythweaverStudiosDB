@@ -1,6 +1,6 @@
 // src/handlers/interactions/economy/raffleHandler.js
 const { EmbedBuilder } = require('discord.js');
-const economyManager = require('../../../managers/economyManager');
+const walletManager = require('../../../managers/economy/walletManager');
 const db = require('../../../utils/database');
 
 module.exports = async (interaction) => {
@@ -14,7 +14,7 @@ module.exports = async (interaction) => {
             return interaction.followUp({ content: 'Could not enter the raffle as it has already ended.', flags: 64 });
         }
         await interaction.deferReply({ flags: 64 });
-        const wallet = economyManager.getWallet(interaction.user.id, interaction.guild.id);
+        const wallet = walletManager.getWallet(interaction.user.id, interaction.guild.id);
         if (wallet.balance < raffle.ticket_cost) {
             return interaction.editReply({ content: `You need **${raffle.ticket_cost.toLocaleString()}** Solyx™ to buy a ticket, but you only have **${wallet.balance.toLocaleString()}**.` });
         }

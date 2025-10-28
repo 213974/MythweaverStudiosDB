@@ -3,7 +3,7 @@ const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('dis
 const db = require('../utils/database');
 const { format, startOfWeek, endOfWeek, eachDayOfInterval, getDay } = require('date-fns');
 const { getRandomGif } = require('../helpers/dashboardHelpers');
-const { DEFAULT_CURRENCY } = require('./economyManager');
+const { DEFAULT_CURRENCY } = require('./economy/walletManager');
 
 // --- Helper Functions ---
 

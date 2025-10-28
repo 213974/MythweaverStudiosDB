@@ -1,6 +1,6 @@
 // src/handlers/interactions/economy/leaderboardHandler.js
 const { EmbedBuilder } = require('discord.js');
-const economyManager = require('../../../managers/economyManager');
+const walletManager = require('../../../managers/economy/walletManager');
 
 module.exports = async (interaction) => {
     if (interaction.customId !== 'leaderboard_check_rank') return;
@@ -8,7 +8,7 @@ module.exports = async (interaction) => {
     const guildId = interaction.guild.id;
     const user = interaction.user;
 
-    const userRank = economyManager.getUserRank(user.id, guildId);
+    const userRank = walletManager.getUserRank(user.id, guildId);
 
     const embed = new EmbedBuilder();
 

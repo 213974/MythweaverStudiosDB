@@ -1,6 +1,6 @@
 ﻿// src/commands/wallet.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const economyManager = require('../managers/economyManager');
+const walletManager = require('../managers/economy/walletManager');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,7 +13,7 @@ module.exports = {
     async execute(interaction) {
         const targetUser = interaction.options.getUser('user') || interaction.user;
 
-        const totalBalance = economyManager.getConsolidatedBalance(targetUser.id, interaction.guild.id);
+        const totalBalance = walletManager.getConsolidatedBalance(targetUser.id, interaction.guild.id);
 
         const embed = new EmbedBuilder()
             .setColor('#3498DB')

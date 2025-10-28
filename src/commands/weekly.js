@@ -1,6 +1,6 @@
-﻿// commands/economy/weekly.js
+﻿// src/commands/weekly.js
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const economyManager = require('../managers/economyManager');
+const claimManager = require('../managers/economy/claimManager');
 const { formatTimestamp } = require('../helpers/timestampFormatter');
 
 module.exports = {
@@ -9,8 +9,8 @@ module.exports = {
         .setDescription('Claim your weekly Solyx reward.'),
     async execute(interaction) {
         const guildId = interaction.guild.id;
-        const weeklyRewardAmount = economyManager.getWeeklyReward(guildId);
-        const { canClaim, nextClaim } = economyManager.canClaimWeekly(interaction.user.id, guildId);
+        const weeklyRewardAmount = claimManager.getWeeklyReward(guildId);
+        const { canClaim, nextClaim } = claimManager.canClaimWeekly(interaction.user.id, guildId);
         const user = interaction.user;
 
         const embed = new EmbedBuilder()

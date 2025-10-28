@@ -3,7 +3,7 @@ services:
     build: .
     container_name: mythweaver_studios_container
     restart: unless-stopped
-    volumes:
-      - ./data:/usr/src/app/data
     env_file:
       - .env
+    volumes:
+      - ./data:/usr/src/app/data

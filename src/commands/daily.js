@@ -1,6 +1,6 @@
-﻿// commands/daily.js
+﻿// src/commands/daily.js
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const economyManager = require('../managers/economyManager');
+const claimManager = require('../managers/economy/claimManager');
 const { formatTimestamp } = require('../helpers/timestampFormatter');
 
 module.exports = {
@@ -11,8 +11,8 @@ module.exports = {
         const guildId = interaction.guild.id;
         const user = interaction.user;
         
-        const dailyRewardAmount = economyManager.getDailyReward(guildId);
-        const { canClaim, weekly_claim_state, nextClaim } = economyManager.getDailyStatus(user.id, guildId);
+        const dailyRewardAmount = claimManager.getDailyReward(guildId);
+        const { canClaim, weekly_claim_state, nextClaim } = claimManager.getDailyStatus(user.id, guildId);
 
         const embed = new EmbedBuilder()
             .setColor(canClaim ? '#2ECC71' : '#E74C3C')

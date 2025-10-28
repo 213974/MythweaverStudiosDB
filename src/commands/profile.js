@@ -1,6 +1,6 @@
 // src/commands/profile.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const economyManager = require('../managers/economyManager');
+const walletManager = require('../managers/economy/walletManager');
 const userManager = require('../managers/userManager');
 const moment = require('moment');
 require('moment-duration-format');
@@ -24,7 +24,7 @@ module.exports = {
         }
         
         // 1. Fetch all required data
-        const totalSolyx = economyManager.getConsolidatedBalance(targetUser.id, interaction.guild.id);
+        const totalSolyx = walletManager.getConsolidatedBalance(targetUser.id, interaction.guild.id);
         const userStats = userManager.getUserStats(targetUser.id, interaction.guild.id);
         
         // 2. Perform calculations

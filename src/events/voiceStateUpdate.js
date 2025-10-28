@@ -1,7 +1,7 @@
 // src/events/voiceStateUpdate.js
 const { Events } = require('discord.js');
 const db = require('../utils/database');
-const economyManager = require('../managers/economyManager');
+const walletManager = require('../managers/economy/walletManager');
 const userManager = require('../managers/userManager');
 const { getSettings } = require('../utils/settingsCache');
 
@@ -39,8 +39,7 @@ function startVcSession(member, client) {
         const isDeafened = currentMember.voice.serverDeaf;
 
         if (!isAlone && !isDeafened) {
-            // Changed the incorrect call from 'addSolyx' to the correct 'modifySolyx'
-            economyManager.modifySolyx(userId, guild.id, settings.rate, 'Voice Chat Activity');
+            walletManager.modifySolyx(userId, guild.id, settings.rate, 'Voice Chat Activity');
             userManager.addSolyxFromSource(userId, guild.id, settings.rate, 'vc');
         }
 

@@ -1,7 +1,7 @@
 // src/managers/leaderboardManager.js
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const db = require('../utils/database');
-const economyManager = require('./economyManager');
+const walletManager = require('./economy/walletManager');
 const { formatTimestamp } = require('../helpers/timestampFormatter');
 const { getRandomGif } = require('../helpers/dashboardHelpers');
 
@@ -56,7 +56,7 @@ async function sendOrUpdateLeaderboard(client, specificGuildId = null) {
             const channel = await guild.channels.fetch(channelId);
             let messageId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'leaderboard_message_id'").get(guildId)?.value;
             
-            const topUsersFromDb = economyManager.getTopUsers(guildId, 50);
+            const topUsersFromDb = walletManager.getTopUsers(guildId, 50);
 
             if (topUsersFromDb.length > 0) {
                 await guild.members.fetch({ user: topUsersFromDb.map(u => u.user_id) }).catch(() => {

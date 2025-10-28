@@ -1,6 +1,6 @@
 // src/managers/taxManager.js
 const db = require('../utils/database');
-const economyManager = require('./economyManager');
+const walletManager = require('./economy/walletManager');
 
 // --- Constants ---
 const DEFAULT_TAX_QUOTA = 100;
@@ -100,30 +100,30 @@ module.exports = {
      * @param {string} clanId The clan's role ID.
      * @param {string} userId The contributing user's ID.
      * @param {number} amount The amount to contribute.
-     * @returns {{success: boolean, message: string}} The result of the operation.
+     * @returns {{success: boolean, message: string, newBalance?: number}} The result of the operation.
      */
     contributeSolyx: (guildId, clanId, userId, amount) => {
         if (amount < MINIMUM_CONTRIBUTION) {
             return { success: false, message: `Contribution must be at least ${MINIMUM_CONTRIBUTION} Solyx™.` };
         }
-        
-        // The check 'if (!Number.isInteger(amount))' has been removed.
-        // The parseFlexibleAmount() helper in the guildhallHandler already guarantees
-        // that 'amount' is a valid, non-negative whole number, making this check
-        // redundant and the source of the reported bug.
 
-        const wallet = economyManager.getWallet(userId, guildId);
+        const wallet = walletManager.getWallet(userId, guildId);
 
         if (Number(wallet.balance) < Number(amount)) {
             return { success: false, message: 'You do not have enough Solyx™ to make this contribution.' };
         }
 
         try {
+            let newBalance;
             db.transaction(() => {
-                // Deduct from user's wallet
-                economyManager.modifySolyx(userId, guildId, -amount, `Clan Tax Contribution: ${clanId}`);
+                const result = walletManager.modifySolyx(userId, guildId, -amount, `Clan Tax Contribution: ${clanId}`);
+                if (result.success) {
+                    newBalance = result.newBalance;
+                } else {
+                    // If modifySolyx fails for some reason, throw an error to roll back the transaction
+                    throw new Error('Failed to modify user Solyx balance.');
+                }
 
-                // Update the tax coffer
                 db.prepare(`
                     UPDATE clan_taxes 
                     SET 
@@ -132,7 +132,8 @@ module.exports = {
                     WHERE guild_id = ? AND clan_id = ?
                 `).run(amount, userId, guildId, clanId);
             })();
-            return { success: true, message: `Successfully contributed ${amount.toLocaleString()} Solyx™.` };
+            // --- Return the new balance on success ---
+            return { success: true, message: `Successfully contributed ${amount.toLocaleString()} Solyx™.`, newBalance };
         } catch (error) {
             console.error('[TaxManager] Failed to contribute Solyx:', error);
             return { success: false, message: 'A database error occurred during the contribution.' };

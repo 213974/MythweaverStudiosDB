@@ -17,7 +17,9 @@ const GIFS = [
     'https://i.pinimg.com/originals/db/91/99/db9199a6ad9c6c1cffe1658f0f159db5.gif',
     'https://i.pinimg.com/originals/ae/b2/14/aeb2149471de2abc2be9d58b1c62b38f.gif',
     'https://i.pinimg.com/originals/fe/a5/3a/fea53ac58aebd04b59de22c9bf9ca8ae.gif',
-    'https://i.pinimg.com/originals/ad/93/2d/ad932df681ef1671fbb801e558d0e320.gif'
+    'https://i.pinimg.com/originals/ad/93/2d/ad932df681ef1671fbb801e558d0e320.gif',
+    'https://i.pinimg.com/originals/70/99/8e/70998e788ce8ae499fa9eec5b8ad2df1.gif',
+    'https://i.pinimg.com/originals/16/2f/22/162f2252116e12165daae9a0d03c689e.gif'
 
 ];
 
