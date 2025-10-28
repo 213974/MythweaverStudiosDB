@@ -43,6 +43,48 @@ module.exports = {
         }
     },
 
+    transferSolyx: (senderId, recipientId, guildId, amount, reason) => {
+        ensureWallet(senderId, guildId);
+        ensureWallet(recipientId, guildId);
+
+        try {
+            const result = db.transaction(() => {
+                // Check sender's balance first
+                const senderWallet = db.prepare('SELECT balance FROM wallets WHERE user_id = ? AND guild_id = ? AND currency = ?').get(senderId, guildId, DEFAULT_CURRENCY);
+                if (senderWallet.balance < amount) {
+                    throw new Error('Insufficient funds');
+                }
+
+                const timestamp = new Date().toISOString();
+
+                // Debit sender
+                db.prepare('UPDATE wallets SET balance = balance - ? WHERE user_id = ? AND guild_id = ? AND currency = ?').run(amount, senderId, guildId, DEFAULT_CURRENCY);
+                db.prepare('INSERT INTO transactions (user_id, guild_id, amount, reason, timestamp) VALUES (?, ?, ?, ?, ?)')
+                  .run(senderId, guildId, -amount, reason, timestamp);
+
+                // Credit recipient
+                db.prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ? AND guild_id = ? AND currency = ?').run(amount, recipientId, guildId, DEFAULT_CURRENCY);
+                db.prepare('INSERT INTO transactions (user_id, guild_id, amount, reason, timestamp) VALUES (?, ?, ?, ?, ?)')
+                  .run(recipientId, guildId, amount, reason, timestamp);
+                
+                // Track currency acquisition for recipient
+                const today = format(new Date(), 'yyyy-MM-dd');
+                db.prepare('INSERT INTO daily_stats (guild_id, date, total_solyx_acquired) VALUES (?, ?, ?) ON CONFLICT(guild_id, date) DO UPDATE SET total_solyx_acquired = total_solyx_acquired + excluded.total_solyx_acquired').run(guildId, today, amount);
+                
+                return { success: true };
+            })();
+
+            return { success: result.success };
+
+        } catch (error) {
+            if (error.message === 'Insufficient funds') {
+                return { success: false, message: 'You do not have enough Solyx™ to make that donation.' };
+            }
+            console.error(`[transferSolyx] Failed to transfer Solyx™ from ${senderId} to ${recipientId}:`, error);
+            return { success: false, message: 'A database error occurred during the transfer.' };
+        }
+    },
+
     getWallet: (userId, guildId, currency = DEFAULT_CURRENCY) => {
         ensureWallet(userId, guildId, currency);
         return db.prepare('SELECT * FROM wallets WHERE user_id = ? AND guild_id = ? AND currency = ?').get(userId, guildId, currency);

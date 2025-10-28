@@ -1,7 +1,7 @@
-﻿// src/commands/dev/settings.js
+﻿// src/commands/settings.js
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, PermissionFlagsBits } = require('discord.js');
-const config = require('../../config');
-const db = require('../../utils/database');
+const config = require('../config');
+const db = require('../utils/database');
 
 module.exports = {
     data: new SlashCommandBuilder()

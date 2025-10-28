@@ -1,13 +1,13 @@
-// src/commands/admin/admin.js
+// src/commands/admin.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { createMainDashboard } = require('../../components/adminDashboard/mainPanel');
-const { createEconomyDashboard } = require('../../components/adminDashboard/economyPanel');
-const { createClanDashboard } = require('../../components/adminDashboard/clanPanel');
-const { createShopDashboard } = require('../../components/adminDashboard/shopPanel');
-const { createRaffleDashboard } = require('../../components/adminDashboard/rafflePanel');
-const { createSystemsDashboard } = require('../../components/adminDashboard/systemsPanel');
-const config = require('../../config');
-const db = require('../../utils/database');
+const { createMainDashboard } = require('../components/adminDashboard/mainPanel');
+const { createEconomyDashboard } = require('../components/adminDashboard/economyPanel');
+const { createClanDashboard } = require('../components/adminDashboard/clanPanel');
+const { createShopDashboard } = require('../components/adminDashboard/shopPanel');
+const { createRaffleDashboard } = require('../components/adminDashboard/rafflePanel');
+const { createSystemsDashboard } = require('../components/adminDashboard/systemsPanel');
+const config = require('../config');
+const db = require('../utils/database');
 
 module.exports = {
     data: new SlashCommandBuilder()
