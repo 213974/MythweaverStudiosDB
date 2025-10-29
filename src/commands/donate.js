@@ -1,7 +1,9 @@
 // src/commands/donate.js
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, Collection } = require('discord.js');
 const walletManager = require('../managers/economy/walletManager');
 const { parseFlexibleAmount } = require('../helpers/interactionHelpers');
+
+const DONATE_COOLDOWN_SECONDS = 10 * 60; // 10 minutes
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -16,9 +18,21 @@ module.exports = {
                 .setDescription('The amount of Solyx™ to donate (e.g., 100, 2.5k).')
                 .setRequired(true)),
     async execute(interaction) {
+        const sender = interaction.user;
+
+        // --- Cooldown Check ---
+        const cooldowns = interaction.client.cooldowns.get('donate') || new Collection();
+        const now = Date.now();
+        const userTimestamp = cooldowns.get(sender.id);
+        const expirationTime = userTimestamp + DONATE_COOLDOWN_SECONDS * 1000;
+
+        if (userTimestamp && now < expirationTime) {
+            const timeLeft = (expirationTime - now) / 1000;
+            return interaction.reply({ content: `You can use the donate command again in ${Math.ceil(timeLeft / 60)} minute(s).`, flags: 64 });
+        }
+
         await interaction.deferReply({ flags: 64 });
 
-        const sender = interaction.user;
         const recipient = interaction.options.getUser('user');
         const amountStr = interaction.options.getString('amount');
         const amount = parseFlexibleAmount(amountStr);
@@ -43,6 +57,11 @@ module.exports = {
         const result = walletManager.transferSolyx(sender.id, recipient.id, guildId, amount, reason);
         
         if (result.success) {
+            // Set cooldown on successful donation
+            cooldowns.set(sender.id, now);
+            interaction.client.cooldowns.set('donate', cooldowns);
+            setTimeout(() => cooldowns.delete(sender.id), DONATE_COOLDOWN_SECONDS * 1000);
+
             const embed = new EmbedBuilder()
                 .setColor('#2ECC71')
                 .setTitle('💸 Donation Successful 💸')

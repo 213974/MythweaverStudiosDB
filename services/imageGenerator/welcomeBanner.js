@@ -16,8 +16,10 @@ const BORDER_SIZE = AVATAR_SIZE + BORDER_THICKNESS * 2; // Diameter of the borde
 // --- Text Constants (Pixel-based for predictable layout) ---
 const WELCOME_TEXT_Y = 445;
 const USERNAME_TEXT_Y = 515;
-// A font stack with common fallbacks to prevent rendering issues.
-const FONT_FAMILY = '"DejaVu Sans", Arial, sans-serif';
+// Use a generic font family. This tells the SVG renderer to use its default
+// sans-serif font, which is the most reliable way to ensure text renders
+// on any system, preventing the '***' issue.
+const FONT_FAMILY = 'sans-serif';
 
 /**
  * Escapes special XML characters to prevent issues when injecting text into SVG.

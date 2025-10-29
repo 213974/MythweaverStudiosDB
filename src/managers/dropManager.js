@@ -66,7 +66,7 @@ module.exports = {
         const initialEmbed = new EmbedBuilder()
             .setColor('#FFD700')
             .setTitle('<a:Yellow_Gem:1427764380489224295> A Solyx Drop has Appeared! <a:Yellow_Gem:1427764380489224295>')
-            .setDescription(`A treasure of **${solyxAmount.toLocaleString()}** Solyx™ has dropped!\nThe first **${settings.requiredReactors}** user(s) to react with ${DROP_EMOJI} will claim a share!`)
+            .setDescription(`A treasure of **${solyxAmount.toLocaleString()}** Solyx™ has dropped!\nThe first **${settings.requiredReactors}** user(s) to will claim a share!`)
             .addFields({
                 name: '<a:Sand_Time:1429464150467281046> Time Remaining',
                 value: `Disappears ${formatTimestamp(Math.floor(Date.now() / 1000) + settings.duration, 'R')}`
@@ -89,13 +89,17 @@ module.exports = {
                 // SUCCESS
                 const winnings = calculateWinnings(solyxAmount, winners.map(w => w.id));
 
+                const deletionTimestamp = Math.floor(Date.now() / 1000) + 10;
                 const successEmbed = EmbedBuilder.from(initialEmbed)
                     .setColor('#2ECC71')
                     .setTitle('<a:Golden_Check:1427763589732634746> Solyx Drop Claimed! <a:Golden_Check:1427763589732634746>')
-                    .setDescription(`The **${solyxAmount.toLocaleString()}** Solyx™ was claimed by:\n${winners.map(w => w.toString()).join(', ')}`)
+                    .setDescription(`Claimed by ${winners.map(w => w.toString()).join(', ')}.\nThis message will be deleted ${formatTimestamp(deletionTimestamp, 'R')}.`)
                     .setFields([]);
 
                 await message.edit({ embeds: [successEmbed], components: [] });
+
+                // Schedule message for deletion
+                setTimeout(() => message.delete().catch(() => {}), 10 * 1000);
 
                 for (const winner of winners) {
                     const amountWon = winnings.get(winner.id);
