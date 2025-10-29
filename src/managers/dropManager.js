@@ -66,7 +66,7 @@ module.exports = {
         const initialEmbed = new EmbedBuilder()
             .setColor('#FFD700')
             .setTitle('<a:Yellow_Gem:1427764380489224295> A Solyx Drop has Appeared! <a:Yellow_Gem:1427764380489224295>')
-            .setDescription(`A treasure of **${solyxAmount.toLocaleString()}** Solyx™ has dropped!\nThe first **${settings.requiredReactors}** user(s) to will claim a share!`)
+            .setDescription(`A treasure of **${solyxAmount.toLocaleString()}** Solyx™ has dropped!\nThe first **${settings.requiredReactors}** user(s) to react with ${DROP_EMOJI} will claim a share!`)
             .addFields({
                 name: '<a:Sand_Time:1429464150467281046> Time Remaining',
                 value: `Disappears ${formatTimestamp(Math.floor(Date.now() / 1000) + settings.duration, 'R')}`
@@ -77,7 +77,7 @@ module.exports = {
         await message.react(DROP_EMOJI);
 
         const collector = message.createReactionCollector({
-            filter: (reaction, user) => reaction.emoji.name === DROP_EMOJI && !user.bot,
+            filter: (reaction, user) => reaction.emoji.name === 'Solyx_Currency' && !user.bot,
             time: settings.duration * 1000,
             maxUsers: settings.requiredReactors
         });
@@ -125,18 +125,17 @@ module.exports = {
 
             } else {
                 // FAILURE (Timer ran out)
-                const warningEmbed = EmbedBuilder.from(initialEmbed)
-                    .setColor('#E67E22')
-                    .setDescription(`The drop is fading away... Quick!\nIt will disappear ${formatTimestamp(Math.floor(Date.now() / 1000) + settings.warning, 'R')}`)
+                const deletionTimestamp = Math.floor(Date.now() / 1000) + settings.warning;
+                const expiredEmbed = EmbedBuilder.from(initialEmbed)
+                    .setColor('#E74C3C')
+                    .setTitle('<a:Golden_X:1427763627146088579> Solyx Drop Expired <a:Golden_X:1427763627146088579>')
+                    .setDescription(`The Solyx drop faded away before it could be claimed.\nThis message will be deleted ${formatTimestamp(deletionTimestamp, 'R')}.`)
                     .setFields([]);
-                await message.edit({ embeds: [warningEmbed] });
-
-                setTimeout(async () => {
-                    const finalEmbed = EmbedBuilder.from(warningEmbed)
-                        .setColor('#E74C3C')
-                        .setTitle('<a:Golden_X:1427763627146088579> Solyx Drop Expired <a:Golden_X:1427763627146088579>')
-                        .setDescription('The Solyx drop faded away before it could be claimed.');
-                    await message.edit({ embeds: [finalEmbed], components: [] }).catch(() => {}); // Ignore if message was deleted
+                await message.edit({ embeds: [expiredEmbed], components: [] });
+                
+                // Schedule final deletion
+                setTimeout(() => {
+                    message.delete().catch(() => {});
                 }, settings.warning * 1000);
             }
         });
