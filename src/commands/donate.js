@@ -74,8 +74,8 @@ module.exports = {
             try {
                 const recipientEmbed = new EmbedBuilder()
                     .setColor('#3498DB')
-                    .setTitle('🎉 You\'ve Received a Donation! 🎉')
-                    .setDescription(`${sender} has donated **${amount.toLocaleString()}** Solyx™ to you in the **${interaction.guild.name}** server!`);
+                    .setTitle('🎉 You\'ve Received Solyx! 🎉')
+                    .setDescription(`${sender} has donated **${amount.toLocaleString()}** Solyx™ to you!`);
                 await recipient.send({ embeds: [recipientEmbed] });
             } catch (error) {
                 console.warn(`[Donate] Could not DM recipient ${recipient.tag}:`, error.message);

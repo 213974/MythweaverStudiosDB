@@ -4,8 +4,8 @@ const db = require('../utils/database');
 const walletManager = require('./economy/walletManager');
 const { formatTimestamp } = require('../helpers/timestampFormatter');
 
-const DROP_EMOJI = '🎊';
-const DROP_FOOTER_TEXT = 'Solyx Drop Event';
+const DROP_EMOJI = '<a:Solyx_Currency:1431059951664627712>';
+const DROP_FOOTER_TEXT = 'Solyx Drop';
 
 // --- Helper Functions ---
 
