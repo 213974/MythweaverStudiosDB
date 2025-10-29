@@ -88,7 +88,7 @@ module.exports = {
             const startupEmbed = new EmbedBuilder()
                 .setColor('#2ECC71')
                 .setTitle('Bot Online & Ready')
-                .setDescription('*Hourly Solyx Drop Testing*')
+                .setDescription('*Bot Moved in Server for 24/7 Uptime*')
                 .setFields(
                     { name: 'Status', value: 'Online', inline: true },
                     { name: 'Startup Time', value: `${startupTime}s`, inline: true },

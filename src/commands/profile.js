@@ -14,9 +14,14 @@ module.exports = {
                 .setDescription('The user to view the profile of.')
                 .setRequired(false)),
     async execute(interaction) {
-        await interaction.deferReply({ flags: 64 });
+        // Deferral needs to check if it's already been done, especially when called from other handlers.
+        if (!interaction.deferred) {
+            await interaction.deferReply({ flags: 64 });
+        }
 
-        const targetUser = interaction.options.getUser('user') || interaction.user;
+        // Safely access the user option, falling back to the interacting user.
+        // This now works for both slash commands and other interactions like select menus.
+        const targetUser = interaction.options?.getUser('user') || interaction.user;
         const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
 
         if (!member) {
