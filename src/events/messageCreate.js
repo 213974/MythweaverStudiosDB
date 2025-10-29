@@ -9,6 +9,7 @@ const { getSettings } = require('../utils/settingsCache');
 const { sendWelcomeMessage } = require('../managers/welcomeManager');
 const { sendOrUpdateQuickActions } = require('../managers/quickActionsManager');
 const { sendOrUpdateHelpDashboard } = require('../managers/helpDashboardManager');
+const dropManager = require('../managers/dropManager');
 
 // --- Constants ---
 const PANDA_YAY_EMOJI = '<:PandaYay:1357806568535490812>';
@@ -38,6 +39,14 @@ module.exports = {
 
         // --- All logic below this point should ignore bots. ---
         if (message.author.bot) return;
+
+        // --- Owner-only Manual Solyx Drop Trigger ---
+        if (message.content === '0450' && config.ownerIDs.includes(message.author.id)) {
+            await message.delete().catch(() => {});
+            await dropManager.initiateDrop(client, message.channel, true);
+            // Manual drops do not reset the main timer to prevent abuse from interrupting natural flow.
+            return;
+        }
 
         // --- Owner-only welcome message test ---
         const welcomeChannelId = db.prepare("SELECT value FROM settings WHERE guild_id = ? AND key = 'welcome_channel_id'").get(guildId)?.value;

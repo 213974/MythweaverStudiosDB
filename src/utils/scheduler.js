@@ -8,7 +8,42 @@ const { sendOrUpdateDashboard } = require('../managers/dashboardManager');
 const { sendOrUpdateCommandList } = require('../managers/publicCommandListManager');
 const taxManager = require('../managers/taxManager');
 const guildhallManager = require('../managers/guildhallManager');
+const dropManager = require('../managers/dropManager');
 const { parseISO } = require('date-fns');
+
+let lastDropCheck = Date.now();
+
+async function checkSolyxDrops(client) {
+    const now = Date.now();
+    for (const [guildId, guild] of client.guilds.cache) {
+        const settings = dropManager.getDropSettings(guildId);
+        if (!settings.enabled || settings.channels.length === 0) continue;
+
+        // Check if enough time has passed since the last drop
+        if (now - lastDropCheck >= settings.interval * 60 * 1000) {
+            lastDropCheck = now; // Reset timer immediately
+
+            let eligibleChannels = [];
+            if (settings.channelMode === 'whitelist') {
+                eligibleChannels = settings.channels;
+            } else { // blacklist
+                const allTextChannelIds = guild.channels.cache
+                    .filter(c => c.isTextBased() && !c.isVoiceBased())
+                    .map(c => c.id);
+                eligibleChannels = allTextChannelIds.filter(id => !settings.channels.includes(id));
+            }
+
+            if (eligibleChannels.length > 0) {
+                const randomChannelId = eligibleChannels[Math.floor(Math.random() * eligibleChannels.length)];
+                const channel = await client.channels.fetch(randomChannelId).catch(() => null);
+                if (channel) {
+                    console.log(`[Scheduler] Triggering Solyx Drop in #${channel.name} for guild ${guild.name}.`);
+                    await dropManager.initiateDrop(client, channel);
+                }
+            }
+        }
+    }
+}
 
 async function checkEndedRaffles(client) {
     const now = Math.floor(Date.now() / 1000);
@@ -124,6 +159,7 @@ function startScheduler(client) {
     }, 5000);
 
     // Set intervals
+    setInterval(() => checkSolyxDrops(client), 60 * 1000); // 1 min (checks if interval has passed)
     setInterval(() => checkEndedRaffles(client), 60 * 1000); // 1 min
     setInterval(() => updateRaffleMessages(client), 3000); // 3 sec
     setInterval(() => updateAnalyticsDashboard(client), 5 * 60 * 1000); // 5 mins

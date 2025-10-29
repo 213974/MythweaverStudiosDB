@@ -5,8 +5,8 @@ const path = require('node:path');
 const { sendOrUpdateDashboard } = require('../managers/dashboardManager');
 const db = require('../utils/database');
 const config = require('../config');
+const dropManager = require('../managers/dropManager');
 
-// This loader now EXACTLY matches the logic in `deploy-commands.js` for perfect synchronization.
 function loadCommands(client) {
     client.commands = new Collection();
     const commandsPath = path.join(__dirname, '..', 'commands');
@@ -64,6 +64,9 @@ module.exports = {
             }
         }
 
+        // Cleanup any drops that were active during a crash
+        await dropManager.cleanupOrphanedDrops(client);
+
         try {
             const TARGET_GUILD_ID = '1336309776509960193';
             const guild = await client.guilds.fetch(TARGET_GUILD_ID).catch(() => null);
@@ -85,7 +88,7 @@ module.exports = {
             const startupEmbed = new EmbedBuilder()
                 .setColor('#2ECC71')
                 .setTitle('Bot Online & Ready')
-                // .setDescription('*Bot Moved in Server for 24/7 Uptime*')
+                .setDescription('*Hourly Solyx Drop Testing*')
                 .setFields(
                     { name: 'Status', value: 'Online', inline: true },
                     { name: 'Startup Time', value: `${startupTime}s`, inline: true },

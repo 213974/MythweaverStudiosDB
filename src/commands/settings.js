@@ -1,5 +1,5 @@
 ﻿// src/commands/settings.js
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, PermissionFlagsBits, ChannelSelectMenuBuilder, ChannelType } = require('discord.js');
 const config = require('../config');
 const db = require('../utils/database');
 
@@ -25,6 +25,8 @@ module.exports = {
             const category = interaction.guild.channels.cache.get(categoryId);
             return category ? `\`${category.name}\`` : '`Not Set`';
         };
+        const dropChannels = JSON.parse(settingsMap.get('drop_channels') || '[]');
+        const dropChannelMode = settingsMap.get('drop_channel_mode') || 'whitelist';
 
 
         const embed = new EmbedBuilder()
@@ -42,7 +44,8 @@ module.exports = {
                 { name: 'Public Command List', value: formatChannel('public_cmd_list_channel_id'), inline: true },
                 { name: 'Quick Actions Hub', value: formatChannel('quick_actions_channel_id'), inline: true },
                 { name: 'Guildhalls Category', value: formatCategory('system_guildhall_category_id'), inline: true },
-                { name: 'Welcome Channel', value: formatChannel('welcome_channel_id'), inline: true }
+                { name: 'Welcome Channel', value: formatChannel('welcome_channel_id'), inline: true },
+                { name: 'Solyx Drop Channels', value: `Mode: \`${dropChannelMode}\`\nChannels: ${dropChannels.length > 0 ? dropChannels.map(id => `<#${id}>`).join(', ') : '`None`'}`, inline: false }
             );
             
         const selectMenu = new StringSelectMenuBuilder()
@@ -59,7 +62,8 @@ module.exports = {
                 { label: 'Set Public Command List Channel', value: 'settings_set_cmd_list_channel', emoji: '📜' },
                 { label: 'Set Quick Actions Channel', value: 'settings_set_quick_actions_channel', emoji: '⚡' },
                 { label: 'Set Guildhalls Category', value: 'settings_set_guildhall_category', emoji: '🏰' },
-                { label: 'Set Welcome Channel', value: 'settings_set_welcome_channel', emoji: '👋' }
+                { label: 'Set Welcome Channel', value: 'settings_set_welcome_channel', emoji: '👋' },
+                { label: 'Manage Solyx Drop Channels', value: 'settings_manage_drop_channels', emoji: '💎' }
             ]);
 
         const row = new ActionRowBuilder().addComponents(selectMenu);
